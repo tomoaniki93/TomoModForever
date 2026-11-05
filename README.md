@@ -1,6 +1,6 @@
 ![TomoModForever](https://img.shields.io/badge/WoW-Forever-c9a252?style=for-the-badge) ![Interface](https://img.shields.io/badge/Interface-16001-8b6b3f?style=for-the-badge) 
 
-# ⚔️ TomoModForever — A Complete Interface for WoW: Forever
+# TomoModForever — A Complete Interface for WoW: Forever
 
 **TomoModForever** is a streamlined edition of TomoMod built for **World of Warcraft: Forever**. It keeps the TomoMod interface (unit frames, party and raid frames, nameplates, castbars, resources, cooldowns, chat, bags, damage meter, skins and quality-of-life tools) and leaves out every module Forever has no use for.
 
