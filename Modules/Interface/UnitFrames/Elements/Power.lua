@@ -7,14 +7,24 @@ local UF_Elements = UF_Elements or {}
 local TEXTURE = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoaniki"
 local FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
 
+-- True when the player's power is shown by the centered ResourceBars bar,
+-- so the unit frame must not draw its own.
+-- [FIX] Only when the ResourceBars module is actually enabled: with it
+-- off, the setting alone left the player with no power bar anywhere.
+function UF_Elements.IsPowerBarSuppressed(unit)
+    if unit ~= "player" then return false end
+    local rb = TomoModForeverDB and TomoModForeverDB.resourceBars
+    if not (rb and rb.enabled) then return false end
+    return rb.primaryPowerCentered
+        or (TomoMod_ResourceBars and TomoMod_ResourceBars._primaryPowerCentered)
+        or false
+end
+
 function UF_Elements.CreatePower(parent, unit, settings)
     if (settings.powerHeight or 0) <= 0 then return nil end
 
     -- If primary power is centered on screen, skip creating UF power bar for player
-    if unit == "player" and (
-        (TomoModForeverDB and TomoModForeverDB.resourceBars and TomoModForeverDB.resourceBars.primaryPowerCentered) or
-        (TomoMod_ResourceBars and TomoMod_ResourceBars._primaryPowerCentered)
-    ) then
+    if UF_Elements.IsPowerBarSuppressed(unit) then
         return nil
     end
 

@@ -63,6 +63,16 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.0.1",
+        highlights = {
+            L["wn_101_minimap_daycycle"],
+            L["wn_101_minimap_zonetext"],
+            L["wn_101_minimap_persist"],
+            L["wn_101_player_power"],
+            L["wn_101_power_toggle"],
+        },
+    },
+    {
         version = "1.0.0",
         highlights = {
             L["wn_100_first_release"],

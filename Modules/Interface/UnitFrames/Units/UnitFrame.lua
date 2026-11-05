@@ -663,6 +663,10 @@ local function RegisterSupplementaryEvents()
             -- custom source live without polling.
             uef:RegisterUnitEvent("UNIT_POWER_UPDATE",            unit)
             uef:RegisterUnitEvent("UNIT_MAXPOWER",                unit)
+            -- Mana/énergie : UNIT_POWER_UPDATE seul ne suffit pas sur tous les
+            -- clients (Forever). pcall : l'événement peut ne pas exister.
+            pcall(uef.RegisterUnitEvent, uef, "UNIT_POWER_FREQUENT", unit)
+            uef:RegisterUnitEvent("UNIT_DISPLAYPOWER",            unit)
             uef:SetScript("OnEvent", function(_, event, u)
                 local root = TomoModForeverDB and TomoModForeverDB.unitFrames
                 if not root or not root.enabled then return end
@@ -682,10 +686,18 @@ local function RegisterSupplementaryEvents()
                 elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
                     UpdateAbsorb(frame)
 
-                elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" then
-                    -- When frame.power exists oUF's Power.Override already
-                    -- updates Forge. Avoid doing the work twice.
-                    if not frame.power then
+                elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER"
+                    or event == "UNIT_POWER_FREQUENT" or event == "UNIT_DISPLAYPOWER" then
+                    -- [FIX] La barre de puissance du cadre joueur restait figée :
+                    -- le chemin oUF (Power.Override) ne recevait pas les
+                    -- événements de mana pour "player", alors que le cadre cible
+                    -- se mettait à jour. On ne dépend plus uniquement d'oUF :
+                    -- mise à jour directe ici (UpdatePower rafraîchit aussi
+                    -- les barres Forge). Coût négligeable même en doublon.
+                    if frame.power then
+                        E.UpdatePower(frame)
+                        E.UpdateInfoBar(frame)
+                    else
                         local settings = TomoModForeverDB.unitFrames[u]
                         local UFE = TomoMod_UFElements
                         if settings and type(settings.elements) == "table"
@@ -810,7 +822,10 @@ function UF.ApplyVisuals(frame, unitKey, settings)
     local fontSize    = globalDB.fontSize or 12
     local fontOutline = globalDB.fontOutline or "OUTLINE"
 
-    frame:SetSize(settings.width, settings.healthHeight + (settings.powerHeight or 0) + (settings.infoBarHeight or 0))
+    -- La hauteur de ressource ne compte que si la barre existe (sinon, barre
+    -- centrée ou désactivée, le cadre gardait un trou vide).
+    local powerH = frame.power and (settings.powerHeight or 0) or 0
+    frame:SetSize(settings.width, settings.healthHeight + powerH + (settings.infoBarHeight or 0))
     frame.health:SetSize(settings.width, settings.healthHeight)
 
     if frame.health.text     then frame.health.text:SetFont(font, fontSize,     fontOutline) end
@@ -917,6 +932,56 @@ function UF.RefreshUnit(unitKey)
         local cb = TomoMod_Castbar.castbars[unitKey]
         if cb.ReanchorToUF then cb:ReanchorToUF() end
     end
+end
+
+-- Changement STRUCTUREL de la barre de ressource, à chaud (sans /reload).
+-- La barre n'était créée qu'au Spawn : passer powerHeight de 0 à >0, ou
+-- basculer resourceBars.primaryPowerCentered, n'avait aucun effet avant
+-- un /reload. Appelée par AstralForge et ResourceCastStudio.
+-- Le cadre est protégé : rien en combat (SetSize serait bloqué).
+local function SyncPowerBar(frame, unitKey, settings)
+    local wanted = (settings.powerHeight or 0) > 0
+        and not (E.IsPowerBarSuppressed and E.IsPowerBarSuppressed(unitKey))
+
+    if wanted and not frame.power then
+        -- Réutilise la barre mise de côté, sinon en crée une.
+        local power = frame._tmPowerCache or E.CreatePower(frame, unitKey, settings)
+        if not power then return end
+        frame._tmPowerCache = nil
+        power:ClearAllPoints()
+        power:SetPoint("TOP", frame.health, "BOTTOM", 0, 0)
+        power:Show()
+        frame.power = power
+        frame.Power = power
+        power.Override = function(oufFrame)
+            E.UpdatePower(oufFrame)
+            E.UpdateInfoBar(oufFrame)
+        end
+        if frame.EnableElement then frame:EnableElement("Power") end
+    elseif not wanted and frame.power then
+        if frame.DisableElement then frame:DisableElement("Power") end
+        frame.power:Hide()
+        frame._tmPowerCache = frame.power
+        frame.power = nil
+        frame.Power = nil
+    else
+        return
+    end
+
+    if frame.infoBar then
+        frame.infoBar:ClearAllPoints()
+        frame.infoBar:SetPoint("TOP", frame.power or frame.health, "BOTTOM", 0, 0)
+    end
+end
+
+function UF.RebuildUnit(unitKey)
+    local frame    = frames[unitKey]
+    local settings = TomoModForeverDB.unitFrames[unitKey]
+    if not frame or not settings then return end
+    if not InCombatLockdown() then
+        SyncPowerBar(frame, unitKey, settings)
+    end
+    UF.RefreshUnit(unitKey)
 end
 
 -- Preview de la menace (appelé par ConfigUI OnShow/OnHide)

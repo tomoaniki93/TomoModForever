@@ -1619,8 +1619,11 @@ local function BuildResourceDisplay()
     local s = GetSettings()
     if not s or not s.enabled then return end
 
-    local specIndex = GetSpecialization and GetSpecialization()
-    if not specIndex or specIndex == 0 then return end
+    -- [FIX] Sans spécialisation (bas niveau, WoW: Forever) on construisait
+    -- rien : la barre de puissance centrée manquait, et le cadre joueur ne
+    -- créait pas la sienne (primaryPowerCentered). On continue avec
+    -- specIndex = 0 : pas de class power, mais la barre centrée s'affiche.
+    local specIndex = (GetSpecialization and GetSpecialization()) or 0
 
     local classData = CLASS_RESOURCES[playerClass]
     local resources = classData and classData[specIndex]
@@ -1900,7 +1903,7 @@ local function OnEvent(self, event, arg1)
         C_Timer.After(1, function() BuildResourceDisplay(); UpdateAlpha(); if RB._refreshOnUpdate then RB._refreshOnUpdate() end end)
     elseif event == "ACTIVE_TALENT_GROUP_CHANGED" or event == "PLAYER_SPECIALIZATION_CHANGED" then
         C_Timer.After(0.5, function()
-            local newSpec = GetSpecialization and GetSpecialization()
+            local newSpec = (GetSpecialization and GetSpecialization()) or 0
             if newSpec ~= currentSpec then
                 currentSpec = newSpec
                 BuildResourceDisplay()

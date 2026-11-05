@@ -1089,6 +1089,82 @@ function TomoMod_Minimap.HideNativeClutter()
     if trackBliz and not InCombatLockdown() then trackBliz:EnableMouse(not hideTracking) end
 end
 
+-- Masque les décorations natives de la minimap moderne :
+--   * MinimapCluster.ZoneTextButton (nom de zone au-dessus de la carte)
+--   * MinimapCluster.BorderTop (fond du bandeau de zone)
+--   * cadran jour/nuit anonyme sous MinimapCluster.MinimapContainer
+--     (Blizzard_Minimap/Camelot/Diel.lua, atlas UI-HUD-Minimap-DayCycle)
+local function decorHide()
+    local d = TomoModForeverDB and TomoModForeverDB.minimap
+    return d and d.enabled and true or false
+end
+
+local DAYCYCLE_ATLAS = {
+    ["UI-HUD-Minimap-DayCycle"]   = true,
+    ["UI-HUD-Minimap-Frame-Cycle"] = true,
+}
+
+local function HasDayCycleAtlas(frame, depth)
+    if not frame or depth > 2 then return false end
+    if frame.GetRegions then
+        for _, region in ipairs({ frame:GetRegions() }) do
+            if region.GetAtlas then
+                local atlas = region:GetAtlas()
+                if atlas and DAYCYCLE_ATLAS[atlas] then return true end
+            end
+        end
+    end
+    if frame.GetChildren then
+        for _, child in ipairs({ frame:GetChildren() }) do
+            if HasDayCycleAtlas(child, depth + 1) then return true end
+        end
+    end
+    return false
+end
+
+local function FindDayCycleFrames()
+    local found = {}
+    local container = MinimapCluster and MinimapCluster.MinimapContainer
+    if not container or not container.GetChildren then return found end
+    for _, child in ipairs({ container:GetChildren() }) do
+        if child ~= Minimap and HasDayCycleAtlas(child, 0) then
+            found[#found + 1] = child
+        end
+    end
+    return found
+end
+
+function TomoMod_Minimap.HideNativeDecorations()
+    local hide = decorHide()
+    local cluster = MinimapCluster
+    local frames = {
+        cluster and cluster.ZoneTextButton,
+        cluster and cluster.BorderTop,
+    }
+    for _, f in ipairs(FindDayCycleFrames()) do frames[#frames + 1] = f end
+
+    for _, frame in ipairs(frames) do
+        if frame then
+            if frame.EnableMouse then
+                ApplyNativeVisibility(frame, hide)
+                HookNativeFrame(frame, decorHide)
+            else
+                -- Texture (BorderTop) : pas de souris, alpha seul
+                frame:SetAlpha(hide and 0 or 1)
+            end
+        end
+    end
+end
+
+-- Le cadran jour/nuit peut être (re)créé au changement de zone : on rescanne.
+local decorWatcher = CreateFrame("Frame")
+decorWatcher:RegisterEvent("PLAYER_ENTERING_WORLD")
+decorWatcher:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+decorWatcher:SetScript("OnEvent", function()
+    if not decorHide() then return end
+    C_Timer.After(1, TomoMod_Minimap.HideNativeDecorations)
+end)
+
 -- [3.0.5] Positionne le déclencheur du collecteur. Extrait de CreateButtonBag
 -- pour être ré-appelable : l'horloge visible est celle de l'InfoPanel
 -- (TomoMod_ClockBar), créée au login — souvent APRÈS ce premier positionnement.
@@ -1475,6 +1551,7 @@ function TomoMod_Minimap.ApplySettings()
     TomoMod_Minimap.ApplyNativeIndicators()
     TomoMod_Minimap.CreateButtonBag()
     TomoMod_Minimap.HideNativeClutter()
+    TomoMod_Minimap.HideNativeDecorations()
     TomoMod_Minimap.RefreshAddonButtonShapes()
     TomoMod_Minimap.SetupEditMode()
     RestorePosition()
@@ -1546,6 +1623,7 @@ function TomoMod_Minimap.Initialize()
         if TomoMod_Minimap.RefreshAddonButtonShapes then TomoMod_Minimap.RefreshAddonButtonShapes() end
         if TomoMod_Minimap.RefreshButtonBag then TomoMod_Minimap.RefreshButtonBag() end
         if TomoMod_Minimap.HideNativeClutter then TomoMod_Minimap.HideNativeClutter() end
+        if TomoMod_Minimap.HideNativeDecorations then TomoMod_Minimap.HideNativeDecorations() end
         if TomoMod_Minimap.PositionBagToggle then TomoMod_Minimap.PositionBagToggle() end
     end)
 

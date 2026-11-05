@@ -575,6 +575,8 @@ if TomoMod_RegisterLocale then
         ["af_v22_sec_global"]        = "Global settings",
         ["af_v22_sec_dimensions"]    = "Dimensions",
         ["af_v22_sec_display"]       = "Display",
+        ["af_v22_player_power"]      = "Show power on the player frame",
+        ["af_v22_player_power_info"] = "Power is shown in the player frame instead of the centered resource bar. Uncheck to use the centered bar (Resource Bars module).",
         ["af_v22_sec_colors"]        = "Colors & threat",
         ["af_v22_sec_auras"]         = "Auras",
         ["af_v22_sec_enemy_buffs"]   = "Enemy buffs",
@@ -591,6 +593,8 @@ if TomoMod_RegisterLocale then
         ["af_v22_sec_global"]        = "Réglages globaux",
         ["af_v22_sec_dimensions"]    = "Dimensions",
         ["af_v22_sec_display"]       = "Affichage",
+        ["af_v22_player_power"]      = "Afficher la ressource dans le cadre joueur",
+        ["af_v22_player_power_info"] = "La ressource (mana, énergie, rage) est affichée dans le cadre joueur au lieu de la barre centrée. Décochez pour utiliser la barre centrée (module Barres de ressources).",
         ["af_v22_sec_colors"]        = "Couleurs & menace",
         ["af_v22_sec_auras"]         = "Auras",
         ["af_v22_sec_enemy_buffs"]   = "Buffs ennemis",
@@ -607,6 +611,8 @@ if TomoMod_RegisterLocale then
         ["af_v22_sec_global"]        = "Globale Einstellungen",
         ["af_v22_sec_dimensions"]    = "Abmessungen",
         ["af_v22_sec_display"]       = "Anzeige",
+        ["af_v22_player_power"]      = "Ressource im Spielerfenster anzeigen",
+        ["af_v22_player_power_info"] = "Die Ressource (Mana, Energie, Wut) wird im Spielerfenster statt in der zentrierten Leiste angezeigt. Deaktivieren, um die zentrierte Leiste (Modul Ressourcenleisten) zu verwenden.",
         ["af_v22_sec_colors"]        = "Farben & Bedrohung",
         ["af_v22_sec_auras"]         = "Auren",
         ["af_v22_sec_enemy_buffs"]   = "Gegnerische Buffs",
@@ -623,6 +629,8 @@ if TomoMod_RegisterLocale then
         ["af_v22_sec_global"]        = "Ajustes globales",
         ["af_v22_sec_dimensions"]    = "Dimensiones",
         ["af_v22_sec_display"]       = "Visualización",
+        ["af_v22_player_power"]      = "Mostrar el recurso en el marco del jugador",
+        ["af_v22_player_power_info"] = "El recurso (maná, energía, ira) se muestra en el marco del jugador en lugar de la barra centrada. Desmarca para usar la barra centrada (módulo Barras de recursos).",
         ["af_v22_sec_colors"]        = "Colores y amenaza",
         ["af_v22_sec_auras"]         = "Auras",
         ["af_v22_sec_enemy_buffs"]   = "Beneficios enemigos",
@@ -639,6 +647,8 @@ if TomoMod_RegisterLocale then
         ["af_v22_sec_global"]        = "Impostazioni globali",
         ["af_v22_sec_dimensions"]    = "Dimensioni",
         ["af_v22_sec_display"]       = "Visualizzazione",
+        ["af_v22_player_power"]      = "Mostra la risorsa nel riquadro giocatore",
+        ["af_v22_player_power_info"] = "La risorsa (mana, energia, ira) viene mostrata nel riquadro giocatore invece che nella barra centrata. Deseleziona per usare la barra centrata (modulo Barre risorse).",
         ["af_v22_sec_colors"]        = "Colori e minaccia",
         ["af_v22_sec_auras"]         = "Aure",
         ["af_v22_sec_enemy_buffs"]   = "Buff nemici",
@@ -655,6 +665,8 @@ if TomoMod_RegisterLocale then
         ["af_v22_sec_global"]        = "Ajustes globais",
         ["af_v22_sec_dimensions"]    = "Dimensões",
         ["af_v22_sec_display"]       = "Exibição",
+        ["af_v22_player_power"]      = "Mostrar o recurso no quadro do jogador",
+        ["af_v22_player_power_info"] = "O recurso (mana, energia, raiva) é exibido no quadro do jogador em vez da barra centralizada. Desmarque para usar a barra centralizada (módulo Barras de recursos).",
         ["af_v22_sec_colors"]        = "Cores e ameaça",
         ["af_v22_sec_auras"]         = "Auras",
         ["af_v22_sec_enemy_buffs"]   = "Bônus inimigos",
@@ -1060,7 +1072,13 @@ local function Apply()
     end
 
     local UF = TomoMod_UnitFrames
-    if UF and UF.RefreshUnit then UF.RefreshUnit(sub.value) end
+    -- RebuildUnit = RefreshUnit + création/retrait à chaud de la barre de
+    -- ressource (hauteur 0 <-> >0) ; repli sur RefreshUnit si absent.
+    if UF and UF.RebuildUnit then
+        UF.RebuildUnit(sub.value)
+    elseif UF and UF.RefreshUnit then
+        UF.RefreshUnit(sub.value)
+    end
     if TomoMod_UFPreview and TomoMod_UFPreview.Refresh then
         TomoMod_UFPreview.Refresh()
     end
@@ -3295,6 +3313,28 @@ end
 
 local function V22BuildUnitDisplay(c, y, db)
     y = V22SectionHeader(c, y, L["af_v22_sec_display"], "V")
+
+    -- Ressource du cadre joueur : dans le cadre, ou dans la barre centrée
+    -- des Barres de ressources (resourceBars.primaryPowerCentered).
+    local sub = Subject()
+    if sub and sub.value == "player" then
+        local rb = TomoModForeverDB.resourceBars
+        local inFrame = not (rb and rb.enabled and rb.primaryPowerCentered)
+        local _, ny = W.CreateCheckbox(c, L["af_v22_player_power"], inFrame, y, function(v)
+            if rb then rb.primaryPowerCentered = not v end
+            -- Une barre de hauteur 0 ne serait jamais créée.
+            if v and (db.powerHeight or 0) <= 0 then db.powerHeight = 6 end
+            if TomoMod_ResourceBars and TomoMod_ResourceBars.ApplySettings then
+                TomoMod_ResourceBars.ApplySettings()
+            end
+            local UF = TomoMod_UnitFrames
+            if UF and UF.RebuildUnit then UF.RebuildUnit("player") end
+            V22CommitFrameEdit()
+        end)
+        y = ny
+        local _, ny2 = W.CreateInfoText(c, L["af_v22_player_power_info"], y)
+        y = ny2
+    end
 
     local _, ny = W.CreateTwoColumnRow(c, y,
         function(col)
