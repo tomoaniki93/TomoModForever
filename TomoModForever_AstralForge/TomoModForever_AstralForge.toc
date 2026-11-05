@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: |cffFFD100Tomo|r|cffF2EBDBMod|r |cffC9A252Forever|r |cffC9A252Astral Forge|r |cffF2EBDBStudio|r
+## Notes: Visual studio for TomoModForever UnitFrame and Nameplate elements.
+## Author: TomoAniki
+## Category: |cffC9A252HUD|r
+## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
+## Version: 1.0.0
+## LoadOnDemand: 1
+## Dependencies: TomoModForever
+
+AstralForge.lua

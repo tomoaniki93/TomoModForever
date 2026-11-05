@@ -1,0 +1,1929 @@
+-- =====================================
+-- Database.lua — Defaults & DB Management
+-- =====================================
+
+local ADDON_FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
+local ADDON_TEXTURE = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoaniki"
+
+-- =====================================
+-- DEFAULTS
+-- =====================================
+
+TomoMod_Defaults = {
+    -- AstralForge : presets de disposition nommes, par domaine. Le magasin
+    -- est libre (l'utilisateur choisit les noms), donc pas de valeurs par
+    -- defaut a fusionner -- juste la table racine.
+    forgeAssets = {},
+
+    -- =====================
+    -- QOL MODULES (preserved from v1.x)
+    -- =====================
+    minimap = {
+        enabled = true,
+        scale = 1.0,
+        borderColor = "class",
+        size = 200,
+        showTracking = true,
+        trackingStyle = "tomomod",    -- "tomomod" | "blizzard"
+        collectorStyle = "tomomod",   -- "tomomod" | "blizzard"
+        showMail = true,
+        showDifficulty = true,
+        showExpansion = true,
+        showCraftingOrder = true,
+        buttonBag = {
+            enabled = true,
+            anchor = "corner",   -- "corner" | "clock-left" | "clock-right"
+            clockGap = 2,         -- écart en px par rapport à l'horloge
+            corner = "BOTTOMLEFT",
+            scale = 1.0,
+            x = 2,
+            y = 26,
+            columns = 5,
+            iconSize = 28,
+        },
+        position = { anchor = "TOPRIGHT", relTo = "TOPRIGHT", x = -20, y = -20 },
+        indicators = {
+            tracking   = { corner = "TOPLEFT",     scale = 1.0, x = 2,  y = -2 },
+            mail       = { corner = "BOTTOMRIGHT", scale = 1.0, x = -2, y = 2  },
+            crafting   = { corner = "BOTTOMRIGHT", scale = 1.0, x = -2, y = 26 },
+            difficulty = { corner = "TOPRIGHT",    scale = 1.0, x = -2, y = -2 },
+            expansion  = { corner = "BOTTOMLEFT",  scale = 1.0, x = 2,  y = 2  },
+        },
+    },
+    infoPanel = {
+        enabled = true,
+        showTime = true,
+        showCoords = true,
+        showDurability = true,
+        use24Hour = true,
+        useServerTime = true,
+        durabilityAnchor = "BOTTOMLEFT",
+        durabilityX = 6,
+        durabilityY = 6,
+    },
+    cursorRing = {
+        enabled = false,
+        scale = 1.0,
+        useClassColor = false,
+        anchorTooltip = false,
+        shape = "ring",
+    },
+    lastSeenVersion = "",
+    installer = {
+        completed = false,
+        step      = 1,
+    },
+    cinematicSkip = {
+        enabled = false,
+        viewedCinematics = {},
+    },
+    frameAnchors = {
+        enabled = true,
+        alertFrame = {
+            position = nil, -- {point, relPoint, x, y}
+        },
+        lootFrame = {
+            position = nil,
+        },
+        -- Without this entry the save path in FrameAnchors is guarded out
+        -- (`if db and db[def.key] then`), so the anchor drags fine and then
+        -- silently forgets where it was put.
+        queueStatus = {
+            position = nil,
+        },
+    },
+    autoQuest = {
+        autoAccept = false,
+        autoTurnIn = false,
+        autoGossip = false,
+    },
+    objectiveTracker = {
+        enabled = true,
+        bgAlpha = 0.65,
+        showBorder = true,
+        hideWhenEmpty = true,
+        headerFontSize = 13,
+        categoryFontSize = 11,
+        questFontSize = 12,
+        objectiveFontSize = 11,
+        maxQuestsShown = 0,
+        buckets = true,
+        bucketsCollapsed = {},
+        scale = 1.0,
+        position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 },
+    },
+    levelingBar = {
+        enabled = false,
+        width = 500,
+        height = 28,
+        position = nil,
+    },
+    rareAlert = {
+        enabled  = false,
+        sound    = true,
+        duration = 20,              -- secondes d'affichage de la bannière
+        position = nil,             -- { point, relativePoint, x, y } une fois déplacée
+        scale    = 1.0,
+    },
+    cvarOptimizer = {
+        backup           = nil,
+        individualBackup = nil,
+    },
+    reputationBar = {
+        enabled         = true,
+        width           = 350,
+        height          = 22,
+        hideBlizzRepBar = true,
+        position        = nil,
+    },
+    autoAcceptInvite = {
+        enabled = false,
+        acceptFriends = true,
+        acceptGuild = true,
+        showMessages = true,
+    },
+    addonDetect = {
+        enabled = true,
+    },
+    autoSkipRole = {
+        enabled = false,
+        showMessages = true,
+    },
+
+    diagnostics = {
+        enabled = true,
+        captureAll = false,
+        suppressPopups = true,
+        autoOpenOnError = false,
+        sessionCount = 0,
+    },
+    autoSummon = {
+        enabled = false,
+        acceptFriends = true,
+        acceptGuild = true,
+        showMessages = true,
+        delaySec = 1,
+    },
+    hideCastBar = {
+        enabled = false,
+    },
+    hideTalkingHead = {
+        enabled = false,
+    },
+    -- Edit Mode's "Status Bar 2". Suppressed by alpha, never Hide(): the
+    -- container is touched by Blizzard's secure code and forcing its shown
+    -- state propagates taint.
+    hideStatusBar2 = {
+        enabled = false,
+    },
+    fastLoot = {
+        enabled = true,
+    },
+    combatText = {
+        enabled = false,
+        offsetX = 0,
+        offsetY = 0,
+    },
+    floatingCombatText = {
+        hideDamage = false,
+        hideHealing = false,
+    },
+    bagMicroMenu = {
+        bagBarMode = "show",
+        microMenuMode = "show",
+    },
+    -- =====================
+    -- MICRO BAR
+    -- Standalone bar of click-forwarders replacing the native micro menu.
+    -- `order` is an array, and MergeTables fills arrays index by index, so a
+    -- reordered list survives updates while a def appended in a later version
+    -- still lands in the player's order.
+    -- =====================
+    microBar = {
+        enabled       = false,
+        hideNative    = true,          -- mute the Blizzard micro menu
+        -- QueueStatusButton is a CHILD of the native micro menu, so muting
+        -- the container takes the Group Finder eye with it. These two govern
+        -- the eye once TomoMod owns the micro menu; position stays with
+        -- FrameAnchors, which already has a "queueStatus" anchor.
+        lfgEyeEnabled = true,
+        lfgEyeScale   = 1.0,
+        iconSize      = 26,
+        spacing       = 4,
+        scale         = 1.0,
+        alpha         = 1.0,
+        orientation   = "horizontal",  -- "horizontal" | "vertical"
+        perLine       = 0,             -- 0 = single row / column
+        colorMode     = "class",       -- "class" | "custom" | "native"
+        color         = { r = 1, g = 1, b = 1 },
+        desaturate    = true,
+        hoverZoom     = true,
+        memoryTooltip = true,
+        fadeMode      = "always",      -- "always" | "hover" | "hovercombat"
+        fadeAlpha     = 0,
+        fadeIn        = 0.15,
+        fadeOut       = 0.25,
+        -- State parity with the native buttons: alert pulses, disabled state,
+        -- keybind hints. alertStyle shares ClassReminder's vocabulary.
+        alertStyle    = "Pixel Glow",   -- "None" | "Pixel Glow" | "Autocast Shine" | "Action Button Glow" | "Proc Glow"
+        alertColor    = { r = 1.0, g = 0.82, b = 0.20 },
+        dimDisabled   = true,
+        disabledAlpha = 0.35,
+        showKeybind   = false,
+        keybindSize   = 10,
+        -- `position` is written on first drag; absent means "use the default anchor".
+        buttons = {
+            character = true, spells = true, profession = true, achievement = true,
+            quest = true, guild = true, lfd = true, collections = true,
+            ej = true, housing = true, social = true, store = false,
+            bags = true, mainmenu = true,
+        },
+        order = {
+            "character", "spells", "profession", "achievement", "quest",
+            "guild", "lfd", "collections", "ej", "housing",
+            "social", "store", "bags", "mainmenu",
+        },
+    },
+
+    -- Cooldown Studio is a load-on-demand addon: once loaded it stays in
+    -- memory for the session. The safety reload releases it on close.
+    CDStudio = {
+        safetyReload = true,
+    },
+
+    autoFillDelete = {
+        enabled = true,
+        focusButton = true,
+        showMessages = false,
+    },
+    autoVendorRepair = {
+        sellGrays    = true,
+        autoRepair   = true,
+        printSummary = true,
+    },
+    merchantTools = {
+        alreadyKnown = {
+            enabled = true,
+            mode    = "MONOCHROME",  -- "MONOCHROME" ou "COLOR"
+            color   = { r = 0.180, g = 0.847, b = 0.518 },
+        },
+        extendPages = {
+            enabled       = false,
+            numberOfPages = 2,
+        },
+    },
+    -- Chat V4 — current chat implementation. The three legacy chat tables
+    -- below are kept temporarily so existing profiles can migrate once.
+    -- Les sacs v4 construisaient leur table a l'execution : hors des defaults,
+    -- la cle echappait a la bijection manifeste, a l'import selectif et au
+    -- moteur de layout. Seule la position est declaree ici ; BagCore continue
+    -- de remplir le reste par DeepFill.
+    bagsV4 = {
+        position = { point = "BOTTOMRIGHT", relativePoint = "BOTTOMRIGHT", x = -42, y = 86 },
+    },
+
+    chatV4 = {
+        enabled = true,
+        -- Position declaree : sans entree ici l'ancre n'existe pas pour le
+        -- moteur de layout, donc pas de migration de schema, pas
+        -- d'estampillage de reference et pas de capture par les presets
+        -- de resolution.
+        position = { point = "BOTTOMLEFT", relativePoint = "BOTTOMLEFT", x = 20, y = 30 },
+        appearance = {
+            bgAlpha = 0.72,
+            messageBgAlpha = 0.72,
+            fontSize = 13,
+            tabHeight = 25,
+            inputHeight = 30,
+            borderAlpha = 0.22,
+            maxLines = 512,
+        },
+        messages = {
+            fade = true,
+            showTimestamp = true,
+            timestampFormat = "%H:%M",
+            shortChannelNames = true,
+            findURL = true,
+            emoji = true,
+            classColorMentions = true,
+        },
+        community = {
+            whisper = true,
+            bnWhisper = true,
+            guild = true,
+            officer = true,
+        },
+        sidebar = {
+            side = "LEFT",
+            width = 32,
+            iconSize = 20,
+            spacing = 2,
+            buttons = {
+                friends = true,
+                guild = true,
+                playerStatus = true,
+                voice = false,
+                mute = false,
+                deafen = false,
+                copy = true,
+                loot = true,
+                settings = true,
+                scroll = true,
+            },
+            order = {
+                "friends", "guild", "playerStatus",
+                "voice", "mute", "deafen",
+                "copy",
+                "loot", "settings",
+                "scroll",
+            },
+        },
+        copy = {
+            maxLines = 500,
+        },
+    },
+
+    -- Legacy ChatFrame V1 settings — migration source only. No runtime module
+    -- loads these settings anymore; ChatCore migrates them into chatV4 once.
+    chatFrameSkin = {
+        enabled = true,
+        skinStyle = "tui",          -- "tui" (current sidebar+window), "classic" (old image-based), "glass", "minimal"
+        bgAlpha = 0.70,
+        fontSize = 13,
+        fade = true,
+        shortChannelNames = true,
+        showTimestamp = true,
+        timestampFormat = "%H:%M",
+        findURL = true,
+        emoji = true,
+        classColorMentions = true,
+        copyButtonMode = "hover",    -- "always" | "hover" | "hidden"
+        chatHistory = true,
+        historyMaxLines = 128,       -- hard cap on stored lines (10-500)
+        historyMaxAge = 21600,       -- seconds; 0 = no age limit (6h default)
+        historySeparator = true,     -- print a session marker after the replay
+        historyDelay = 2,            -- seconds after login before replaying;
+                                     -- keeps addon load errors readable
+        keywords = "%MYNAME%",
+        showHistory = {
+            WHISPER = true,
+            GUILD = true,
+            PARTY = true,
+            RAID = true,
+            INSTANCE = true,
+            CHANNEL = true,
+            SAY = false,
+            YELL = false,
+            OFFICER = true,
+            EMOTE = false,
+        },
+        history = {},
+        position = { anchor = "BOTTOMLEFT", relTo = "BOTTOMLEFT", x = 2, y = 2 },
+    },
+    chatFrameSkinV2 = {
+        enabled       = false,
+        width         = 550,
+        height        = 320,
+        scale         = 100,
+        opacity       = 88,
+        fontSize      = 13,
+        defaultTab    = "general",
+        collapsed     = false,
+        showTimestamp = true,
+        history       = {},
+        position      = { anchor = "BOTTOMLEFT", relTo = "BOTTOMLEFT", x = 20, y = 24 },
+    },
+    -- Chat Frame UI — multi-position containers, button bar, sidebar icons,
+    -- layout switching, raid frame manager (adapted from MayronUI).
+    chatFrameUI = {
+        enabled = false,
+        swapInCombat = false,
+        raidFrameManager = true,
+        chatFrames = {
+            TOPLEFT = {
+                enabled = true,
+                xOffset = 2, yOffset = -2,
+                tabBar  = { show = true, yOffset = -12 },
+                window  = { yOffset = -37 },
+                buttons = {
+                    { "Character", "Spell Book", "Talents" },
+                    { key = "C", "Reputation", "LFD", "Quest Log" },
+                    { key = "S", "Achievements", "Collections Journal", "Encounter Journal" },
+                },
+            },
+            TOPRIGHT = {
+                enabled = false,
+                xOffset = -2, yOffset = -2,
+                tabBar  = { show = true, yOffset = -12 },
+                window  = { yOffset = -37 },
+                buttons = {
+                    { "Character", "Spell Book", "Talents" },
+                    { key = "C", "Reputation", "LFD", "Quest Log" },
+                    { key = "S", "Achievements", "Collections Journal", "Encounter Journal" },
+                },
+            },
+            BOTTOMLEFT = {
+                enabled = false,
+                xOffset = 2, yOffset = 2,
+                tabBar  = { show = true, yOffset = -43 },
+                window  = { yOffset = 12 },
+                buttons = {
+                    { "Character", "Spell Book", "Talents" },
+                    { key = "C", "Reputation", "LFD", "Quest Log" },
+                    { key = "S", "Achievements", "Collections Journal", "Encounter Journal" },
+                },
+            },
+            BOTTOMRIGHT = {
+                enabled = false,
+                xOffset = -2, yOffset = 2,
+                tabBar  = { show = true, yOffset = -43 },
+                window  = { yOffset = 12 },
+                buttons = {
+                    { "Character", "Spell Book", "Talents" },
+                    { key = "C", "Reputation", "LFD", "Quest Log" },
+                    { key = "S", "Achievements", "Collections Journal", "Encounter Journal" },
+                },
+            },
+        },
+        iconsAnchor = "TOPLEFT",
+        icons = {
+            { type = "voiceChat" },
+            { type = "professions" },
+            { type = "shortcuts" },
+            { type = "copyChat" },
+            { type = "emotes" },
+            { type = "playerStatus" },
+        },
+        brightness = 0.7,
+        editBox = {
+            position = "BOTTOM",
+            yOffset = -8,
+            height = 27,
+            inset = 0,
+            backdropColor = { r = 0, g = 0, b = 0, a = 0.6 },
+        },
+        highlighted = {},
+        layouts = {},
+        currentLayout = nil,
+    },
+    bagSkin = {
+        enabled = false,
+        slotSize = 40,
+        slotSpacingX = 5,
+        slotSpacingY = 5,
+        width = 480,
+        scale = 100,
+        opacity = 92,
+        showQualityBorders = true,
+        showCooldowns = true,
+        showQuantityBadges = true,
+        showItemLevel = false,
+        showJunkIcon = false,
+        showSearchBar = true,
+        showGold = true,
+        showCurrencies = false,
+        layoutMode = "combined",     -- "combined", "separateBags"
+        sortMode = "quality",
+        reverseBagOrder = false,
+        stackMerge = false,
+        showEmptySlots = true,
+        showRecentItems = true,
+        showBagBar = true,
+        collapsedSections = {},
+        position = { anchor = "BOTTOMRIGHT", relTo = "BOTTOMRIGHT", x = -20, y = 60 },
+    },
+    gameMenuSkin = {
+        enabled = true,
+    },
+    blizzardAuraFrames = {
+        enabled = true,
+        showBuffs = true,
+        showDebuffs = true,
+    },
+    tooltipSkin = {
+        enabled = true,
+        bgAlpha = 0.97,
+        borderAlpha = 0.8,
+        bgColor = { r = 0.06, g = 0.06, b = 0.08 },
+        borderColor = { r = 0.20, g = 0.20, b = 0.24 },
+        anchor = "default",        -- default | cursor | corner | custom
+        anchorCorner = "BOTTOMRIGHT",
+        fontSize = 12,
+        -- Bars are out by design: the information layer replaces them.
+        hideHealthBar = true,
+        useClassColorNames = true,
+        hidePlayerServer = false,
+        hidePlayerTitle = false,
+        useGuildNameColor = true,
+        guildNameColor = { r = 0.180, g = 0.847, b = 0.518 },
+
+        -- ---- Unit information layer (TooltipInfo.lua) ----
+        showUnitInfo              = true,   -- master switch for the lines below
+        infoIconSize              = 14,
+        reactionBorder            = true,   -- border tinted by reaction/class
+        colorTooltipLevel         = true,   -- level line by difficulty colour
+        showTooltipRaidMarker     = true,
+        showTooltipRoleIcon       = true,
+        showTooltipClassIcon      = false,  -- redundant with the coloured name
+        showTooltipGuildRank      = true,
+        showTooltipGuildRankIndex = false,
+        showTooltipGuildRealm     = true,
+        showTooltipTarget         = true,
+        showTooltipMythicScore    = true,
+        showTooltipMount          = true,
+        showTooltipSpeed          = false,  -- drives the refresh loop; opt-in
+        showTooltipLocation       = false,  -- player/party only, see TooltipInfo
+
+        -- ---- Inspection (TooltipInspect.lua) ----
+        showTooltipItemLevel      = true,
+        showTooltipSpec           = true,
+        showTooltipSpecIcon       = true,
+        inspectPendingText        = true,   -- show "..." while the reply lands
+    },
+    mailSkin = {
+        enabled = true,
+    },
+
+
+
+    waypoint = {
+        enabled      = true,
+        beaconScale  = 1.0,   -- global scale multiplier on the in-world beacon
+        showBeam     = true,  -- show the vertical teal beam below the beacon
+        showETA      = true,  -- append arrival-time estimate to distance text
+        sessionName  = nil,   -- restored label after /reload
+        zoneOnly     = true,  -- hide waypoint when not in the same zone
+        beaconSize   = 32,    -- icon diameter (px)
+        shape        = "ring", -- "ring" or "arrow"
+        color        = { r = 0.330, g = 0.870, b = 0.980 }, -- accent cyan électrique
+    },
+
+
+
+    afkDisplay = {
+        enabled = true,
+        rotateCamera = true,
+        playerModel = true,
+        modelScale = 1.0,
+    },
+
+    lustSound = {
+        enabled = false,
+        sound = "TALUANI",
+        channel = "Master",
+        showChat = false,
+        debug = false,
+    },
+
+    cooldownManager = {
+        enabled = true,
+        -- Masquage individuel des quatre viewers Blizzard (essential, utility,
+        -- buffIcon, buffBar). Seules les clés à true sont stockées.
+        hiddenViewers = {},
+        showHotKey = false,
+        combatAlpha = true,
+        alphaInCombat = 1.0,
+        alphaWithTarget = 0.8,
+        alphaOutOfCombat = 0.5,
+        -- Overlay
+        useCustomOverlay = false,
+        overlayR = 1.0,
+        overlayG = 1.0,
+        overlayB = 1.0,
+        -- Active aura swipe color
+        customSwipeEnabled = false,
+        swipeR = 1.0,
+        swipeG = 0.95,
+        swipeB = 0.57,
+        swipeA = 0.55,
+        -- Cooldown swipe color
+        customCDSwipeEnabled = false,
+        cdSwipeR = 0.0,
+        cdSwipeG = 0.0,
+        cdSwipeB = 0.0,
+        cdSwipeA = 0.7,
+        -- Utility dimming
+        dimUtility = false,
+        dimOpacity = 0.35,
+        -- GCD hiding
+        hideGCD = false,
+        -- Desaturation on cooldown
+        desaturateOnCD = false,
+        -- Visibility rules
+        visibilityRules = {
+            hideWhenMounted = false,
+            hideInVehicles = false,
+            hideOutOfCombat = false,
+            showInCombat = false,
+            showInInstance = false,
+            showWithEnemyTarget = false,
+        },
+        -- Sound alerts
+        soundAlertEnabled = false,
+        soundAlertFile = "Interface\\AddOns\\TomoModForever\\Assets\\Sounds\\Golden_Lust.ogg",
+        -- Pandemic detection (buff refresh window)
+        pandemicEnabled = false,
+        pandemicThreshold = 0.3,
+        -- Range check coloring
+        rangeCheckEnabled = false,
+        -- Buff bar layout
+        buffBarDirection = "HORIZONTAL",
+        buffBarWidth = 120,
+        buffBarSpacing = 2,
+        -- Buff icon direction
+        buffIconDirection = "CENTERED",
+        -- Proc glow
+        procGlow = {
+            enabled = true,
+            glowType = "Pixel Glow",
+            color = { 0.95, 0.95, 0.32, 1 },
+            pixelLines = 5,
+            pixelFrequency = 0.25,
+            pixelLength = 8,
+            pixelThickness = 1,
+            autoParticles = 8,
+            autoFrequency = 0.25,
+            autoScale = 1.0,
+            buttonFrequency = 0.25,
+        },
+        -- Phase 4 : réglages par viewer (CDMHolders)
+        -- Clés : iconSize (nil = auto), spacing, rowLimit (nil/0 = illimité),
+        -- direction, secondaryDirection, position {x, y} (rel. CENTER UIParent),
+        -- barWidth/barHeight/spacing pour buffBar.
+        -- position volontairement absente des défauts : capturée depuis la
+        -- position Edit Mode Blizzard actuelle au premier lancement (migration douce).
+        viewerLayout = {
+            essential = {},
+            utility   = {},
+            buffIcon  = {},
+            buffBar   = {},
+        },
+    },
+
+    -- =====================
+    -- RESOURCE BARS
+    -- =====================
+    resourceBars = {
+        enabled = true,
+        displayMode = "bars",       -- "icons" (GW2 textures) or "bars" (flat colors)
+
+        -- ResourceBars V3 visual layer. Continuous bars no longer borrow the
+        -- UnitFrame texture, and both spacing levels can be tuned separately.
+        barTexture = "tomo",        -- legacy/fallback for V3 styles
+        backgroundAlpha = 0.80,
+        borderEnabled = true,
+        borderSize = 1,
+        borderColor = { r = 0, g = 0, b = 0 },
+        barSpacing = 2,
+        segmentSpacing = 2,
+        stackDirection = "DOWN",    -- DOWN | UP
+
+        -- V3.1: each visual family can now be styled independently.
+        styles = {
+            health = {
+                barTexture = "tomo",
+                backgroundAlpha = 0.80,
+                borderEnabled = true,
+                borderSize = 1,
+                borderColor = { r = 0, g = 0, b = 0 },
+            },
+            power = {
+                barTexture = "tomo",
+                backgroundAlpha = 0.80,
+                borderEnabled = true,
+                borderSize = 1,
+                borderColor = { r = 0, g = 0, b = 0 },
+            },
+            class = {
+                barTexture = "tomo",
+                backgroundAlpha = 0.80,
+                borderEnabled = true,
+                borderSize = 1,
+                borderColor = { r = 0, g = 0, b = 0 },
+            },
+        },
+
+        -- V3.1: class resource designer.
+        classResource = {
+            mode = "segments",          -- segments | bar
+            orientation = "HORIZONTAL", -- HORIZONTAL | VERTICAL
+            partialFill = true,
+            borderMode = "segments",    -- segments | outer | both | none
+            emptyColor = { r = 0.06, g = 0.06, b = 0.08 },
+        },
+
+        -- Advanced marks. Legacy powerTicks remains supported as fallback.
+        hashLines = {
+            power = {
+                enabled = false,
+                values = "",
+                mode = "percent",        -- percent | value
+                width = 1,
+                color = { r = 1, g = 1, b = 1, a = 0.75 },
+            },
+            class = {
+                enabled = false,
+                values = "",
+                mode = "percent",
+                width = 1,
+                color = { r = 1, g = 1, b = 1, a = 0.75 },
+            },
+        },
+
+        thresholds = {
+            class = {
+                enabled = false,
+                mode = "percent",        -- percent | value
+                low = 30,
+                high = 80,
+                lowColor = { r = 1.00, g = 0.22, b = 0.18 },
+                highColor = { r = 1.00, g = 0.78, b = 0.16 },
+                target = "both",         -- bar | text | both
+            },
+        },
+
+        visibilityMode = "always",   -- always, combat, target, hidden
+        combatAlpha = 1.0,
+        oocAlpha = 0.6,
+        width = 260,
+        primaryHeight = 16,          -- class power display height
+        secondaryHeight = 12,        -- druid mana bar height
+        primaryPowerCentered = true, -- show primary power (mana/energy/rage) centered on screen
+        primaryPowerBarHeight = 14,   -- height of centered primary power bar
+        scale = 1.0,
+        showText = true,
+        textAlignment = "CENTER",    -- LEFT, CENTER, RIGHT
+        font = ADDON_FONT,
+        fontSize = 11,
+        syncWidthWithCooldowns = false,
+        -- v2.8 : Barre de vie HUD + animations + ticks + seuils
+        healthBarEnabled = false,
+        healthBarHeight = 14,
+        healthTextFormat = "both",       -- none / value / percent / both
+        healthClassColored = true,
+        healthThresholdEnabled = true,
+        healthThresholdPct = 30,
+        smoothBars = true,
+        showFullResourceGlow = true,        -- glow when an opt-in class resource reaches maximum
+        showSuperchargedComboPoints = true, -- Rogue Supercharger charged-slot visual
+        powerTicks = "",                 -- % du max, ex : "25 50 75"
+        powerThresholdEnabled = false,
+        powerThresholdPct = 25,
+        position = {
+            point = "BOTTOM",
+            relativePoint = "CENTER",
+            x = 0,
+            y = -230,
+        },
+        colors = {
+            mana            = { r = 0.00, g = 0.00, b = 1.00 },
+            comboPoints     = { r = 1.00, g = 0.96, b = 0.41 },
+            chargedComboPoints = { r = 0.95, g = 0.20, b = 0.20 },
+            runes           = { r = 0.50, g = 0.50, b = 0.50 },
+            runesReady      = { r = 0.75, g = 0.22, b = 0.22 },
+            soulShards      = { r = 0.58, g = 0.51, b = 0.79 },
+            holyPower       = { r = 0.95, g = 0.90, b = 0.60 },
+            chi             = { r = 0.71, g = 1.00, b = 0.92 },
+            arcaneCharges   = { r = 0.10, g = 0.10, b = 0.98 },
+            essence         = { r = 0.00, g = 0.80, b = 0.60 },
+            stagger         = { r = 0.52, g = 1.00, b = 0.52 },
+            soulFragments   = { r = 0.80, g = 0.20, b = 1.00 },
+            tipOfTheSpear   = { r = 0.20, g = 0.80, b = 0.20 },
+            maelstromWeapon = { r = 0.00, g = 0.50, b = 1.00 },
+            icicles         = { r = 0.55, g = 0.85, b = 1.00 },
+            -- v2.8
+            health          = { r = 0.15, g = 0.75, b = 0.30 },
+            healthLow       = { r = 1.00, g = 0.20, b = 0.20 },
+            powerLow        = { r = 1.00, g = 0.25, b = 0.25 },
+        },
+    },
+
+    -- LoadOnDemand Studio UI state. Kept in defaults so profile
+    -- import/export sanitisation does not drop the first-run tutorial state.
+    resourceCastStudio = {
+        tutorialVersion = 0,
+        previewKind = "auto",
+        demoValuePct = 70,
+    },
+
+    -- =====================
+    -- UNIT FRAMES
+    -- =====================
+    unitFrames = {
+        enabled = true,
+        hideBlizzardFrames = true,
+        texture = ADDON_TEXTURE,
+        font = ADDON_FONT,
+        fontFamily = ADDON_FONT,
+        fontSize = 12,
+        fontOutline = "OUTLINE",
+        borderSize = 1,
+        borderColor = { r = 0, g = 0, b = 0, a = 1 },
+
+        -- Aperçu du panneau de configuration : alimente les cadres d'aperçu
+        -- avec les vraies données quand l'unité existe (sinon, simulation).
+        previewLiveData = true,
+
+        -- Per-unit settings
+        player = {
+            enabled = true,
+            width = 260,
+            height = 58,
+            healthHeight = 38,
+            powerHeight = 2,
+            infoBarHeight = 18,
+            useClassColor = true,
+            useFactionColor = false,
+            showName = true,
+            showLevel = false,
+            showHealthText = true,
+            healthTextFormat = "percent", -- current, percent, current_percent, current_max, deficit
+            showPowerText = false,
+            showAbsorb = true,
+            showThreat = false,
+            showLeaderIcon = true,
+            leaderIconOffset = { x = -2, y = 0 },
+            auras = {
+                enabled = true,
+                type = "HARMFUL",
+                maxAuras = 8,
+                size = 30,
+                spacing = 3,
+                perRow = 6,
+                growDirection = "LEFT",
+                showDuration = true,
+                showOnlyMine = false,
+            },
+            -- elements: filled from the AstralForge registry at init (see
+            -- TomoMod_NormalizeUFElements). Kept OUT of the defaults on
+            -- purpose so the registry stays the single source of truth.
+            position = { point = "BOTTOM", relativePoint = "CENTER", x = -280, y = -190 },
+        },
+
+        target = {
+            enabled = true,
+            width = 260,
+            height = 58,
+            healthHeight = 38,
+            powerHeight = 2,
+            infoBarHeight = 18,
+            useClassColor = true,
+            useFactionColor = true,
+            useNameplateColors = true,
+            showName = true,
+            showLevel = true,
+            nameTruncate = true,
+            nameTruncateLength = 20,
+            showHealthText = true,
+            healthTextFormat = "percent",
+            showPowerText = false,
+            showAbsorb = false,
+            showThreat = true,
+            threatText = {
+                enabled  = false,
+                offsetX  = 0,
+                offsetY  = 0,
+                fontSize = 13,
+            },
+            showRaidIcon = true,
+            raidIconOffset = { x = 0, y = 2 },
+            showQuestIcon = true,
+            showLeaderIcon = true,
+            leaderIconOffset = { x = -2, y = 0 },
+            auras = {
+                enabled = true,
+                type = "HARMFUL",
+                maxAuras = 8,
+                size = 30,
+                spacing = 3,
+                perRow = 6,
+                growDirection = "RIGHT",
+                showDuration = true,
+                showOnlyMine = false,
+                position = { point = "BOTTOMLEFT", relativePoint = "TOPLEFT", x = 0, y = 6 },
+            },
+            enemyBuffs = {
+                enabled = true,
+                maxAuras = 4,
+                size = 24,
+                spacing = 2,
+                perRow = 3,
+                growDirection = "RIGHT",
+                growVertical = "UP",
+                showDuration = true,
+            },
+            -- elements: see the note on the player block above.
+            position = { point = "BOTTOM", relativePoint = "CENTER", x = 280, y = -190 },
+        },
+
+        targettarget = {
+            enabled = true,
+            width = 130,
+            height = 32,
+            healthHeight = 26,
+            powerHeight = 0,
+            useClassColor = true,
+            useFactionColor = true,
+            showName = true,
+            showLevel = false,
+            nameTruncate = true,
+            nameTruncateLength = 12,
+            showHealthText = false,
+            healthTextFormat = "percent",
+            showPowerText = false,
+            showAbsorb = false,
+            showThreat = false,
+            position = { point = "TOPLEFT", relativePoint = "TOPRIGHT", x = 8, y = 0 },
+            anchorTo = "target",
+        },
+
+        pet = {
+            enabled = true,
+            width = 130,
+            height = 32,
+            healthHeight = 26,
+            powerHeight = 0,
+            useClassColor = false,
+            useFactionColor = false,
+            showName = true,
+            showLevel = false,
+            showHealthText = false,
+            healthTextFormat = "percent",
+            showPowerText = false,
+            showAbsorb = false,
+            showThreat = false,
+            position = { point = "TOPRIGHT", relativePoint = "TOPLEFT", x = -8, y = 0 },
+            anchorTo = "player",
+        },
+
+        focus = {
+            enabled = true,
+            width = 200,
+            height = 44,
+            healthHeight = 32,
+            powerHeight = 6,
+            useClassColor = true,
+            useFactionColor = true,
+            useNameplateColors = true,
+            showName = true,
+            showLevel = true,
+            showHealthText = true,
+            healthTextFormat = "percent",
+            showPowerText = false,
+            showAbsorb = false,
+            showThreat = false,
+            auras = {
+                enabled = true,
+                type = "HARMFUL",
+                maxAuras = 6,
+                size = 26,
+                spacing = 3,
+                perRow = 6,
+                growDirection = "RIGHT",
+                showDuration = true,
+                showOnlyMine = true,
+                position = { point = "BOTTOMLEFT", relativePoint = "TOPLEFT", x = 0, y = 6 },
+            },
+            enemyBuffs = {
+                enabled = true,
+                maxAuras = 3,
+                size = 22,
+                spacing = 2,
+                perRow = 3,
+                growDirection = "RIGHT",
+                growVertical = "UP",
+                showDuration = true,
+            },
+            position = { point = "CENTER", relativePoint = "CENTER", x = -350, y = 150 },
+        },
+
+        -- Boss Frames (boss1–boss5)
+        bossFrames = {
+            enabled = true,
+            width = 200,
+            height = 28,
+            spacing = 4,
+            position = {
+                point = "RIGHT",
+                relativePoint = "RIGHT",
+                x = -80,
+                y = 200,
+            },
+        },
+    },
+
+    -- =====================
+    -- CASTBARS (standalone)
+    -- =====================
+    castbars = {
+        enabled = true,
+        hideBlizzardCastbar = true,
+
+        -- Global visual
+        barTexture = "blizzard",
+        barTextureLSM = "",
+        font = ADDON_FONT,
+        fontLSM = "",
+        fontSize = 12,
+        backgroundMode = "black",
+        customBackgroundPath = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Castbars\\background",
+        useCustomBorder = false,
+        customBorderPath = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Castbars\\border",
+
+        -- Spark
+        showSpark = true,
+        sparkStyle = "Comet",
+        customSparkPath = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Castbars\\cast_spark",
+        sparkColor    = { r = 1.0, g = 1.0, b = 1.0 },
+        sparkGlowColor = { r = 1.0, g = 0.9, b = 0.5 },
+        sparkTailColor = { r = 1.0, g = 0.8, b = 0.3 },
+        sparkGlowAlpha = 0.7,
+        sparkTailAlpha = 0.6,
+
+        -- Colors
+        castbarColor       = { r = 1.0, g = 0.7, b = 0.0 },
+        castbarNIColor     = { r = 0.5, g = 0.5, b = 0.5 },
+        castbarInterruptColor = { r = 0.1, g = 0.8, b = 0.1 },
+        useClassColor = true,
+
+        -- Timer
+        timerFormat = "remaining",
+        spellNameMaxLen = 0,
+
+        -- Transitions
+        showTransitions = true,
+        showChannelTicks = true,
+
+        -- GCD
+        showGCDSpark = false,
+        gcdHeight = 4,
+        gcdColor = { r = 1, g = 1, b = 1 },
+
+        -- Interrupt feedback
+        showInterruptFeedback = true,
+        interruptFeedbackColor = { r = 0.1, g = 0.8, b = 0.1 },
+        interruptFeedbackFontSize = 28,
+
+        -- ===== PLAYER =====
+        player = {
+            enabled = true,
+            width = 260,
+            height = 22,
+            showIcon = true,
+            iconSide = "LEFT",
+            showTimer = true,
+            showLatency = true,
+            position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = -150 },
+        },
+
+        -- ===== TARGET =====
+        target = {
+            enabled = true,
+            width = 260,
+            height = 22,
+            showIcon = true,
+            iconSide = "LEFT",
+            showTimer = true,
+            showLatency = false,
+            anchorToUnitFrame = true,
+            anchorOffsetY = -4,
+            position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = -200 },
+        },
+
+        -- ===== FOCUS =====
+        focus = {
+            enabled = true,
+            width = 200,
+            height = 18,
+            showIcon = true,
+            iconSide = "LEFT",
+            showTimer = true,
+            showLatency = false,
+            anchorToUnitFrame = true,
+            anchorOffsetY = -4,
+            position = { point = "CENTER", relativePoint = "CENTER", x = -350, y = 100 },
+        },
+
+        -- ===== PET =====
+        pet = {
+            enabled = false,
+            width = 150,
+            height = 14,
+            showIcon = true,
+            iconSide = "LEFT",
+            showTimer = true,
+            showLatency = false,
+            anchorToUnitFrame = true,
+            anchorOffsetY = -4,
+            position = { point = "CENTER", relativePoint = "CENTER", x = -200, y = -150 },
+        },
+
+        -- ===== BOSS =====
+        boss = {
+            enabled = true,
+            width = 200,
+            height = 18,
+            showIcon = true,
+            iconSide = "LEFT",
+            showTimer = true,
+            showLatency = false,
+            anchorToUnitFrame = true,
+            anchorOffsetY = -4,
+            position = { point = "RIGHT", relativePoint = "RIGHT", x = -80, y = 180 },
+        },
+    },
+
+    -- =====================
+    -- NAMEPLATES
+    -- =====================
+    nameplates = {
+        enabled = true,
+        width = 156,
+        height = 17,
+        texture = ADDON_TEXTURE,
+        font = ADDON_FONT,
+        fontSize = 10,
+        nameFontSize = 11,
+        fontOutline = "OUTLINE",
+        showName = true,
+        showLevel = false,
+        showHealthText = true,
+        healthTextFormat = "current_percent",
+        showClassification = true,
+        showThreat = true,
+        showCastbar = true,
+        -- EXPERIMENTAL: Mythic+ multi-pull cast-focus filter. Opt-in only.
+        experimentalCastFocus = false,
+        castbarHeight = 14,
+        castbarColor = { r = 0.85, g = 0.15, b = 0.15 },           -- RED (interruptible)
+        castbarUninterruptible = { r = 0.45, g = 0.45, b = 0.45 }, -- GREY (non-interruptible)
+        useClassColors = true,
+        showAbsorb = true,
+        showAuras = true,
+        auraSize = 24,
+        maxAuras = 5,
+        showOnlyMyAuras = true,
+        showEnemyBuffs = true,
+        enemyBuffSize = 22,
+        maxEnemyBuffs = 4,
+        enemyBuffYOffset = 4,
+        friendlyPlates = false,
+        friendlyNameOnly = true,
+        friendlyRoleIcons = true,
+        roleIconSize = 32,
+        roleShowTank = true,
+        roleShowHealer = true,
+        roleShowDps = true,
+        tankMode = false,
+        selectedAlpha = 1.0,
+        unselectedAlpha = 0.8,
+        overlapV = 1.05,         -- Vertical overlap (higher = plates closer together, 0.5-3.0)
+        topInset = 0.065,        -- How high plates can go on screen (0.01=top, 0.5=middle)
+        colors = {
+            hostile       = { r = 0.78, g = 0.04, b = 0.04 },
+            neutral       = { r = 0.81, g = 0.72, b = 0.19 },
+            friendly      = { r = 0.11, g = 0.82, b = 0.11 },
+            tapped        = { r = 0.50, g = 0.50, b = 0.50 },
+            focus         = { r = 0.180, g = 0.847, b = 0.518 },
+            -- NPC type colors (Ellesmere-style)
+            caster        = { r = 0.23, g = 0.51, b = 0.97 },  -- BLUE (caster mobs)
+            miniboss      = { r = 0.52, g = 0.24, b = 0.98 },  -- PURPLE (elite + higher level)
+            enemyInCombat = { r = 0.80, g = 0.14, b = 0.14 },  -- RED (default enemy in combat)
+            -- Classification colors (kept for legacy)
+            boss          = { r = 0.85, g = 0.10, b = 0.10 },
+            elite         = { r = 0.52, g = 0.24, b = 0.98 },
+            rare          = { r = 0.00, g = 0.80, b = 0.80 },
+            normal        = { r = 0.80, g = 0.14, b = 0.14 },
+            trivial       = { r = 0.50, g = 0.50, b = 0.50 },
+        },
+        useClassificationColors = true,
+        -- La POSITION de la marque de raid vit desormais dans
+        -- nameplates.elements.raidMarker (registre AstralForge) ; seule la
+        -- taille reste ici.
+        raidIconSize = 24,
+        tankColors = {
+            noThreat      = { r = 1.00, g = 0.22, b = 0.17 },
+            lowThreat     = { r = 0.81, g = 0.72, b = 0.19 },
+            hasThreat     = { r = 0.180, g = 0.847, b = 0.518 },
+            dpsHasAggro   = { r = 1.00, g = 0.50, b = 0.00 },  -- ORANGE (DPS has aggro)
+            dpsNearAggro  = { r = 0.81, g = 0.72, b = 0.19 },  -- YELLOW (DPS near aggro)
+        },
+    },
+
+    -- =====================
+    -- PARTY FRAMES
+    -- =====================
+    partyFrames = {
+        enabled = true,
+        hideBlizzardFrames = true,
+
+        -- Layout
+        width = 160,
+        height = 40,
+        spacing = 2,
+        growDirection = "DOWN",  -- DOWN, UP, RIGHT, LEFT
+
+        -- Health
+        texture = ADDON_TEXTURE,
+        healthColor = "class",  -- "class", "green", "gradient"
+        showHealthText = true,
+        healthTextFormat = "percent",  -- percent, current, current_percent, deficit
+        font = ADDON_FONT,
+        fontSize = 11,
+        fontOutline = "OUTLINE",
+
+        -- Power
+        showPower = true,
+        powerHeight = 3,
+
+        -- Absorb
+        showAbsorb = true,
+        absorbColor = { r = 0.50, g = 0.50, b = 1.00, a = 0.50 },
+
+        -- Heal Prediction
+        showHealPrediction = true,
+
+        -- Name & Role
+        showName = true,
+        nameMaxLength = 0,  -- 0 = no limit
+        showRoleIcon = true,
+        roleIconSize = 14,
+        showLeaderIcon = true,
+        leaderIconSize = 14,
+        showRaidMarker = true,
+        raidMarkerSize = 16,
+        readyCheckSize = 24,
+        summonSize = 30,
+
+        -- Range
+        showRange = true,
+        oorAlpha = 0.40,
+
+        -- Typed debuff alert: full-frame outline + real aura icon.
+        -- AuraSlots cover Magic / Curse / Disease / Poison / Bleed in 12.1.
+        showDispel = true,
+        showDispelBorder = true,
+        showDispelIcon = true,
+        showDispelBleed = true,
+        dispelBorderSize = 2,
+        dispelSize = 22,
+
+        -- HoT tracking
+        showHoTs = true,
+        hotSize = 12,
+        maxHoTs = 3,
+        -- Seconds over the icon, or only the cooldown swipe. The swipe is
+        -- drawn either way; this governs the number on top of it.
+        hotShowDuration = true,
+
+        -- Defensive cooldowns (active buffs on the member)
+        -- Externals are what a healer needs mid-pull; raid-wide buffs light up
+        -- every frame at once and personals are informative but noisy, so both
+        -- start off.
+        showDefensives = true,
+        defensiveIconSize = 16,
+        maxDefensives = 2,
+        defensiveShowExternals = true,
+        defensiveShowRaidWide = false,
+        defensiveShowPersonals = false,
+
+        -- Cooldown trackers (M+)
+        showInterruptCD = true,
+        showBrezCD = true,
+        cdIconSize = 18,
+        cdLayout = "vertical",  -- "vertical" (on health bar), "horizontal" (below frame)
+
+        -- Resurrection indicator (incoming res cast on this member)
+        showResurrectIndicator = true,
+        resurrectIconSize = 26,
+
+        -- Sort
+        sortByRole = true,  -- Tank > Healer > DPS
+
+        -- Position
+        position = {
+            point = "LEFT",
+            relativePoint = "LEFT",
+            x = 20,
+            y = 0,
+        },
+
+        -- Arena (enemy frames)
+        arena = {
+            enabled = true,
+            width = 160,
+            height = 40,
+            spacing = 2,
+            showTrinketCD = true,
+            trinketSize = 20,
+            showSpecIcon = true,
+            position = {
+                point = "RIGHT",
+                relativePoint = "RIGHT",
+                x = -20,
+                y = 0,
+            },
+        },
+    },
+
+    -- =====================
+    -- RAID FRAMES
+    -- =====================
+    raidFrames = {
+        enabled = true,
+        hideBlizzardFrames = true,
+        skinGroupManager = true,
+
+        -- Layout
+        layout = "grid",          -- "grid" or "list"
+        width = 72,
+        height = 36,
+        spacing = 2,
+        groupSpacing = 6,
+
+        -- Per-size layout overrides (10 / 25 / 40). When enabled, the matching
+        -- bracket's non-nil fields override the base width/height/spacing above
+        -- according to the current group size; nil fields inherit the base.
+        raidSizeOverrides = {
+            enabled = false,
+            ["10"] = { width = 72, height = 40, spacing = 2, groupSpacing = 6 },
+            ["25"] = { width = 72, height = 32, spacing = 2, groupSpacing = 5 },
+            ["40"] = { width = 64, height = 28, spacing = 1, groupSpacing = 4 },
+        },
+
+        -- Health
+        texture = ADDON_TEXTURE,
+        healthColor = "class",
+        showHealthText = false,
+        healthTextFormat = "percent",
+        font = ADDON_FONT,
+        fontSize = 10,
+        fontOutline = "OUTLINE",
+
+        -- Power (healers only)
+        showPower = true,
+        powerHeight = 2,
+
+        -- Absorb
+        showAbsorb = true,
+        absorbColor = { r = 0.50, g = 0.50, b = 1.00, a = 0.50 },
+
+        -- Heal Prediction
+        showHealPrediction = true,
+
+        -- Name & Icons
+        showName = true,
+        nameMaxLength = 5,
+        showRoleIcon = true,
+        roleIconSize = 20,
+        showRaidMarker = true,
+        raidMarkerSize = 12,
+        readyCheckSize = 20,
+        summonSize = 22,
+
+        -- Resurrection indicator (incoming res cast on this member)
+        showResurrectIndicator = true,
+        resurrectIconSize = 22,
+
+        -- Range
+        showRange = true,
+        oorAlpha = 0.40,
+
+        -- Typed debuff alert: full-frame outline + real aura icon.
+        showDispel = true,
+        showDispelBorder = true,
+        showDispelIcon = true,
+        showDispelBleed = true,
+        dispelBorderSize = 2,
+        dispelSize = 18,
+
+        -- HoT tracking
+        showHoTs = true,
+        hotSize = 10,
+        maxHoTs = 3,
+        -- cf. partyFrames.hotShowDuration.
+        hotShowDuration = true,
+
+        -- Debuff tracking
+        showDebuffs = true,
+        debuffSize = 18,
+        maxDebuffs = 3,
+
+        -- Defensive cooldowns (active buffs on the member)
+        showDefensives = true,
+        defensiveIconSize = 14,
+        maxDefensives = 2,
+        defensiveShowExternals = true,
+        defensiveShowRaidWide = false,
+        defensiveShowPersonals = false,
+
+        -- Sort
+        sortByRole = true,
+
+        -- Position
+        position = {
+            point = "TOPLEFT",
+            anchor = "TOPLEFT",
+            x = 20,
+            y = -200,
+        },
+    },
+
+    -- =====================
+    -- BATTLE-REZ COUNTER (standalone HUD)
+    -- Reads the shared combat-resurrection charge pool (C_Spell.GetSpellCharges
+    -- on Rebirth / 20484) so any class can see how many brez are available and
+    -- the time to the next charge. The pool only exists in instanced content.
+    -- =====================
+    battleRez = {
+        enabled = true,
+        onlyInstance = true,   -- hide outside dungeons/raids (no shared pool there)
+        size = 44,
+        fontSize = 18,
+        showSwipe = true,
+        position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 200 },
+    },
+
+
+
+    -- =====================
+    -- COOLDOWN FORGE (AstralForge Cooldown) -- schema V1
+    -- Bars stored per class token; empty by default. Defensive merge
+    -- fills only missing keys, so player bars are never clobbered on update.
+    -- =====================
+    cooldownForge = {
+        -- Aura ids the client has been observed naming. Learned at runtime,
+        -- never authored, so it cannot go stale at a patch.
+        readableAuraIDs = {},
+        schemaVersion = 1,
+        enabled       = true,
+        bars          = {},   -- [classToken] = { <BarSchema>, ... }
+    },
+
+    -- =====================
+    -- HEALER STUDIO (advanced Party/Raid healer indicators) -- schema V1
+    -- Layouts are stored per class token, empty by default. Declared here
+    -- and not only created on demand: Profiles.lua sanitizes an imported
+    -- profile against the keys of TomoMod_Defaults, so a root key missing
+    -- from this table is silently dropped on every import/export.
+    -- =====================
+    healerStudio = {
+        schemaVersion  = 1,
+        onlyHealerSpec = true,
+        party = { enabled = false, defaultSize = 12, classes = {} },
+        raid  = { enabled = false, defaultSize = 10, classes = {} },
+    },
+}
+
+-- Client flavour gate. Applied to the defaults rather than only to the
+-- live DB, so that a fresh install, TomoMod_ResetDatabase and
+-- TomoMod_ResetModule all inherit it without knowing this file exists.
+if TomoMod_Compat and TomoMod_Compat.ApplyDefaults then
+    TomoMod_Compat.ApplyDefaults(TomoMod_Defaults)
+end
+
+-- =====================================
+-- DB FUNCTIONS
+-- =====================================
+
+-- =====================================
+-- ONE-TIME DATA MIGRATIONS
+-- =====================================
+-- MergeTables only fills in MISSING keys, so changing a default never
+-- reaches an existing database. Anything that has to be corrected on
+-- profiles already in the wild goes here, each step behind its own flag
+-- so it runs exactly once whatever version the player is coming from.
+--
+-- The bookkeeping table is excluded from profile snapshots in
+-- Core/Profiles.lua: otherwise restoring a profile saved before a
+-- migration would clear the flag and let that migration fire again,
+-- undoing a setting the player had deliberately changed back.
+local function TomoMod_RunMigrations()
+    if type(TomoModForeverDB._migrations) ~= "table" then TomoModForeverDB._migrations = {} end
+    local done = TomoModForeverDB._migrations
+
+    -- With no quest tracked, the objective tracker used to leave an empty
+    -- panel on screen -- and, because its height was measured from
+    -- Blizzard's always-shown containers, a panel covering most of the
+    -- screen. hideWhenEmpty now defaults to true; bring existing profiles
+    -- along once. A player who prefers the old behaviour can turn it back
+    -- off and it will stick.
+    -- The tooltip now ships an information layer instead of bars, so bring
+    -- existing profiles onto hideHealthBar = true once. A player who wants the
+    -- bar back can untick it and it will stick.
+    -- The aura tracker is gone: CooldownForge covers the same ground, and
+    -- keeping a second overlay competing for the same screen space was the
+    -- reason it existed at all. Drop the table rather than leave it
+    -- orphaned in every profile -- nothing reads it now, and Profiles.lua
+    -- would go on copying it around forever.
+    -- The buff frame skin is gone. Blizzard's aura buttons report secret
+    -- dimensions, so any backdrop we attached to them threw inside
+    -- Blizzard's own Backdrop.lua, and the frames get reshaped every
+    -- patch. Nothing here can be carried anywhere, so the table is simply
+    -- dropped rather than left orphaned in every profile.
+    -- TomoModForever ships without the modules WoW: Forever cannot run
+    -- (action bars, Mythic+, housing, skyriding, world quests, compass,
+    -- consumables, prey tracker, class reminder, gear advisor, loots,
+    -- profession helper, auction recipe tracker, tooltip IDs, character
+    -- skin). A profile imported from TomoMod can still carry their tables:
+    -- drop them once so they are not copied from profile to profile.
+    if not done.foreverDropRemoved then
+        done.foreverDropRemoved = true
+        for _, key in ipairs({
+            "actionBars", "actionBarSkin", "totemBar", "MythicKeys", "MythicTracker",
+            "TomoScore", "Keystones", "KeystonesResetAt", "housing", "skyRide",
+            "worldQuestTab", "compass", "consumableBar", "preyTracker",
+            "classReminder", "loots", "professionHelper", "tooltipIDs",
+            "characterSkin",
+        }) do
+            TomoModForeverDB[key] = nil
+        end
+    end
+
+    if not done.dropBuffSkin then
+        done.dropBuffSkin = true
+        TomoModForeverDB.buffSkin = nil
+    end
+
+    if not done.dropAuraTracker then
+        done.dropAuraTracker = true
+        -- customSpells was hand-typed by the player and has no equivalent
+        -- in CooldownForge's schema, so it cannot be converted. Losing it
+        -- silently would be the worst outcome; stash the IDs and let the
+        -- login path report them once, so they can be recreated. Only the
+        -- additions are worth keeping -- blacklist entries were removals
+        -- from a default list that no longer exists.
+        local at = TomoModForeverDB.auraTracker
+        if type(at) == "table" and type(at.customSpells) == "table" then
+            local ids = {}
+            for spellID, on in pairs(at.customSpells) do
+                if on and tonumber(spellID) then
+                    ids[#ids + 1] = tonumber(spellID)
+                end
+            end
+            if #ids > 0 then
+                table.sort(ids)
+                TomoModForeverDB._auraTrackerRescue = ids
+            end
+        end
+        TomoModForeverDB.auraTracker = nil
+    end
+
+    if not done.ttHideHealthBar then
+        done.ttHideHealthBar = true
+        if type(TomoModForeverDB.tooltipSkin) == "table" then
+            TomoModForeverDB.tooltipSkin.hideHealthBar = true
+        end
+    end
+
+    if not done.otHideWhenEmpty then
+        done.otHideWhenEmpty = true
+        if type(TomoModForeverDB.objectiveTracker) == "table" then
+            TomoModForeverDB.objectiveTracker.hideWhenEmpty = true
+        end
+    end
+
+    -- The bag "categories" layout is gone. A profile still set to it would
+    -- fall through every branch of LayoutGrid and render an empty bag, so
+    -- move those players onto the combined grid once.
+    if not done.bagDropCategories then
+        done.bagDropCategories = true
+        local bs = TomoModForeverDB.bagSkin
+        if type(bs) == "table" then
+            if bs.layoutMode == "categories" then bs.layoutMode = "combined" end
+            bs.bagCategoryState, bs.bagCategoryOrder = nil, nil
+        end
+    end
+
+    -- CoTankTracker stored posX/posY captured through GetPoint() right after
+    -- StartMoving(), so they were offsets against an engine-chosen anchor, not
+    -- the CENTER/CENTER the restore code applied them to. The new key holds
+    -- screen coordinates against BOTTOMLEFT; the old pair cannot be converted
+    -- (its origin was never recorded), so it is dropped and the frame falls
+    -- back to its default spot once.
+    if not done.coTankPositionV2 then
+        done.coTankPositionV2 = true
+        local ct = TomoModForeverDB.coTankTracker
+        if type(ct) == "table" then
+            ct.posX, ct.posY = nil, nil
+        end
+    end
+
+    -- The per-message chat copy icon is gone: its texture failed to resolve
+    -- and left a placeholder glyph in front of every line. The option is no
+    -- longer in the GUI, so clear it for anyone who had it on -- otherwise
+    -- they would keep the glyphs with no way to switch them off.
+    if not done.chatDropCopyLines then
+        done.chatDropCopyLines = true
+        if type(TomoModForeverDB.chatFrameSkin) == "table" then
+            TomoModForeverDB.chatFrameSkin.copyChatLines = nil
+        end
+    end
+
+    -- The copy window moved to the TUI presentation and gained a per-window
+    -- copy button. Existing profiles have no copyButtonMode, so seed the
+    -- default explicitly rather than relying on the nil fallback -- the GUI
+    -- dropdown needs a concrete value to show a selection.
+    if not done.chatCopyButtonMode then
+        done.chatCopyButtonMode = true
+        local cfs = TomoModForeverDB.chatFrameSkin
+        if type(cfs) == "table" and cfs.copyButtonMode == nil then
+            cfs.copyButtonMode = "hover"
+        end
+    end
+
+    -- The contacts window skin is gone: Blizzard rebuilds that frame in 12.1,
+    -- so skinning it would break on patch day. Drop the orphaned table rather
+    -- than leave it sitting in every saved profile.
+    if not done.dropFriendsSkin then
+        done.dropFriendsSkin = true
+        TomoModForeverDB.friendsSkin = nil
+    end
+
+    -- AstralForge: unit frame element positions used to be a bag of
+    -- offsets applied against anchor points hard-coded in the engine
+    -- (elementOffsets, raidIconOffset, leaderIconOffset, threatText's own
+    -- offset pair). They are now full anchor records living under
+    -- `elements`, so the studio can move an element instead of only
+    -- nudging it. Carry every legacy offset over with the anchor pair the
+    -- engine used to apply, then drop the dead keys.
+    --
+    -- elementOffsets.auras is dropped without conversion: the engine
+    -- stopped reading it in 3.0.5 (auras.position is the single source of
+    -- truth, written by the drag), so it holds a value that has had no
+    -- effect for several versions and converting it would MOVE auras that
+    -- are currently sitting where the player put them.
+    if not done.ufElementsV1 then
+        done.ufElementsV1 = true
+        local uf = TomoModForeverDB.unitFrames
+        if type(uf) == "table" then
+            local pair = function(t)
+                if type(t) ~= "table" then return nil end
+                return tonumber(t.x) or 0, tonumber(t.y) or 0
+            end
+            for _, unitKey in ipairs({ "player", "target", "targettarget", "pet", "focus" }) do
+                local s = uf[unitKey]
+                if type(s) == "table" then
+                    local el = type(s.elements) == "table" and s.elements or {}
+                    local old = s.elementOffsets
+
+                    local function carry(id, point, relPoint, src)
+                        local x, y = pair(src)
+                        if not x then return end
+                        el[id] = {
+                            point    = point,
+                            relTo    = "health",
+                            relPoint = relPoint,
+                            x        = x,
+                            y        = y,
+                        }
+                    end
+
+                    if type(old) == "table" then
+                        carry("name",       "LEFT",   "LEFT",   old.name)
+                        carry("level",      "RIGHT",  "RIGHT",  old.level)
+                        carry("healthText", "CENTER", "CENTER", old.healthText)
+                        carry("power",      "TOP",    "BOTTOM", old.power)
+                    end
+                    carry("raidIcon",   "BOTTOM",     "TOP",     s.raidIconOffset)
+                    carry("leaderIcon", "BOTTOMLEFT", "TOPLEFT", s.leaderIconOffset)
+
+                    local tt = s.threatText
+                    if type(tt) == "table" then
+                        carry("threatText", "CENTER", "CENTER",
+                            { x = tt.offsetX, y = tt.offsetY })
+                        tt.offsetX, tt.offsetY = nil, nil
+                    end
+
+                    s.elements          = el
+                    s.elementOffsets    = nil
+                    s.raidIconOffset    = nil
+                    s.leaderIconOffset  = nil
+                end
+            end
+        end
+    end
+
+    -- AstralForge : les deux conteneurs d'auras gardaient leur position dans
+    -- auras.position / enemyBuffs.position, ecrite par le drag en jeu. C'etait
+    -- la derniere seconde source de verite de position du domaine. On la
+    -- reporte telle quelle -- l'ancien drag sauvait deja un delta CENTER/CENTER
+    -- relatif au cadre, ce qui est exactement la forme d'un enregistrement
+    -- d'element -- puis on supprime la cle.
+    --
+    -- Un profil qui n'a jamais bouge ses auras n'a pas de `position` : il part
+    -- alors des valeurs par defaut du registre, identiques aux valeurs de repli
+    -- que le code utilisait (BOTTOMLEFT/TOPLEFT +0,+6 et BOTTOMRIGHT/TOPRIGHT).
+    if not done.ufAuraElementsV1 then
+        done.ufAuraElementsV1 = true
+        local uf = TomoModForeverDB.unitFrames
+        if type(uf) == "table" then
+            for _, unitKey in ipairs({ "player", "target", "targettarget", "pet", "focus" }) do
+                local s = uf[unitKey]
+                if type(s) == "table" then
+                    local el = type(s.elements) == "table" and s.elements or {}
+                    local function carryContainer(elementID, holder)
+                        if type(holder) ~= "table" then return end
+                        local pos = holder.position
+                        if type(pos) == "table" and pos.point then
+                            el[elementID] = {
+                                point    = pos.point,
+                                relTo    = "frame",
+                                relPoint = pos.relativePoint or pos.point,
+                                x        = tonumber(pos.x) or 0,
+                                y        = tonumber(pos.y) or 0,
+                            }
+                        end
+                        holder.position = nil
+                    end
+                    carryContainer("auras", s.auras)
+                    carryContainer("enemyBuffs", s.enemyBuffs)
+                    s.elements = el
+                end
+            end
+        end
+    end
+
+    -- AstralForge, domaine plaques de nom. Seule la marque de raid avait un
+    -- reglage de position exploitable (raidIconAnchor / raidIconX / raidIconY) ;
+    -- tout le reste etait code en dur dans CreatePlate et part donc des
+    -- valeurs par defaut du registre, identiques a l'ancien comportement.
+    --
+    -- L'ancien code posait SetPoint(anchor, health, anchor, x, y) : le point
+    -- de l'icone ET celui de la barre de vie etaient le MEME. On reporte donc
+    -- l'ancre sur les deux, ce qui reproduit exactement le rendu d'avant.
+    if not done.npElementsV1 then
+        done.npElementsV1 = true
+        local np = TomoModForeverDB.nameplates
+        if type(np) == "table" then
+            local el = type(np.elements) == "table" and np.elements or {}
+            local anchor = np.raidIconAnchor
+            if type(anchor) == "string" then
+                el.raidMarker = {
+                    point    = anchor,
+                    relTo    = "health",
+                    relPoint = anchor,
+                    x        = tonumber(np.raidIconX) or 2,
+                    y        = tonumber(np.raidIconY) or 2,
+                }
+            end
+            np.elements        = el
+            np.raidIconAnchor  = nil
+            np.raidIconX       = nil
+            np.raidIconY       = nil
+        end
+    end
+
+    -- Diagnostics used to default OFF: a purely opt-in feature nobody would
+    -- reasonably find unless they went looking for it, which meant a player
+    -- hitting a wall of real errors (their own BugGrabber, if they have it,
+    -- popping its "too many errors" warning) still produced an empty report
+    -- when asked for one -- not because anything was broken, but because
+    -- nothing was ever listening. It now defaults ON (popups stay suppressed
+    -- by default either way, so this is a quiet background capture, not a
+    -- new popup). Existing profiles are switched on once here; unticking the
+    -- box after this still sticks, same as any other setting.
+    if not done.diagEnableByDefault then
+        done.diagEnableByDefault = true
+        if type(TomoModForeverDB.diagnostics) == "table" then
+            TomoModForeverDB.diagnostics.enabled = true
+        end
+    end
+
+    -- Positions were stored in three shapes that grew independently --
+    -- point/relativePoint, anchor/relTo and point/relPoint -- none of
+    -- which recorded the screen they were captured on. The v2 shape uses
+    -- one pair of names and carries the reference dimensions, so a
+    -- profile can be moved between resolutions without every element
+    -- keeping a pixel offset that no longer means the same thing.
+    --
+    -- The conversion is a rename and nothing more. No reference size is
+    -- stamped, which makes every converted position apply exactly as it
+    -- did before: an upgrade that quietly rearranged someone's screen
+    -- would be worse than the problem being fixed. Only positions saved
+    -- after this point carry a reference and get rescaled.
+    if not done.layoutSchemaV2 then
+        done.layoutSchemaV2 = true
+        if TomoMod_Layout and TomoMod_Layout.MigrateAll then
+            TomoMod_Layout.MigrateAll(TomoModForeverDB)
+        end
+    end
+end
+
+-- =====================================
+-- ASTRALFORGE -- UNIT FRAME ELEMENT NORMALISATION
+-- =====================================
+-- The element defaults are NOT duplicated in TomoMod_Defaults: the
+-- AstralForge registry owns them, and this fills any entry a profile does
+-- not have yet. Run on every login (not behind a migration flag) so an
+-- element added in a later version lands additively in profiles already
+-- in the wild, and re-run after a reset or a profile switch because both
+-- rebuild TomoModForeverDB from the defaults.
+function TomoMod_NormalizeUFElements()
+    local UFE = TomoMod_UFElements
+    if not UFE or not UFE.Ensure then return false end
+    local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+    if type(uf) ~= "table" then return false end
+
+    for _, unitKey in ipairs({ "player", "target", "targettarget", "pet", "focus" }) do
+        local s = uf[unitKey]
+        if type(s) == "table" then
+            if type(s.elements) ~= "table" then s.elements = {} end
+            UFE.Ensure(s.elements)
+        end
+    end
+    return true
+end
+
+-- Meme contrat pour les plaques de nom : le registre possede les valeurs
+-- par defaut, ceci comble ce qu'un profil n'a pas encore.
+function TomoMod_NormalizeNPElements()
+    local NPE = TomoMod_NPElements
+    if not NPE or not NPE.Ensure then return false end
+    local np = TomoModForeverDB and TomoModForeverDB.nameplates
+    if type(np) ~= "table" then return false end
+    if type(np.elements) ~= "table" then np.elements = {} end
+    NPE.Ensure(np.elements)
+    return true
+end
+
+-- Point d'entree unique appele par l'init, les resets et les profils : un
+-- domaine ajoute plus tard se branche ici et nulle part ailleurs.
+function TomoMod_NormalizeAllElements()
+    local a = TomoMod_NormalizeUFElements()
+    local b = TomoMod_NormalizeNPElements()
+    -- The one funnel every route into the live DB already passes through:
+    -- login, profile load, content swap, full import, selective import.
+    -- A profile written on Midnight and carried to Forever is corrected
+    -- here rather than trusted.
+    local c = false
+    if TomoMod_Compat and TomoMod_Compat.EnforceDB then
+        c = TomoMod_Compat.EnforceDB(TomoModForeverDB) > 0
+    end
+    return a or b or c
+end
+
+function TomoMod_InitDatabase()
+    if not TomoModForeverDB then
+        TomoModForeverDB = {}
+    end
+    -- One recovery point before the first migration pass with this local patch.
+    if next(TomoModForeverDB) and not TomoModForeverDB._profileSafetyMigrationBackup and TomoMod_ProfileSafety then
+        local saved = TomoMod_ProfileSafety.CreateBackup("avant migrations 4.0.4")
+        if saved then TomoModForeverDB._profileSafetyMigrationBackup = true end
+    end
+    TomoMod_MergeTables(TomoModForeverDB, TomoMod_Defaults)
+
+    -- One bad migration step used to be able to take the whole session down
+    -- with it: an uncaught error here skipped every migration after it AND
+    -- NormalizeAllElements (called right after, unconditionally) -- which on
+    -- a profile with years of history behind it (unlike a fresh dev profile
+    -- reset every patch) can leave unit-frame/nameplate `elements` entries
+    -- missing, and everything downstream that reads them errors out anew on
+    -- every single update for the rest of the session. Both steps are now
+    -- independently pcall-guarded, so a failure in one cannot swallow the
+    -- other, and it is reported instead of silently repeating forever.
+    local okMigrate, errMigrate = pcall(TomoMod_RunMigrations)
+    if not okMigrate then
+        print("|cffff0000TomoMod|r " .. (TomoMod_L and TomoMod_L["msg_migration_failed"]
+            or "A database migration step failed — please report this in the Discord: ") .. tostring(errMigrate))
+    end
+
+    local okNormalize, errNormalize = pcall(TomoMod_NormalizeAllElements)
+    if not okNormalize then
+        print("|cffff0000TomoMod|r " .. (TomoMod_L and TomoMod_L["msg_normalize_failed"]
+            or "Element normalization failed — please report this in the Discord: ") .. tostring(errNormalize))
+    end
+end
+
+function TomoMod_ResetDatabase()
+    local safety = TomoMod_ProfileSafety
+    if not safety then return false, "Protection des profils indisponible" end
+    local ok, err = safety.Transaction("avant reinitialisation complete", function()
+        for key in pairs(TomoModForeverDB) do
+            if not safety.EXCLUDED[key] then TomoModForeverDB[key] = nil end
+        end
+        for key, value in pairs(CopyTable(TomoMod_Defaults)) do TomoModForeverDB[key] = value end
+        TomoModForeverDB._profiles = nil
+        TomoMod_NormalizeAllElements()
+    end, true)
+    if not ok then print("TomoMod : " .. tostring(err)); return false, err end
+    print("|cffffd100TomoModForever|r " .. TomoMod_L["msg_db_reset"])
+    return true
+end
+
+function TomoMod_ResetModule(moduleName)
+    if TomoMod_Defaults[moduleName] then
+        local safety = TomoMod_ProfileSafety
+        if not safety then return false, "Protection des profils indisponible" end
+        local ok, err = safety.Transaction("avant reinitialisation " .. moduleName, function()
+            TomoModForeverDB[moduleName] = CopyTable(TomoMod_Defaults[moduleName])
+            if moduleName == "unitFrames" or moduleName == "nameplates" then
+                TomoMod_NormalizeAllElements()
+            end
+        end)
+        if not ok then print("TomoMod : " .. tostring(err)); return false, err end
+        print("|cffffd100TomoModForever|r " .. string.format(TomoMod_L["msg_module_reset"], moduleName))
+        return true
+    end
+end

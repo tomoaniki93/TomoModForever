@@ -1,0 +1,27 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+    <!-- oUF — bibliothèque UnitFrame, exposée en global via X-oUF: TomoMod_oUF dans le TOC -->
+    <Script file="Libs\LibStub\LibStub.lua"/>
+    <!-- CallbackHandler-1.0 : dependance declaree de LibSharedMedia-3.0.
+         Sans elle, LibSharedMedia s'interrompt sur un LibStub:GetLibrary
+         non-silencieux APRES s'etre enregistree, laissant une table vide
+         mais truthy -> "attempt to call a nil value" chez ses appelants.
+         Doit rester chargee avant LibSharedMedia. -->
+    <Script file="Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua"/>
+    <!-- LibKeyBound-1.0 (Rev 126, MINOR 100004) : mode d'assignation de
+         touches partage entre addons. Depend de LibStub + CallbackHandler-1.0,
+         doit donc rester apres eux.
+         Copie embarquee telle quelle depuis un build packagee (Dominos 11.3.3),
+         fins de ligne et BOM d'origine preserves par fichier.
+         POUR METTRE A JOUR : reprendre un zip packagee (CurseForge ou une
+         release Dominos / Bartender4). NE PAS prendre le depot GitHub
+         Tuller/LibKeyBound-1.0 : c'est un miroir SVN dont le MINOR vaut
+         tonumber(("$Revision$"):match("%d+")), ce qui leve une erreur
+         d'arithmetique hors checkout SVN. -->
+    <Include file="Libs\LibKeyBound-1.0\lib.xml"/>
+    <Script file='Libs\LibDispel\LibDispel.lua'/> <!-- keep over oUF -->
+    <Include file="Libs\oUF\oUF_Mainline.xml"/>
+    <Script file="Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua"/>
+    <include file="Libs\libserialize\embeds.xml"/>
+    <Script file="Libs\libserialize\serializer.lua"/>
+    <include file="Libs\LibDeflate\lib.xml"/>
+</Ui>

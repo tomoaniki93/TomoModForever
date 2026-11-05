@@ -1,0 +1,623 @@
+-- Panels/General.lua v2.7.0
+local W = TomoMod_Widgets
+local L = TomoMod_L
+
+if TomoMod_RegisterLocale then
+    TomoMod_RegisterLocale("enUS", {
+        ["section_blizzard_fct"] = "Blizzard Floating Combat Text",
+        ["info_blizzard_fct"] = "Hide damage and healing numbers independently. Other Blizzard combat text, including absorb/shield notifications, is left unchanged.",
+        ["opt_hide_fct_damage"] = "Disable floating damage",
+        ["opt_hide_fct_healing"] = "Disable floating healing",
+        ["section_blizzard_cdm_visibility"] = "Blizzard Cooldown Manager",
+        ["info_blizzard_cdm_visibility"] = "Check a viewer to hide that Blizzard Cooldown Manager bar. TomoMod only makes it invisible and non-clickable; it does not delete or replace Blizzard's viewer.",
+        ["opt_hide_cdm_essential"] = "Hide CDM Essential (essential cooldowns)",
+        ["opt_hide_cdm_utility"] = "Hide CDM Utility (utilities)",
+        ["opt_hide_cdm_bufficon"] = "Hide CDM tracked bonuses (icons)",
+        ["opt_hide_cdm_buffbar"] = "Hide CDM tracked bonuses (bars)",
+    })
+    TomoMod_RegisterLocale("frFR", {
+        ["section_blizzard_fct"] = "Texte de combat flottant Blizzard",
+        ["info_blizzard_fct"] = "Masque séparément les nombres de dégâts et de soins. Les autres textes de combat Blizzard, y compris les absorptions/boucliers, restent inchangés.",
+        ["opt_hide_fct_damage"] = "Désactiver les dégâts flottants",
+        ["opt_hide_fct_healing"] = "Désactiver les soins flottants",
+        ["section_blizzard_cdm_visibility"] = "Cooldown Manager de Blizzard",
+        ["info_blizzard_cdm_visibility"] = "Coche une barre pour masquer le viewer correspondant du Cooldown Manager de Blizzard. TomoMod le rend seulement invisible et non cliquable : il ne supprime ni ne remplace le viewer Blizzard.",
+        ["opt_hide_cdm_essential"] = "Masquer CDM Essential (cooldowns essentiels)",
+        ["opt_hide_cdm_utility"] = "Masquer CDM Utility (utilitaires)",
+        ["opt_hide_cdm_bufficon"] = "Masquer CDM Bonus suivi (icônes)",
+        ["opt_hide_cdm_buffbar"] = "Masquer CDM Bonus suivi (barres)",
+    })
+    TomoMod_RegisterLocale("deDE", {
+        ["section_blizzard_fct"] = "Blizzards schwebender Kampftext",
+        ["info_blizzard_fct"] = "Blendet Schadens- und Heilungszahlen unabhängig aus. Andere Blizzard-Kampftexte, einschließlich Absorptionen/Schilden, bleiben unverändert.",
+        ["opt_hide_fct_damage"] = "Schwebenden Schaden deaktivieren",
+        ["opt_hide_fct_healing"] = "Schwebende Heilung deaktivieren",
+        ["section_blizzard_cdm_visibility"] = "Blizzard Abklingzeitmanager",
+        ["info_blizzard_cdm_visibility"] = "Aktiviere einen Eintrag, um den entsprechenden Blizzard-Cooldown-Viewer auszublenden. TomoMod macht ihn nur unsichtbar und nicht anklickbar; der Blizzard-Viewer wird weder gelöscht noch ersetzt.",
+        ["opt_hide_cdm_essential"] = "CDM Essential ausblenden (wichtige Abklingzeiten)",
+        ["opt_hide_cdm_utility"] = "CDM Utility ausblenden (Hilfsfähigkeiten)",
+        ["opt_hide_cdm_bufficon"] = "CDM verfolgte Boni ausblenden (Symbole)",
+        ["opt_hide_cdm_buffbar"] = "CDM verfolgte Boni ausblenden (Leisten)",
+    })
+    TomoMod_RegisterLocale("esES", {
+        ["section_blizzard_fct"] = "Texto de combate flotante de Blizzard",
+        ["info_blizzard_fct"] = "Oculta por separado los números de daño y sanación. El resto del texto de combate de Blizzard, incluidas las absorciones/escudos, no cambia.",
+        ["opt_hide_fct_damage"] = "Desactivar daño flotante",
+        ["opt_hide_fct_healing"] = "Desactivar sanación flotante",
+        ["section_blizzard_cdm_visibility"] = "Gestor de reutilización de Blizzard",
+        ["info_blizzard_cdm_visibility"] = "Marca un visor para ocultar esa barra del gestor de reutilización de Blizzard. TomoMod solo la vuelve invisible y no interactiva; no elimina ni reemplaza el visor de Blizzard.",
+        ["opt_hide_cdm_essential"] = "Ocultar CDM Essential (reutilizaciones esenciales)",
+        ["opt_hide_cdm_utility"] = "Ocultar CDM Utility (utilidades)",
+        ["opt_hide_cdm_bufficon"] = "Ocultar bonos seguidos de CDM (iconos)",
+        ["opt_hide_cdm_buffbar"] = "Ocultar bonos seguidos de CDM (barras)",
+    })
+    TomoMod_RegisterLocale("itIT", {
+        ["section_blizzard_fct"] = "Testo di combattimento fluttuante Blizzard",
+        ["info_blizzard_fct"] = "Nasconde separatamente i numeri di danno e cura. Gli altri testi di combattimento Blizzard, inclusi assorbimenti/scudi, restano invariati.",
+        ["opt_hide_fct_damage"] = "Disattiva danni fluttuanti",
+        ["opt_hide_fct_healing"] = "Disattiva cure fluttuanti",
+        ["section_blizzard_cdm_visibility"] = "Gestore recuperi Blizzard",
+        ["info_blizzard_cdm_visibility"] = "Seleziona un viewer per nascondere la relativa barra del gestore recuperi Blizzard. TomoMod la rende solo invisibile e non cliccabile; non elimina né sostituisce il viewer Blizzard.",
+        ["opt_hide_cdm_essential"] = "Nascondi CDM Essential (recuperi essenziali)",
+        ["opt_hide_cdm_utility"] = "Nascondi CDM Utility (utilità)",
+        ["opt_hide_cdm_bufficon"] = "Nascondi bonus tracciati CDM (icone)",
+        ["opt_hide_cdm_buffbar"] = "Nascondi bonus tracciati CDM (barre)",
+    })
+    TomoMod_RegisterLocale("ptBR", {
+        ["section_blizzard_fct"] = "Texto de combate flutuante da Blizzard",
+        ["info_blizzard_fct"] = "Oculta separadamente os números de dano e cura. Os outros textos de combate da Blizzard, incluindo absorções/escudos, permanecem inalterados.",
+        ["opt_hide_fct_damage"] = "Desativar dano flutuante",
+        ["opt_hide_fct_healing"] = "Desativar cura flutuante",
+        ["section_blizzard_cdm_visibility"] = "Gerenciador de recarga da Blizzard",
+        ["info_blizzard_cdm_visibility"] = "Marque um visualizador para ocultar a barra correspondente do Gerenciador de Recarga da Blizzard. O TomoMod apenas a torna invisível e não clicável; ele não remove nem substitui o visualizador da Blizzard.",
+        ["opt_hide_cdm_essential"] = "Ocultar CDM Essential (recargas essenciais)",
+        ["opt_hide_cdm_utility"] = "Ocultar CDM Utility (utilidades)",
+        ["opt_hide_cdm_bufficon"] = "Ocultar bônus acompanhados do CDM (ícones)",
+        ["opt_hide_cdm_buffbar"] = "Ocultar bônus acompanhados do CDM (barras)",
+    })
+end
+
+function TomoMod_ConfigPanel_General(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local y = -12
+
+    -- ═══════════════════════════════════════════════
+    -- MINIMAP
+    -- ═══════════════════════════════════════════════
+    local card, cy = W.CreateCard(c, L["section_minimap"], y)
+
+    local _, cy = W.CreateCheckbox(card.inner, L["opt_minimap_enable"], TomoModForeverDB.minimap.enabled, cy, function(v)
+        TomoModForeverDB.minimap.enabled = v
+        if v and TomoMod_Minimap then TomoMod_Minimap.ApplySettings() end
+    end)
+
+    local _, cy = W.CreateCheckbox(card.inner, L["opt_minimap_tracking"], TomoModForeverDB.minimap.showTracking ~= false, cy, function(v)
+        TomoModForeverDB.minimap.showTracking = v
+        if TomoMod_Minimap and TomoMod_Minimap.CreateTrackingButton then
+            TomoMod_Minimap.CreateTrackingButton()
+        end
+    end)
+
+    -- [3.0.2] Style du bouton de pistage : TomoMod ou natif Blizzard
+    local _, cy = W.CreateDropdown(card.inner, L["opt_tracking_style"], {
+        { text = L["minimap_style_tomo"],  value = "tomomod"  },
+        { text = L["minimap_style_bliz"],  value = "blizzard" },
+    }, TomoModForeverDB.minimap.trackingStyle or "tomomod", cy, function(v)
+        TomoModForeverDB.minimap.trackingStyle = v
+        if TomoMod_Minimap then
+            if TomoMod_Minimap.CreateTrackingButton then TomoMod_Minimap.CreateTrackingButton() end
+            if TomoMod_Minimap.HideNativeClutter then TomoMod_Minimap.HideNativeClutter() end
+        end
+    end)
+
+    local _, cy = W.CreateTwoColumnRow(card.inner, cy,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_minimap_mail"], TomoModForeverDB.minimap.showMail ~= false, 0, function(v)
+                TomoModForeverDB.minimap.showMail = v
+                if TomoMod_Minimap and TomoMod_Minimap.ApplyNativeIndicators then TomoMod_Minimap.ApplyNativeIndicators() end
+            end)
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_minimap_difficulty"], TomoModForeverDB.minimap.showDifficulty ~= false, 0, function(v)
+                TomoModForeverDB.minimap.showDifficulty = v
+                if TomoMod_Minimap and TomoMod_Minimap.ApplyNativeIndicators then TomoMod_Minimap.ApplyNativeIndicators() end
+            end)
+            return ny
+        end)
+
+    local _, cy = W.CreateTwoColumnRow(card.inner, cy,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_minimap_expansion"], TomoModForeverDB.minimap.showExpansion ~= false, 0, function(v)
+                TomoModForeverDB.minimap.showExpansion = v
+                if TomoMod_Minimap and TomoMod_Minimap.ApplyNativeIndicators then TomoMod_Minimap.ApplyNativeIndicators() end
+            end)
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_minimap_crafting"], TomoModForeverDB.minimap.showCraftingOrder ~= false, 0, function(v)
+                TomoModForeverDB.minimap.showCraftingOrder = v
+                if TomoMod_Minimap and TomoMod_Minimap.ApplyNativeIndicators then TomoMod_Minimap.ApplyNativeIndicators() end
+            end)
+            return ny
+        end)
+
+    local _, cy = W.CreateTwoColumnRow(card.inner, cy,
+        function(col)
+            local _, ny = W.CreateSlider(col, L["opt_size"], TomoModForeverDB.minimap.size, 150, 300, 10, 0, function(v)
+                TomoModForeverDB.minimap.size = v
+                if Minimap then Minimap:SetSize(v, v) end
+            end)
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateSlider(col, L["opt_scale"], TomoModForeverDB.minimap.scale, 0.5, 2.0, 0.1, 0, function(v)
+                TomoModForeverDB.minimap.scale = v
+                if TomoMod_Minimap then TomoMod_Minimap.ApplyScale() end
+            end, "%.1f")
+            return ny
+        end)
+
+    local _, cy = W.CreateDropdown(card.inner, L["opt_border"], {
+        { text = L["border_class"], value = "class"  },
+        { text = L["border_black"],              value = "black"  },
+    }, TomoModForeverDB.minimap.borderColor, cy, function(v)
+        TomoModForeverDB.minimap.borderColor = v
+        if TomoMod_Minimap then TomoMod_Minimap.CreateBorder() end
+    end)
+
+    y = W.FinalizeCard(card, cy)
+
+    -- ═══════════════════════════════════════════════
+    -- INDICATEURS DE LA MINIMAP (position / taille)
+    -- ═══════════════════════════════════════════════
+    local cardI, ciy = W.CreateCard(c, L["section_minimap_indicators"], y)
+
+    -- État courant : quel indicateur on configure
+    local INDS = {
+        { key = "tracking",   label = L["opt_minimap_tracking"] },
+        { key = "mail",       label = L["opt_minimap_mail"] },
+        { key = "difficulty", label = L["opt_minimap_difficulty"] },
+        { key = "expansion",  label = L["opt_minimap_expansion"] },
+        { key = "crafting",   label = L["opt_minimap_crafting"] },
+    }
+    local selKey = "tracking"
+
+    local function EnsureCfg(key)
+        TomoModForeverDB.minimap.indicators = TomoModForeverDB.minimap.indicators or {}
+        TomoModForeverDB.minimap.indicators[key] = TomoModForeverDB.minimap.indicators[key] or {}
+        return TomoModForeverDB.minimap.indicators[key]
+    end
+
+    -- Ré-applique l'indicateur courant en jeu (live)
+    local function ApplyOne(key)
+        if not TomoMod_Minimap then return end
+        if key == "tracking" then
+            if TomoMod_Minimap.CreateTrackingButton then TomoMod_Minimap.CreateTrackingButton() end
+        else
+            if TomoMod_Minimap.ApplyNativeIndicators then TomoMod_Minimap.ApplyNativeIndicators() end
+        end
+    end
+
+    local _, ciy = W.CreateInfoText(cardI.inner, L["info_minimap_indicators"], ciy)
+
+    -- Contrôles (déclarés avant le sélecteur pour pouvoir être mis à jour)
+    local cornerDD, scaleSL, offXSL, offYSL
+
+    -- Sélecteur d'indicateur
+    local indOpts = {}
+    for _, e in ipairs(INDS) do indOpts[#indOpts+1] = { text = e.label, value = e.key } end
+    local _, ciy = W.CreateDropdown(cardI.inner, L["opt_indicator"], indOpts, selKey, ciy, function(v)
+        selKey = v
+        local cfg = EnsureCfg(selKey)
+        local dC, dS, dX, dY = TomoMod_Minimap.GetIndicatorCfg(selKey)
+        -- Met à jour les widgets pour refléter l'indicateur choisi
+        if cornerDD then cornerDD:SetValue(cfg.corner or dC) end
+        if scaleSL  then scaleSL:SetValue(cfg.scale or dS) end
+        if offXSL   then offXSL:SetValue(cfg.x or dX) end
+        if offYSL   then offYSL:SetValue(cfg.y or dY) end
+    end)
+
+    -- Valeurs initiales (indicateur "tracking")
+    local iC, iS, iX, iY
+    if TomoMod_Minimap and TomoMod_Minimap.GetIndicatorCfg then
+        iC, iS, iX, iY = TomoMod_Minimap.GetIndicatorCfg(selKey)
+    end
+    iC = iC or "TOPLEFT"; iS = iS or 1.0; iX = iX or 0; iY = iY or 0
+
+    -- Coin + Échelle
+    local _, ciy = W.CreateTwoColumnRow(cardI.inner, ciy,
+        function(col)
+            local f, ny = W.CreateDropdown(col, L["opt_corner"], {
+                { text = L["corner_topleft"],  value = "TOPLEFT"     },
+                { text = L["corner_topright"],  value = "TOPRIGHT"    },
+                { text = L["corner_bottomleft"],   value = "BOTTOMLEFT"  },
+                { text = L["corner_bottomright"],   value = "BOTTOMRIGHT" },
+            }, iC, 0, function(v)
+                EnsureCfg(selKey).corner = v
+                ApplyOne(selKey)
+            end)
+            cornerDD = f
+            return ny
+        end,
+        function(col)
+            local f, ny = W.CreateSlider(col, L["opt_size"], iS, 0.5, 2.0, 0.05, 0, function(v)
+                EnsureCfg(selKey).scale = v
+                ApplyOne(selKey)
+            end, "%.2f")
+            scaleSL = f
+            return ny
+        end)
+
+    -- Décalage X + Y
+    local _, ciy = W.CreateTwoColumnRow(cardI.inner, ciy,
+        function(col)
+            local f, ny = W.CreateSlider(col, L["opt_offset_x"], iX, -60, 60, 1, 0, function(v)
+                EnsureCfg(selKey).x = v
+                ApplyOne(selKey)
+            end, "%d")
+            offXSL = f
+            return ny
+        end,
+        function(col)
+            local f, ny = W.CreateSlider(col, L["opt_offset_y"], iY, -60, 60, 1, 0, function(v)
+                EnsureCfg(selKey).y = v
+                ApplyOne(selKey)
+            end, "%d")
+            offYSL = f
+            return ny
+        end)
+
+    y = W.FinalizeCard(cardI, ciy)
+
+    -- ═══════════════════════════════════════════════
+    -- BOUTONS D'ADDON (collecteur)
+    -- ═══════════════════════════════════════════════
+    local cardB, cby = W.CreateCard(c, L["section_buttonbag"], y)
+
+    local function EnsureBag()
+        TomoModForeverDB.minimap.buttonBag = TomoModForeverDB.minimap.buttonBag or {}
+        return TomoModForeverDB.minimap.buttonBag
+    end
+    local function ApplyBag()
+        if TomoMod_Minimap and TomoMod_Minimap.CreateButtonBag then TomoMod_Minimap.CreateButtonBag() end
+        if TomoMod_Minimap and TomoMod_Minimap.RefreshButtonBag then TomoMod_Minimap.RefreshButtonBag() end
+    end
+
+    local _, cby = W.CreateInfoText(cardB.inner, L["info_buttonbag"], cby)
+
+    local _, cby = W.CreateCheckbox(cardB.inner, L["opt_buttonbag_enable"], EnsureBag().enabled ~= false, cby, function(v)
+        EnsureBag().enabled = v
+        ApplyBag()
+        if TomoMod_Minimap and TomoMod_Minimap.HideNativeClutter then TomoMod_Minimap.HideNativeClutter() end
+    end)
+
+    -- [3.0.2] Style du collecteur : boîte TomoMod ou compartiment natif Blizzard
+    local _, cby = W.CreateDropdown(cardB.inner, L["opt_collector_style"], {
+        { text = L["collector_style_tomo"],   value = "tomomod"  },
+        { text = L["collector_style_bliz"],  value = "blizzard" },
+    }, TomoModForeverDB.minimap.collectorStyle or "tomomod", cby, function(v)
+        TomoModForeverDB.minimap.collectorStyle = v
+        ApplyBag()
+        if TomoMod_Minimap and TomoMod_Minimap.HideNativeClutter then TomoMod_Minimap.HideNativeClutter() end
+    end)
+
+    local bagDB = EnsureBag()
+
+    -- [3.0.1] Position du collecteur : sur la minimap (coin) ou collé à l'horloge
+    local _, cby = W.CreateDropdown(cardB.inner, L["opt_buttonbag_anchor"], {
+        { text = L["buttonbag_anchor_corner"], value = "corner"      },
+        { text = L["buttonbag_anchor_clockl"],   value = "clock-left"  },
+        { text = L["buttonbag_anchor_clockr"],   value = "clock-right" },
+    }, bagDB.anchor or "corner", cby, function(v)
+        EnsureBag().anchor = v
+        ApplyBag()
+    end)
+
+    local _, cby = W.CreateTwoColumnRow(cardB.inner, cby,
+        function(col)
+            local f, ny = W.CreateDropdown(col, L["opt_corner"], {
+                { text = L["corner_topleft"],  value = "TOPLEFT"     },
+                { text = L["corner_topright"],  value = "TOPRIGHT"    },
+                { text = L["corner_bottomleft"],   value = "BOTTOMLEFT"  },
+                { text = L["corner_bottomright"],   value = "BOTTOMRIGHT" },
+            }, bagDB.corner or "BOTTOMLEFT", 0, function(v)
+                EnsureBag().corner = v
+                ApplyBag()
+            end)
+            return ny
+        end,
+        function(col)
+            local f, ny = W.CreateSlider(col, L["opt_buttonbag_columns"], bagDB.columns or 5, 1, 10, 1, 0, function(v)
+                EnsureBag().columns = v
+                -- RelayoutBag : les boutons sont déjà dans bagFrame.content,
+                -- un rescan (ApplyBag) ne les retrouverait plus.
+                if TomoMod_Minimap and TomoMod_Minimap.RelayoutBag then TomoMod_Minimap.RelayoutBag() end
+            end, "%d")
+            return ny
+        end)
+
+    local _, cby = W.CreateSlider(cardB.inner, L["opt_buttonbag_iconsize"], bagDB.iconSize or 28, 16, 40, 1, cby, function(v)
+        EnsureBag().iconSize = v
+        -- RelayoutBag : les boutons sont déjà dans bagFrame.content,
+        -- un rescan (ApplyBag) ne les retrouverait plus.
+        if TomoMod_Minimap and TomoMod_Minimap.RelayoutBag then TomoMod_Minimap.RelayoutBag() end
+    end, "%d")
+
+    local _, cby = W.CreateButton(cardB.inner, L["btn_buttonbag_rescan"], 220, cby, function()
+        if TomoMod_Minimap and TomoMod_Minimap.RefreshButtonBag then TomoMod_Minimap.RefreshButtonBag() end
+    end)
+
+    y = W.FinalizeCard(cardB, cby)
+
+    -- ═══════════════════════════════════════════════
+    -- INFO PANEL
+    -- ═══════════════════════════════════════════════
+    local card2, cy = W.CreateCard(c, L["section_info_panel"], y)
+
+    local _, cy = W.CreateCheckbox(card2.inner, L["opt_enable"], TomoModForeverDB.infoPanel.enabled, cy, function(v)
+        TomoModForeverDB.infoPanel.enabled = v
+        if v then
+            if TomoMod_InfoPanel then TomoMod_InfoPanel.Initialize() end
+        else
+            if TomoMod_InfoPanel then TomoMod_InfoPanel.Hide() end
+        end
+    end)
+
+    local _, cy = W.CreateTwoColumnRow(card2.inner, cy,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_time"], TomoModForeverDB.infoPanel.showTime, 0, function(v)
+                TomoModForeverDB.infoPanel.showTime = v
+                if TomoMod_InfoPanel then TomoMod_InfoPanel.Update() end
+            end)
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_24h_format"], TomoModForeverDB.infoPanel.use24Hour, 0, function(v)
+                TomoModForeverDB.infoPanel.use24Hour = v
+                if TomoMod_InfoPanel then TomoMod_InfoPanel.Update() end
+            end)
+            return ny
+        end)
+
+    local _, cy = W.CreateTwoColumnRow(card2.inner, cy,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_show_coords"], TomoModForeverDB.infoPanel.showCoords ~= false, 0, function(v)
+                TomoModForeverDB.infoPanel.showCoords = v
+                if TomoMod_InfoPanel then TomoMod_InfoPanel.Update() end
+            end)
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_durability"], TomoModForeverDB.infoPanel.showDurability ~= false, 0, function(v)
+                TomoModForeverDB.infoPanel.showDurability = v
+                if TomoMod_InfoPanel then TomoMod_InfoPanel.Update() end
+            end)
+            return ny
+        end)
+
+    -- [3.1.7] Position de la durabilité (configurable) — le bouton d'extension
+    -- apparu en 12.0.7 sur la minimap peut chevaucher le coin par défaut.
+    local _, cy = W.CreateInfoText(card2.inner, L["info_durability_position"], cy)
+    local _, cy = W.CreateDropdown(card2.inner, L["opt_durability_corner"], {
+        { text = L["corner_topleft"],  value = "TOPLEFT"     },
+        { text = L["corner_topright"],  value = "TOPRIGHT"    },
+        { text = L["corner_bottomleft"],   value = "BOTTOMLEFT"  },
+        { text = L["corner_bottomright"],   value = "BOTTOMRIGHT" },
+    }, TomoModForeverDB.infoPanel.durabilityAnchor or "BOTTOMLEFT", cy, function(v)
+        TomoModForeverDB.infoPanel.durabilityAnchor = v
+        if TomoMod_InfoPanel and TomoMod_InfoPanel.ApplyDurabilityPosition then TomoMod_InfoPanel.ApplyDurabilityPosition() end
+    end)
+    local _, cy = W.CreateTwoColumnRow(card2.inner, cy,
+        function(col)
+            local _, ny = W.CreateSlider(col, L["opt_offset_x"], TomoModForeverDB.infoPanel.durabilityX or 6, -100, 100, 1, 0, function(v)
+                TomoModForeverDB.infoPanel.durabilityX = v
+                if TomoMod_InfoPanel and TomoMod_InfoPanel.ApplyDurabilityPosition then TomoMod_InfoPanel.ApplyDurabilityPosition() end
+            end, "%d")
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateSlider(col, L["opt_offset_y"], TomoModForeverDB.infoPanel.durabilityY or 6, -100, 100, 1, 0, function(v)
+                TomoModForeverDB.infoPanel.durabilityY = v
+                if TomoMod_InfoPanel and TomoMod_InfoPanel.ApplyDurabilityPosition then TomoMod_InfoPanel.ApplyDurabilityPosition() end
+            end, "%d")
+            return ny
+        end)
+
+    y = W.FinalizeCard(card2, cy)
+
+    -- ═══════════════════════════════════════════════
+    -- BLIZZARD AURA FRAMES
+    -- ═══════════════════════════════════════════════
+    local auraCard, ay = W.CreateCard(c, L["section_blizzard_auras"], y)
+    local _, ay = W.CreateInfoText(auraCard.inner, L["info_blizzard_auras"], ay)
+
+    TomoModForeverDB.blizzardAuraFrames = TomoModForeverDB.blizzardAuraFrames or {
+        enabled = true,
+        showBuffs = true,
+        showDebuffs = true,
+    }
+    local auraDB = TomoModForeverDB.blizzardAuraFrames
+    local function ApplyBlizzardAuraFrames()
+        if TomoMod_BlizzardAuraFrames and TomoMod_BlizzardAuraFrames.ApplySettings then
+            TomoMod_BlizzardAuraFrames.ApplySettings()
+        end
+    end
+
+    local _, ay = W.CreateCheckbox(auraCard.inner, L["opt_blizzard_auras_manage"], auraDB.enabled ~= false, ay, function(v)
+        auraDB.enabled = v
+        ApplyBlizzardAuraFrames()
+    end)
+    local _, ay = W.CreateCheckbox(auraCard.inner, L["opt_blizzard_buffs"], auraDB.showBuffs ~= false, ay, function(v)
+        auraDB.showBuffs = v
+        ApplyBlizzardAuraFrames()
+    end)
+    local _, ay = W.CreateCheckbox(auraCard.inner, L["opt_blizzard_debuffs"], auraDB.showDebuffs ~= false, ay, function(v)
+        auraDB.showDebuffs = v
+        ApplyBlizzardAuraFrames()
+    end)
+
+    y = W.FinalizeCard(auraCard, ay)
+
+    -- ═══════════════════════════════════════════════
+    -- BLIZZARD FLOATING COMBAT TEXT
+    -- ═══════════════════════════════════════════════
+    local fctCard, fty = W.CreateCard(c, L["section_blizzard_fct"], y)
+    local _, fty = W.CreateInfoText(fctCard.inner, L["info_blizzard_fct"], fty)
+
+    TomoModForeverDB.floatingCombatText = TomoModForeverDB.floatingCombatText or {
+        hideDamage = false,
+        hideHealing = false,
+    }
+    local fctDB = TomoModForeverDB.floatingCombatText
+
+    local _, fty = W.CreateCheckbox(fctCard.inner, L["opt_hide_fct_damage"],
+        fctDB.hideDamage == true, fty, function(v)
+            if TomoMod_CombatText and TomoMod_CombatText.SetFloatingDamageHidden then
+                TomoMod_CombatText.SetFloatingDamageHidden(v)
+            else
+                fctDB.hideDamage = v
+            end
+        end)
+
+    local _, fty = W.CreateCheckbox(fctCard.inner, L["opt_hide_fct_healing"],
+        fctDB.hideHealing == true, fty, function(v)
+            if TomoMod_CombatText and TomoMod_CombatText.SetFloatingHealingHidden then
+                TomoMod_CombatText.SetFloatingHealingHidden(v)
+            else
+                fctDB.hideHealing = v
+            end
+        end)
+
+    y = W.FinalizeCard(fctCard, fty)
+
+    -- ═══════════════════════════════════════════════
+    -- BLIZZARD COOLDOWN MANAGER — VISIBILITY
+    -- Moved here from the legacy Combat > Cooldowns panel.
+    -- ═══════════════════════════════════════════════
+    local cdmCard, cdy = W.CreateCard(c, L["section_blizzard_cdm_visibility"], y)
+    local _, cdy = W.CreateInfoText(cdmCard.inner, L["info_blizzard_cdm_visibility"], cdy)
+
+    local Hd = TomoMod_CDMHolders
+    local function IsViewerHidden(key)
+        return Hd and Hd.IsViewerHidden and Hd.IsViewerHidden(key) or false
+    end
+    local function SetViewerHidden(key, value)
+        if Hd and Hd.SetViewerHidden then
+            Hd.SetViewerHidden(key, value)
+        end
+    end
+
+    local _, cdy = W.CreateCheckbox(cdmCard.inner, L["opt_hide_cdm_essential"],
+        IsViewerHidden("essential"), cdy, function(v) SetViewerHidden("essential", v) end)
+    local _, cdy = W.CreateCheckbox(cdmCard.inner, L["opt_hide_cdm_utility"],
+        IsViewerHidden("utility"), cdy, function(v) SetViewerHidden("utility", v) end)
+    local _, cdy = W.CreateCheckbox(cdmCard.inner, L["opt_hide_cdm_bufficon"],
+        IsViewerHidden("buffIcon"), cdy, function(v) SetViewerHidden("buffIcon", v) end)
+    local _, cdy = W.CreateCheckbox(cdmCard.inner, L["opt_hide_cdm_buffbar"],
+        IsViewerHidden("buffBar"), cdy, function(v) SetViewerHidden("buffBar", v) end)
+
+    y = W.FinalizeCard(cdmCard, cdy)
+
+    -- ═══════════════════════════════════════════════
+    -- CURSOR RING
+    -- ═══════════════════════════════════════════════
+    local card3, cy = W.CreateCard(c, L["section_cursor_ring"], y)
+
+    local _, cy = W.CreateCheckbox(card3.inner, L["opt_enable"], TomoModForeverDB.cursorRing.enabled, cy, function(v)
+        TomoModForeverDB.cursorRing.enabled = v
+        if TomoMod_CursorRing then TomoMod_CursorRing.ApplySettings() end
+    end)
+
+    local _, cy = W.CreateTwoColumnRow(card3.inner, cy,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_class_color"], TomoModForeverDB.cursorRing.useClassColor, 0, function(v)
+                TomoModForeverDB.cursorRing.useClassColor = v
+                if TomoMod_CursorRing then TomoMod_CursorRing.ApplyColor() end
+            end)
+            return ny
+        end,
+        function(col)
+            local _, ny = W.CreateCheckbox(col, L["opt_anchor_tooltip_ring"], TomoModForeverDB.cursorRing.anchorTooltip, 0, function(v)
+                TomoModForeverDB.cursorRing.anchorTooltip = v
+                if TomoMod_CursorRing then TomoMod_CursorRing.SetupTooltipAnchor() end
+            end)
+            return ny
+        end)
+
+    local _, cy = W.CreateSlider(card3.inner, L["opt_scale"], TomoModForeverDB.cursorRing.scale, 0.5, 3.0, 0.1, cy, function(v)
+        TomoModForeverDB.cursorRing.scale = v
+        if TomoMod_CursorRing then TomoMod_CursorRing.ApplyScale() end
+    end, "%.1f")
+
+    local _, cy = W.CreateDropdown(card3.inner,
+        L["opt_cursor_ring_texture"],
+        {
+            { text = L["cursor_tex_ring"],  value = "ring"  },
+            { text = L["cursor_tex_glow"],  value = "glow"  },
+            { text = L["cursor_tex_arc"], value = "arc" },
+            { text = L["cursor_tex_cross"], value = "cross" },
+        },
+        TomoModForeverDB.cursorRing.shape or "ring",
+        cy,
+        function(v)
+            TomoModForeverDB.cursorRing.shape = v
+            if TomoMod_CursorRing then TomoMod_CursorRing.ApplyTexture() end
+        end)
+
+    y = W.FinalizeCard(card3, cy)
+
+    -- ═══════════════════════════════════════════════
+    -- GÉNÉRAL
+    -- ═══════════════════════════════════════════════
+    local card4, cy = W.CreateCard(c, L["section_general"], y)
+
+    local ver = "v" .. (C_AddOns.GetAddOnMetadata("TomoModForever", "Version") or "?")
+    local _, cy = W.CreateInfoText(card4.inner, string.format(L["about_text"], ver), cy)
+
+    -- [Lot A] Echelle de la fenetre de configuration (strings enregistrees
+    -- via TomoMod_RegisterLocale dans ConfigUI.lua)
+    local scaleSlider
+    scaleSlider, cy = W.CreateSlider(card4.inner, L["opt_gui_scale"],
+        math.floor((((TomoModForeverDB.configGUI and TomoModForeverDB.configGUI.scale) or 1) * 100) + 0.5),
+        70, 130, 5, cy, function(v)
+            TomoModForeverDB.configGUI = TomoModForeverDB.configGUI or {}
+            TomoModForeverDB.configGUI.scale = v / 100
+            if TomoMod_Config and TomoMod_Config.ApplyGUIScale then TomoMod_Config.ApplyGUIScale() end
+        end, "%d %%")
+    local _, cy = W.CreateInfoText(card4.inner, L["info_gui_scale"], cy)
+
+    local _, cy = W.CreateButton(card4.inner, L["btn_gui_reset_size"], 220, cy, function()
+        if TomoMod_Config and TomoMod_Config.ResetGUISize then TomoMod_Config.ResetGUISize() end
+        if scaleSlider then scaleSlider:SetValue(100) end
+    end)
+
+    local _, cy = W.CreateButton(card4.inner, L["btn_relaunch_installer"], 220, cy, function()
+        if TomoMod_OpenInstaller then
+            TomoMod_OpenInstaller(true)
+            if TomoMod_Config and TomoMod_Config.Hide then TomoMod_Config.Hide() end
+        end
+    end)
+    local _, cy = W.CreateInfoText(card4.inner, L["info_relaunch_installer"], cy)
+
+    -- "Reset everything" lives in Profiles > Resets only, next to the
+    -- backups that undo it. TOMOMOD_RESET_ALL stays defined below for it.
+
+    y = W.FinalizeCard(card4, cy)
+
+    c:SetHeight(math.abs(y) + 20)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+StaticPopupDialogs["TOMOMOD_RESET_ALL"] = {
+    text     = L["popup_reset_text"],
+    button1  = L["popup_confirm"],
+    button2  = L["popup_cancel"],
+    OnAccept = function() if TomoMod_ResetDatabase() then ReloadUI() end end,
+    timeout       = 0,
+    whileDead     = true,
+    hideOnEscape  = true,
+    preferredIndex = 3,
+}

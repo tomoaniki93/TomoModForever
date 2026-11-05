@@ -1,0 +1,822 @@
+-- =====================================
+-- Skins.lua — Config Panel for Skins category
+-- Top-level tabs: Chat Frame, Bags, Obj. Tracker, Character,
+--                 Buffs, Game Menu, Mail
+-- Migrates all skin settings from the QOL tab into a dedicated section.
+-- =====================================
+
+local L = TomoMod_L
+local W = TomoMod_Widgets
+local T = W.Theme
+
+-- =====================================================================
+-- TAB: CHAT FRAME V4 — live Chat V4 controls
+-- =====================================================================
+
+local function BuildChatFrameTab(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local y = -10
+
+    local Chat = TomoMod_ChatFrameSkin
+    if not Chat or not Chat.GetDB then
+        local _, ny = W.CreateInfoText(c, W.Loc("skins_chat_unavailable", "Chat V4 is unavailable."), y)
+        y = ny
+        c:SetHeight(math.abs(y) + 40)
+        if scroll.UpdateScroll then scroll.UpdateScroll() end
+        return scroll
+    end
+
+    local db = Chat.GetDB()
+    local appearance = db.appearance
+    local messages = db.messages
+    local sidebar = db.sidebar
+    local copy = db.copy
+
+    local function Apply()
+        if Chat and Chat.ApplySettings then Chat.ApplySettings() end
+    end
+
+    local _, ny = W.CreateInfoText(c, L["chat_v4_live_info"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_enable"], db.enabled ~= false, y, function(v)
+        Chat.SetEnabled(v)
+    end)
+    y = ny
+
+    -- ── Appearance ─────────────────────────────────────────────
+    local _, ny = W.CreateSectionHeader(c, L["chat_v4_appearance"], y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_chat_skin_bg_alpha"], (appearance.bgAlpha or 0.72) * 100, 0, 100, 5, y, function(v)
+        appearance.bgAlpha = v / 100
+        Apply()
+    end, "%.0f%%")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_chat_message_bg_alpha"], (appearance.messageBgAlpha or appearance.bgAlpha or 0.72) * 100, 0, 100, 5, y, function(v)
+        appearance.messageBgAlpha = v / 100
+        Apply()
+    end, "%.0f%%")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_chat_skin_font_size"], appearance.fontSize or 13, 9, 20, 1, y, function(v)
+        appearance.fontSize = v
+        Apply()
+    end)
+    y = ny
+
+    -- ── Messages ───────────────────────────────────────────────
+    local _, ny = W.CreateSectionHeader(c, L["chat_v4_messages"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_fade"], messages.fade ~= false, y, function(v)
+        messages.fade = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_timestamp"], messages.showTimestamp ~= false, y, function(v)
+        messages.showTimestamp = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_short_channels"], messages.shortChannelNames ~= false, y, function(v)
+        messages.shortChannelNames = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_url"], messages.findURL ~= false, y, function(v)
+        messages.findURL = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_emoji"], messages.emoji ~= false, y, function(v)
+        messages.emoji = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_chat_skin_class_colors"], messages.classColorMentions ~= false, y, function(v)
+        messages.classColorMentions = v
+        Apply()
+    end)
+    y = ny
+
+    -- ── Sidebar ────────────────────────────────────────────────
+    local _, ny = W.CreateSectionHeader(c, L["chat_v4_sidebar"], y)
+    y = ny
+
+    local _, ny = W.CreateDropdown(c, L["chat_v4_sidebar_side"], {
+        { text = L["chat_v4_sidebar_left"],  value = "LEFT"  },
+        { text = L["chat_v4_sidebar_right"], value = "RIGHT" },
+    }, sidebar.side or "LEFT", y, function(v)
+        sidebar.side = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["chat_v4_sidebar_width"], sidebar.width or 32, 26, 48, 1, y, function(v)
+        sidebar.width = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["chat_v4_sidebar_icon_size"], sidebar.iconSize or 20, 16, 30, 1, y, function(v)
+        sidebar.iconSize = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["chat_v4_sidebar_spacing"], sidebar.spacing or 2, 0, 8, 1, y, function(v)
+        sidebar.spacing = v
+        Apply()
+    end)
+    y = ny
+
+    sidebar.buttons = sidebar.buttons or {}
+    local sb = sidebar.buttons
+    local BUTTON_ROWS = {
+        { "friends",      "chat_v4_btn_friends",  "guild",    "chat_v4_btn_guild"    },
+        { "playerStatus", "chat_v4_btn_status",   "voice",    "chat_v4_btn_voice"    },
+        { "mute",         "chat_v4_btn_mute",     "deafen",   "chat_v4_btn_deafen"   },
+        { "copy",         "chat_v4_btn_copy",     "loot",     "chat_v4_btn_loot"     },
+        { "settings",     "chat_v4_btn_settings", "scroll",   "chat_v4_btn_scroll"   },
+    }
+    for _, row in ipairs(BUTTON_ROWS) do
+        local keyA, labelA, keyB, labelB = row[1], row[2], row[3], row[4]
+        local _, rowY = W.CreateCheckboxPair(c,
+            L[labelA], sb[keyA] ~= false, y, function(v) sb[keyA] = v; Apply() end,
+            L[labelB], sb[keyB] ~= false,    function(v) sb[keyB] = v; Apply() end)
+        y = rowY
+    end
+
+    -- ── Copy Chat ──────────────────────────────────────────────
+    local _, ny = W.CreateSectionHeader(c, L["chat_v4_copy"], y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["chat_v4_copy_lines"], copy.maxLines or 500, 50, 1000, 50, y, function(v)
+        copy.maxLines = v
+    end, "%.0f")
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+--[[ Chat Frame UI (multi-position containers — MayronUI style) — disabled for now
+    TomoModForeverDB.chatFrameUI = TomoModForeverDB.chatFrameUI or {}
+    local cfuiDB = TomoModForeverDB.chatFrameUI
+
+    local _, ny = W.CreateSeparator(c, y); y = ny
+    local _, ny = W.CreateSubLabel(c, L["sublabel_chatframeui"], y); y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_cfui_enable"], cfuiDB.enabled, y, function(v)
+        cfuiDB.enabled = v
+        if TomoMod_ChatFrameUI then TomoMod_ChatFrameUI.SetEnabled(v) end
+    end); y = ny
+
+    -- Per-anchor frame toggles
+    local anchors = {
+        { key = "TOPLEFT",     label = L["opt_cfui_frame_topleft"] },
+        { key = "TOPRIGHT",    label = L["opt_cfui_frame_topright"] },
+        { key = "BOTTOMLEFT",  label = L["opt_cfui_frame_bottomleft"] },
+        { key = "BOTTOMRIGHT", label = L["opt_cfui_frame_bottomright"] },
+    }
+    for _, a in ipairs(anchors) do
+        cfuiDB.chatFrames = cfuiDB.chatFrames or {}
+        cfuiDB.chatFrames[a.key] = cfuiDB.chatFrames[a.key] or {}
+        local fs = cfuiDB.chatFrames[a.key]
+        local _, ny = W.CreateCheckbox(c, a.label, fs.enabled, y, function(v)
+            fs.enabled = v
+            if TomoMod_ChatFrameUI then TomoMod_ChatFrameUI.ApplySettings() end
+        end); y = ny
+    end
+
+    local _, ny = W.CreateSeparator(c, y); y = ny
+
+    -- Icons anchor
+    local _, ny = W.CreateDropdown(c, L["opt_cfui_icons_anchor"],
+        W.AnchorOptions({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }),
+        cfuiDB.iconsAnchor or "TOPLEFT", y, function(v)
+        cfuiDB.iconsAnchor = v
+        if TomoMod_ChatFrameUI then TomoMod_ChatFrameUI.RefreshSideBarIcons() end
+    end); y = ny
+
+    -- Edit box position
+    local _, ny = W.CreateDropdown(c, L["opt_cfui_editbox_position"],
+        W.AnchorOptions({ "TOP", "BOTTOM" }),
+        (cfuiDB.editBox and cfuiDB.editBox.position) or "BOTTOM", y, function(v)
+        cfuiDB.editBox = cfuiDB.editBox or {}
+        cfuiDB.editBox.position = v
+        if TomoMod_ChatFrameUI then TomoMod_ChatFrameUI.ApplySettings() end
+    end); y = ny
+
+    -- Edit box height
+    local _, ny = W.CreateSlider(c, L["opt_cfui_editbox_height"], (cfuiDB.editBox and cfuiDB.editBox.height) or 27, 20, 50, 1, y, function(v)
+        cfuiDB.editBox = cfuiDB.editBox or {}
+        cfuiDB.editBox.height = v
+        if TomoMod_ChatFrameUI then TomoMod_ChatFrameUI.ApplySettings() end
+    end); y = ny
+
+    -- Raid frame manager
+    local _, ny = W.CreateCheckbox(c, L["opt_cfui_raid_frame_mgr"], cfuiDB.raidFrameManager ~= false, y, function(v)
+        cfuiDB.raidFrameManager = v
+    end); y = ny
+
+    -- Swap buttons in combat
+    local _, ny = W.CreateCheckbox(c, L["opt_cfui_swap_in_combat"], cfuiDB.swapInCombat, y, function(v)
+        cfuiDB.swapInCombat = v
+    end); y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+--]]
+
+-- =====================================================================
+-- TAB: BAGS
+-- =====================================================================
+
+local function BuildBagsTab(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local y = -10
+
+    local Bags = TomoMod_BagSkin
+    if not Bags or not Bags.GetDB then
+        local _, ny = W.CreateInfoText(c, W.Loc("skins_bags_unavailable", "Bags V4 is unavailable."), y)
+        y = ny
+        c:SetHeight(math.abs(y) + 40)
+        if scroll.UpdateScroll then scroll.UpdateScroll() end
+        return scroll
+    end
+
+    local db = Bags.GetDB()
+    local layout = db.layout
+    local appearance = db.appearance
+    local sorting = db.sorting
+    local slots = db.slots
+    local sidebar = db.sidebar
+    local search = db.search
+
+    local function Loc(key, fallback)
+        local value = L and L[key]
+        if type(value) == "string" and value ~= key and value ~= "" then return value end
+        return fallback
+    end
+
+    local function Apply()
+        if Bags and Bags.ApplySettings then Bags.ApplySettings() end
+    end
+
+    local _, ny = W.CreateSectionHeader(c, Loc("section_skin_bags", "Bags V4"), y)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, Loc("bags_v4_gui_info", "Combined mode uses one TomoMod bag window. Separate mode restores Blizzard's individual bag windows."), y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_enable", "Enable Bags V4"), db.enabled ~= false, y, function(v)
+        Bags.SetEnabled(v)
+    end)
+    y = ny
+
+    -- Display mode ------------------------------------------------------
+    local _, ny = W.CreateSegmentedControl(c, Loc("bags_v4_gui_mode", "Bag display"), {
+        { text = Loc("bags_v4_gui_combined", "Combined"), value = "combined" },
+        { text = Loc("bags_v4_gui_separate", "Separate"), value = "separate" },
+    }, layout.mode or "combined", y, function(v)
+        if Bags.SetDisplayMode then
+            Bags.SetDisplayMode(v)
+        else
+            layout.mode = v
+            Apply()
+        end
+    end, 2)
+    y = ny
+
+    -- Appearance --------------------------------------------------------
+    local _, ny = W.CreateSectionHeader(c, Loc("bags_v4_gui_appearance", "Appearance"), y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("bags_v4_gui_columns", "Columns"), layout.columns or 12, 6, 16, 1, y, function(v)
+        layout.columns = math.floor(v + 0.5)
+        Apply()
+    end, "%.0f")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("opt_skin_bags_slot_size", "Slot size"), layout.slotSize or 38, 28, 52, 1, y, function(v)
+        layout.slotSize = math.floor(v + 0.5)
+        Apply()
+    end, "%.0f")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("bags_v4_gui_spacing", "Slot spacing"), layout.spacing or 4, 0, 10, 1, y, function(v)
+        layout.spacing = math.floor(v + 0.5)
+        Apply()
+    end, "%.0f")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("opt_skin_bags_scale", "Scale"), (appearance.scale or 1) * 100, 70, 140, 5, y, function(v)
+        appearance.scale = v / 100
+        Apply()
+    end, "%.0f%%")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("opt_skin_bags_opacity", "Opacity"), (appearance.alpha or 0.96) * 100, 25, 100, 5, y, function(v)
+        appearance.alpha = v / 100
+        Apply()
+    end, "%.0f%%")
+    y = ny
+
+    -- Sorting & search --------------------------------------------------
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+
+    local _, ny = W.CreateSegmentedControl(c, Loc("opt_skin_bags_sort_mode", "Visual sorting"), {
+        { text = Loc("bags_v4_sort_natural", "Bag order"), value = "natural" },
+        { text = Loc("bags_v4_sort_quality", "Quality"), value = "quality" },
+        { text = Loc("bags_v4_sort_name", "Name"), value = "name" },
+        { text = Loc("bags_v4_sort_ilvl", "Item level"), value = "ilvl" },
+    }, sorting.mode or "natural", y, function(v)
+        sorting.mode = v
+        Apply()
+    end, 2)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_search", "Search bar"), search.enabled ~= false, y, function(v)
+        search.enabled = v
+        Apply()
+    end)
+    y = ny
+
+    -- Item slots --------------------------------------------------------
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+
+    local qualityStyle = slots.qualityStyle
+    if qualityStyle ~= "tint" and qualityStyle ~= "border"
+        and qualityStyle ~= "both" and qualityStyle ~= "none" then
+        qualityStyle = (slots.qualityBorders == false) and "none" or "tint"
+    end
+
+    local _, ny = W.CreateSegmentedControl(c, Loc("bags_v4_quality_style", "Item quality"), {
+        { text = Loc("bags_v4_quality_tint", "Tinted slot"), value = "tint" },
+        { text = Loc("bags_v4_quality_border", "Coloured frame"), value = "border" },
+        { text = Loc("bags_v4_quality_both", "Both"), value = "both" },
+        { text = Loc("bags_v4_quality_none", "None"), value = "none" },
+    }, qualityStyle, y, function(v)
+        slots.qualityStyle = v
+        slots.qualityBorders = nil
+        Apply()
+    end, 2)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_show_ilvl", "Show item level"), slots.itemLevel ~= false, y, function(v)
+        slots.itemLevel = v
+        Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_show_empty", "Show empty slots"), slots.showEmpty ~= false, y, function(v)
+        slots.showEmpty = v
+        Apply()
+    end)
+    y = ny
+
+    -- Pinned / Recent ---------------------------------------------------
+    local _, ny = W.CreateSectionHeader(c, Loc("bags_v4_gui_sidebar", "Pinned & Recent"), y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("bags_v4_gui_pinned_max", "Pinned items"), sidebar.pinnedMax or 8, 2, 12, 1, y, function(v)
+        sidebar.pinnedMax = math.floor(v + 0.5)
+        Apply()
+    end, "%.0f")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, Loc("bags_v4_gui_recent_max", "Recent items"), sidebar.recentMax or 8, 2, 12, 1, y, function(v)
+        sidebar.recentMax = math.floor(v + 0.5)
+        Apply()
+    end, "%.0f")
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+-- =====================================
+-- TAB: OBJECTIVE TRACKER SKIN
+-- =====================================
+
+local function BuildObjectiveTrackerTab(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local y = -10
+
+    local _, ny = W.CreateSectionHeader(c, L["section_obj_tracker"], y)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_obj_tracker"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_enable"], TomoModForeverDB.objectiveTracker.enabled, y, function(v)
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.SetEnabled(v) end
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_bg_alpha"], TomoModForeverDB.objectiveTracker.bgAlpha, 0, 1, 0.05, y, function(v)
+        TomoModForeverDB.objectiveTracker.bgAlpha = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_border"], TomoModForeverDB.objectiveTracker.showBorder, y, function(v)
+        TomoModForeverDB.objectiveTracker.showBorder = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_hide_empty"], TomoModForeverDB.objectiveTracker.hideWhenEmpty, y, function(v)
+        TomoModForeverDB.objectiveTracker.hideWhenEmpty = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_buckets"], TomoModForeverDB.objectiveTracker.buckets, y, function(v)
+        TomoModForeverDB.objectiveTracker.buckets = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_header_size"], TomoModForeverDB.objectiveTracker.headerFontSize, 8, 20, 1, y, function(v)
+        TomoModForeverDB.objectiveTracker.headerFontSize = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_cat_size"], TomoModForeverDB.objectiveTracker.categoryFontSize, 8, 18, 1, y, function(v)
+        TomoModForeverDB.objectiveTracker.categoryFontSize = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_quest_size"], TomoModForeverDB.objectiveTracker.questFontSize, 8, 18, 1, y, function(v)
+        TomoModForeverDB.objectiveTracker.questFontSize = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_obj_size"], TomoModForeverDB.objectiveTracker.objectiveFontSize, 8, 16, 1, y, function(v)
+        TomoModForeverDB.objectiveTracker.objectiveFontSize = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_max_quests"], TomoModForeverDB.objectiveTracker.maxQuestsShown, 0, 25, 1, y, function(v)
+        TomoModForeverDB.objectiveTracker.maxQuestsShown = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+-- =====================================
+-- TAB: CHARACTER SKIN
+-- =====================================
+
+local function BuildGameMenuSkinTab(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local y = -10
+
+    local _, ny = W.CreateSectionHeader(c, L["sublabel_game_menu_skin"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_game_menu_skin_enable"], TomoModForeverDB.gameMenuSkin.enabled, y, function(v)
+        TomoModForeverDB.gameMenuSkin.enabled = v
+        if TomoMod_GameMenuSkin then TomoMod_GameMenuSkin.SetEnabled(v) end
+    end)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_game_menu_skin_reload"], y)
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+--[[local function BuildMailSkinTab(parent)
+    if _G.TomoMod_BuildMailSkinTab then
+        return _G.TomoMod_BuildMailSkinTab(parent)
+    end
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local _, ny = W.CreateInfoText(c, "Mail skin (configured in QOL > Skins).", -10)
+    c:SetHeight(60)
+    return scroll
+end]]
+
+-- =====================================================================
+-- TAB: TOOLTIP
+-- =====================================================================
+
+local function BuildTooltipSkinTab(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local y = -10
+
+    local _, ny = W.CreateSectionHeader(c, L["section_tooltip_skin"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_skin_enable"], TomoModForeverDB.tooltipSkin.enabled, y, function(v)
+        TomoModForeverDB.tooltipSkin.enabled = v
+        if TomoMod_TooltipSkin then TomoMod_TooltipSkin.SetEnabled(v) end
+    end)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_tooltip_skin_reload"], y)
+    y = ny
+
+    -- Background alpha
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSlider(c, L["opt_tooltip_bg_alpha"], (TomoModForeverDB.tooltipSkin.bgAlpha or 0.92) * 100, 0, 100, 5, y, function(v)
+        TomoModForeverDB.tooltipSkin.bgAlpha = v / 100
+    end, "%.0f%%")
+    y = ny
+
+    -- Border alpha
+    local _, ny = W.CreateSlider(c, L["opt_tooltip_border_alpha"], (TomoModForeverDB.tooltipSkin.borderAlpha or 0.8) * 100, 0, 100, 5, y, function(v)
+        TomoModForeverDB.tooltipSkin.borderAlpha = v / 100
+    end, "%.0f%%")
+    y = ny
+
+    -- Couleur du fond / de la bordure (configurable pour éviter que le fond se fonde dans le décor)
+    if not TomoModForeverDB.tooltipSkin.bgColor then TomoModForeverDB.tooltipSkin.bgColor = { r = 0.06, g = 0.06, b = 0.08 } end
+    local _, ny = W.CreateColorPicker(c, L["opt_tooltip_bg_color"], TomoModForeverDB.tooltipSkin.bgColor, y, function(r, g, b)
+        TomoModForeverDB.tooltipSkin.bgColor.r = r
+        TomoModForeverDB.tooltipSkin.bgColor.g = g
+        TomoModForeverDB.tooltipSkin.bgColor.b = b
+    end)
+    y = ny
+
+    if not TomoModForeverDB.tooltipSkin.borderColor then TomoModForeverDB.tooltipSkin.borderColor = { r = 0.20, g = 0.20, b = 0.24 } end
+    local _, ny = W.CreateColorPicker(c, L["opt_tooltip_border_color"], TomoModForeverDB.tooltipSkin.borderColor, y, function(r, g, b)
+        TomoModForeverDB.tooltipSkin.borderColor.r = r
+        TomoModForeverDB.tooltipSkin.borderColor.g = g
+        TomoModForeverDB.tooltipSkin.borderColor.b = b
+    end)
+    y = ny
+
+    -- Position de l'infobulle (defaut / souris / coin / personnalise)
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateDropdown(c, L["opt_tooltip_anchor"], {
+        { text = L["tooltip_anchor_default"],          value = "default" },
+        { text = L["tooltip_anchor_cursor"],          value = "cursor"  },
+        { text = L["tooltip_anchor_corner"], value = "corner"  },
+        { text = L["tooltip_anchor_custom"],    value = "custom"  },
+    }, TomoModForeverDB.tooltipSkin.anchor or "default", y, function(v)
+        TomoModForeverDB.tooltipSkin.anchor = v
+        if TomoMod_TooltipSkin and TomoMod_TooltipSkin.RefreshAnchor then TomoMod_TooltipSkin.RefreshAnchor() end
+    end)
+    y = ny
+
+    local _, ny = W.CreateDropdown(c, L["opt_tooltip_anchor_corner"], {
+        { text = L["corner_br"],  value = "BOTTOMRIGHT" },
+        { text = L["corner_bl"],  value = "BOTTOMLEFT"  },
+        { text = L["corner_tr"], value = "TOPRIGHT"    },
+        { text = L["corner_tl"], value = "TOPLEFT"     },
+    }, TomoModForeverDB.tooltipSkin.anchorCorner or "BOTTOMRIGHT", y, function(v)
+        TomoModForeverDB.tooltipSkin.anchorCorner = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_tooltip_anchor"], y)
+    y = ny
+
+    -- [FIX] Le repere teal restait affiche en permanence des que le mode
+    -- "Personnalise" etait choisi, meme en dehors de tout mode d'edition.
+    -- Il est desormais cache par defaut (comme les autres reperes de l'addon,
+    -- geres par le bouton Layout) ; ce bouton permet de l'afficher/masquer a
+    -- la demande sans avoir a ouvrir le panneau Layout complet.
+    local _, ny = W.CreateButton(c, L["btn_tooltip_toggle_anchor"], 220, y, function()
+        if TomoMod_TooltipSkin and TomoMod_TooltipSkin.ToggleLock then
+            TomoMod_TooltipSkin.ToggleLock()
+        end
+    end)
+    y = ny
+
+    -- Font size
+    local _, ny = W.CreateSlider(c, L["opt_tooltip_font_size"], TomoModForeverDB.tooltipSkin.fontSize or 12, 9, 18, 1, y, function(v)
+        TomoModForeverDB.tooltipSkin.fontSize = v
+    end)
+    y = ny
+
+    -- Hide health bar
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_hide_healthbar"], TomoModForeverDB.tooltipSkin.hideHealthBar, y, function(v)
+        TomoModForeverDB.tooltipSkin.hideHealthBar = v
+    end)
+    y = ny
+
+    -- Class color names
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_class_color"], TomoModForeverDB.tooltipSkin.useClassColorNames, y, function(v)
+        TomoModForeverDB.tooltipSkin.useClassColorNames = v
+    end)
+    y = ny
+
+    -- Hide server
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_hide_server"], TomoModForeverDB.tooltipSkin.hidePlayerServer, y, function(v)
+        TomoModForeverDB.tooltipSkin.hidePlayerServer = v
+    end)
+    y = ny
+
+    -- Hide title
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_hide_title"], TomoModForeverDB.tooltipSkin.hidePlayerTitle, y, function(v)
+        TomoModForeverDB.tooltipSkin.hidePlayerTitle = v
+    end)
+    y = ny
+
+    -- Guild name color
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_guild_color"], TomoModForeverDB.tooltipSkin.useGuildNameColor, y, function(v)
+        TomoModForeverDB.tooltipSkin.useGuildNameColor = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateColorPicker(c, L["opt_tooltip_guild_color_pick"], TomoModForeverDB.tooltipSkin.guildNameColor, y, function(r, g, b)
+        TomoModForeverDB.tooltipSkin.guildNameColor.r = r
+        TomoModForeverDB.tooltipSkin.guildNameColor.g = g
+        TomoModForeverDB.tooltipSkin.guildNameColor.b = b
+    end)
+    y = ny
+
+    -- ─────────────────────────────────────────────
+    -- Unit information (TooltipInfo)
+    -- ─────────────────────────────────────────────
+    local _, ny = W.CreateSeparator(c, y); y = ny
+    local _, ny = W.CreateSubLabel(c, L["sublabel_tooltip_info"], y); y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_unit_info"], TomoModForeverDB.tooltipSkin.showUnitInfo ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showUnitInfo = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_tooltip_unit_info"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_reaction_border"], TomoModForeverDB.tooltipSkin.reactionBorder ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.reactionBorder = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_color_level"], TomoModForeverDB.tooltipSkin.colorTooltipLevel ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.colorTooltipLevel = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_raid_marker"], TomoModForeverDB.tooltipSkin.showTooltipRaidMarker ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipRaidMarker = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_role_icon"], TomoModForeverDB.tooltipSkin.showTooltipRoleIcon ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipRoleIcon = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_class_icon"], TomoModForeverDB.tooltipSkin.showTooltipClassIcon, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipClassIcon = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["opt_tooltip_icon_size"], TomoModForeverDB.tooltipSkin.infoIconSize or 14, 8, 24, 1, y, function(v)
+        TomoModForeverDB.tooltipSkin.infoIconSize = v
+    end, "%.0f")
+    y = ny
+
+    local _, ny = W.CreateSeparator(c, y); y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_guild_rank"], TomoModForeverDB.tooltipSkin.showTooltipGuildRank ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipGuildRank = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_guild_rank_index"], TomoModForeverDB.tooltipSkin.showTooltipGuildRankIndex, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipGuildRankIndex = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_guild_realm"], TomoModForeverDB.tooltipSkin.showTooltipGuildRealm ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipGuildRealm = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_show_target"], TomoModForeverDB.tooltipSkin.showTooltipTarget ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipTarget = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_mythic_score"], TomoModForeverDB.tooltipSkin.showTooltipMythicScore ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipMythicScore = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_mount"], TomoModForeverDB.tooltipSkin.showTooltipMount ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipMount = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_speed"], TomoModForeverDB.tooltipSkin.showTooltipSpeed, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipSpeed = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_location"], TomoModForeverDB.tooltipSkin.showTooltipLocation, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipLocation = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_tooltip_location"], y)
+    y = ny
+
+    local _, ny = W.CreateSeparator(c, y); y = ny
+    local _, ny = W.CreateSubLabel(c, L["sublabel_tooltip_inspect"], y); y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_item_level"], TomoModForeverDB.tooltipSkin.showTooltipItemLevel ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipItemLevel = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_spec"], TomoModForeverDB.tooltipSkin.showTooltipSpec ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipSpec = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_spec_icon"], TomoModForeverDB.tooltipSkin.showTooltipSpecIcon ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.showTooltipSpecIcon = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["opt_tooltip_pending_text"], TomoModForeverDB.tooltipSkin.inspectPendingText ~= false, y, function(v)
+        TomoModForeverDB.tooltipSkin.inspectPendingText = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateInfoText(c, L["info_tooltip_inspect"], y)
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+-- =====================================================================
+-- MAIN PANEL ENTRY POINT
+-- =====================================================================
+
+function TomoMod_ConfigPanel_Skins(parent)
+    local tabs = {
+        { key = "chatframe",  label = L["tab_skin_chatframe"],  builder = function(p) return BuildChatFrameTab(p) end },
+        { key = "bags",       label = L["tab_skin_bags"],       builder = function(p) return BuildBagsTab(p) end },
+        { key = "objtracker", label = L["tab_skin_objtracker"], builder = function(p) return BuildObjectiveTrackerTab(p) end },
+        { key = "gamemenu",   label = L["tab_skin_gamemenu"],   builder = function(p) return BuildGameMenuSkinTab(p) end },
+        { key = "tooltip",    label = L["tab_skin_tooltip"],    builder = function(p) return BuildTooltipSkinTab(p) end },
+        --{ key = "mail",       label = L["tab_skin_mail"],       builder = function(p) return BuildMailSkinTab(p) end },
+    }
+
+    return W.CreateTabPanel(parent, tabs)
+end
+
+-- Clearing the stored history is destructive and irreversible, so it goes
+-- behind a confirmation rather than firing straight off the button.
+StaticPopupDialogs["TOMOMOD_CLEAR_CHAT_HISTORY"] = {
+    text = L["popup_chat_history_clear"],
+    button1 = L["popup_confirm"],
+    button2 = L["popup_cancel"],
+    OnAccept = function()
+        local n = 0
+        if TomoMod_ChatFrameSkin and TomoMod_ChatFrameSkin.ClearChatHistory then
+            n = TomoMod_ChatFrameSkin.ClearChatHistory() or 0
+        end
+        print("|cffffd100TomoModForever|r " .. string.format(L["msg_chat_history_cleared"], n))
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
