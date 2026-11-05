@@ -1,0 +1,111 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+
+    <!-- Modules: Minimap + InfoPanel -->
+    <Include file="Minimap\Minimap.lua" />
+    <Include file="Minimap\InfoPanel.lua"/>
+
+    <!-- CDM -->
+    <Include file="CooldownManager\CDMScanner.lua" />
+    <Include file="CooldownManager\CDMHolders.lua" />
+    <Include file="CooldownManager\CDMLayout.lua" />
+    <Include file="CooldownManager\CDMKeybinds.lua" />
+    <Include file="CooldownManager\CDMProcGlow.lua" />
+    <Include file="CooldownManager\CooldownManager.lua" />
+
+    <!-- CooldownForge (AstralForge Cooldown) -->
+    <Include file="CooldownForge\CDF_Core.lua" />
+    <Include file="CooldownForge\CDF_API.lua" />
+    <Include file="CooldownForge\CDF_Catalog.lua" />
+    <Include file="CooldownForge\CDF_Watch.lua" />
+    <Include file="CooldownForge\CDF_Skin.lua" />
+    <Include file="CooldownForge\CDF_Render.lua" />
+    <Include file="CooldownForge\CDF_Movers.lua" />
+    <Include file="CooldownForge\CDF_IO.lua" />
+
+    <!-- Modules: Auto -->
+    <Include file="Auto\AddonDetect.lua" />
+    <Include file="Auto\AutoVendorRepair.lua" />
+    <Include file="Auto\Fastloot.lua"/>
+    <Include file="Auto\HideTalkingHead.lua"/>
+    <Include file="Auto\HideCastBar.lua"/>
+    <Include file="Auto\CinematicSkip.lua"/>
+    <Include file="Auto\AutoAcceptInvite.lua"/>
+    <Include file="Auto\AutoSummon.lua"/>
+    <Include file="Auto\AutoFillDelete.lua"/>
+    <Include file="Auto\AutoSkipRole.lua"/>
+    <Include file="Auto\BagMicroMenu.lua"/>
+    <Include file="Auto\MerchantTools.lua"/>
+
+    <!-- Modules: AFK Display -->
+    <Include file="AFK\AFKDisplay.lua" />
+
+    <!-- Modules: Classes -->
+    <Include file="Classes\CompanionStatus.lua" />
+
+    <!-- Modules: Cursor -->
+    <Include file="Cursor\CursorRing.lua" />
+
+    <!-- Modules: Quest -->
+    <Include file="Quest\AutoQuest.lua" />
+    <Include file="Quest\ObjectiveTracker.lua" />
+
+    <!-- Modules: CVar Optimizer -->
+    <Include file="Optimizations\CVarOptimizer.lua" />
+
+    <!-- Modules: Leveling -->
+    <Include file="Leveling\LevelingBar.lua" />
+
+    <!-- Modules: FrameAnchors -->
+    <Include file="FrameAnchors\FrameAnchors.lua" />
+
+    <!-- Modules: LustSound -->
+    <Include file="LustSound\LustSound.lua" />
+
+    <!-- Modules: Combat -->
+    <Include file="Combat\CombatText.lua" />
+
+    <!-- Modules: Chat V4 (fresh implementation; old ChatFrameSkin/ChatCopy are not loaded) -->
+    <Include file="Chat\ChatLocale.lua" />
+    <Include file="Chat\ChatCore.lua" />
+    <Include file="Chat\ChatLayout.lua" />
+    <Include file="Chat\ChatMessages.lua" />
+    <Include file="Chat\ChatRenderer.lua" />
+    <Include file="Chat\ChatTabs.lua" />
+    <Include file="Chat\ChatInput.lua" />
+    <Include file="Chat\ChatCopy.lua" />
+    <Include file="Chat\ChatSidebar.lua" />
+    <Include file="Chat\ChatBridge.lua" />
+
+    <!-- Modules: Skins -->
+    <Include file="Skins\ColorPickerSkin.lua" />
+    <Include file="Skins\ReputationBar.lua" />
+
+    <!-- Modules: Bags V4 (fresh implementation; legacy Skins\BagSkin.lua is kept on disk but not loaded) -->
+    <Include file="Bags\BagCore.lua" />
+    <Include file="Bags\BagData.lua" />
+    <Include file="Bags\BagLayout.lua" />
+    <Include file="Bags\BagSlots.lua" />
+    <Include file="Bags\BagSidebar.lua" />
+    <Include file="Bags\BagSearch.lua" />
+    <Include file="Bags\BagBridge.lua" />
+
+    <Include file="Skins\GameMenuSkin.lua" />
+    <Include file="Skins\BlizzardAuraFrames.lua" />
+    <Include file="Skins\TooltipSkin.lua" />
+    <Include file="Skins\TooltipInspect.lua" />
+    <Include file="Skins\TooltipInfo.lua" />
+    <Include file="Skins\GroupManagerSkin.lua" />
+    <!-- Modules: Waypoint (In-world navigation — /tm way) -->
+    <Include file="Waypoint\Waypoint.lua" />
+
+    <!-- Modules: Diagnostics (Error Capture & Report — /tmdiag) -->
+    <Include file="Diagnostics\Diagnostics.lua" />
+
+    <!-- Modules: RareAlert (Alerte de proximité des rares — vignettes) -->
+    <Include file="RareAlert\RareAlert.lua" />
+
+    <!-- Modules: Movers (Layout System — doit être en dernier) -->
+    <Include file="Movers\Movers.lua" />
+
+</Ui>

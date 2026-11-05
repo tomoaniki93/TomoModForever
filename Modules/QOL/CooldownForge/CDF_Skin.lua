@@ -1,0 +1,280 @@
+-- =====================================================================
+-- CooldownForge -- Skin (S0). Parametric per-bar visual style: three
+-- named presets ("net", "tomo", "verre") over eight axes. Class color
+-- is resolved at apply time and never stored, so an exported bar stays
+-- portable across classes. desatOnCooldown is an independent toggle
+-- (available on every preset, does not flip the bar to "custom").
+-- Display-only: no secret values, no protected frames.
+-- =====================================================================
+
+local CDF = TomoMod_CooldownForge
+if not CDF then return end
+
+local BRAND = { 0.788, 0.635, 0.322 }
+
+CDF.SKIN_TEX = {
+    mask_soft   = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\cdf\\mask_corner_soft.tga",
+    mask_round  = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\cdf\\mask_corner_round.tga",
+    shadow_soft = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\cdf\\shadow_soft.tga",
+}
+
+CDF.SKIN_AXES = {
+    "border", "corners", "swipe", "timer",
+    "badge", "desatOnCooldown", "shadow", "stackPos",
+    -- [S7] fine axes (default nil in presets -> resolved defaults below)
+    "opacity", "timerColor",
+    -- [S9] castability tint; see CDF.UNUSABLE_MODES. "off" on every preset
+    -- so no existing bar changes appearance.
+    "unusableMode",
+    -- [H1] Active-state visuals. Now that tracked buffs render, "the buff is
+    -- up" and "the spell is recharging" both showed as a plain icon: these two
+    -- axes are what tells them apart. "off" on every preset, so nothing
+    -- existing changes look.
+    "activeSwipe", "activeBorder",
+}
+
+-- Both axes accept the same modes: off, the class colour, or a custom one.
+CDF.ACTIVE_MODES = { off = true, class = true, custom = true }
+
+-- CooldownForge hotkeys are part of the visual style, but intentionally not
+-- a SKIN_AXIS: presets should never switch them on behind the player's back.
+-- Keeping them in bar.style means CopyStyle/import/duplicate carry them
+-- automatically without a schema migration.
+CDF.HOTKEY_POINTS = {
+    TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true,
+}
+CDF.HOTKEY_OUTLINES = { none = true, OUTLINE = true, THICKOUTLINE = true }
+CDF.HOTKEY_SIZE_MIN, CDF.HOTKEY_SIZE_MAX = 8, 24
+CDF.HOTKEY_OFFSET_MIN, CDF.HOTKEY_OFFSET_MAX = -30, 30
+
+local function hkClamp(v, lo, hi, fallback)
+    v = tonumber(v)
+    if v == nil then v = fallback end
+    if v < lo then return lo end
+    if v > hi then return hi end
+    return v
+end
+
+function CDF.ResolveHotkeyStyle(bar)
+    local style = (bar and bar.style) or {}
+    local hk = type(style.hotkey) == "table" and style.hotkey or {}
+    local point = CDF.HOTKEY_POINTS[hk.point] and hk.point or "TOPRIGHT"
+    local outline = CDF.HOTKEY_OUTLINES[hk.outline] and hk.outline or "OUTLINE"
+    local color = hk.color
+    if type(color) ~= "table" or tonumber(color[1]) == nil then
+        color = { 0.95, 0.97, 1.00, 1 }
+    end
+
+    return {
+        enabled = hk.enabled == true,
+        font = (type(hk.font) == "string" and hk.font ~= "") and hk.font or nil,
+        size = hkClamp(hk.size, CDF.HOTKEY_SIZE_MIN, CDF.HOTKEY_SIZE_MAX, 10),
+        outline = outline,
+        point = point,
+        x = hkClamp(hk.x, CDF.HOTKEY_OFFSET_MIN, CDF.HOTKEY_OFFSET_MAX, 0),
+        y = hkClamp(hk.y, CDF.HOTKEY_OFFSET_MIN, CDF.HOTKEY_OFFSET_MAX, 0),
+        color = {
+            hkClamp(color[1], 0, 1, 0.95),
+            hkClamp(color[2], 0, 1, 0.97),
+            hkClamp(color[3], 0, 1, 1.00),
+            hkClamp(color[4], 0, 1, 1),
+        },
+    }
+end
+
+CDF.SKIN_PRESETS = {
+    net = {
+        opacity = 1,
+        timerColor = { 1, 1, 1 },
+        border  = { mode = "flat", color = { 0, 0, 0 }, thickness = 1 },
+        corners = "sharp",
+        swipe   = { mode = "dark" },
+        timer   = { pos = "center", size = 14 },
+        badge   = false,
+        desatOnCooldown = false,
+        shadow  = false,
+        stackPos = "BOTTOMRIGHT",
+        unusableMode = "off",
+    },
+    tomo = {
+        opacity = 1,
+        timerColor = nil,   -- nil = accent/class-driven default in render
+        border  = { mode = "class", thickness = 1 },
+        corners = "soft",
+        swipe   = { mode = "class" },
+        timer   = { pos = "badge", size = 10 },
+        badge   = true,
+        desatOnCooldown = false,
+        shadow  = false,
+        stackPos = "TOPRIGHT",
+        unusableMode = "off",
+    },
+    verre = {
+        opacity = 1,
+        timerColor = { 1, 1, 1 },
+        border  = { mode = "flat", color = { 1, 1, 1, 0.10 }, thickness = 1 },
+        corners = "round",
+        swipe   = { mode = "verre" },
+        timer   = { pos = "center", size = 15 },
+        badge   = false,
+        desatOnCooldown = true,
+        shadow  = true,
+        stackPos = "BOTTOMRIGHT",
+        unusableMode = "off",
+    },
+}
+
+-- ---------------------------------------------------------------------
+-- Color resolution
+-- ---------------------------------------------------------------------
+-- [L1] delegated to Forge.Util (brand fallback keeps the headless
+-- self-test standalone).
+function CDF.ClassColor()
+    local F = TomoMod_Forge
+    if F and F.Util then return F.Util.ClassColor() end
+    return BRAND[1], BRAND[2], BRAND[3]
+end
+
+-- mode: "class" (player class color) | "bar" (explicit color) | anything
+-- else falls back to `color` then to the provided fallback.
+function CDF.ResolveTint(mode, color, fr, fg, fb)
+    if mode == "class" then return CDF.ClassColor() end
+    if mode == "bar" and color then
+        return color[1] or 1, color[2] or 1, color[3] or 1, color[4]
+    end
+    if color then
+        return color[1] or 0, color[2] or 0, color[3] or 0, color[4]
+    end
+    return fr or 0, fg or 0, fb or 0
+end
+
+-- ---------------------------------------------------------------------
+-- Style normalization / resolution
+-- ---------------------------------------------------------------------
+-- Bounds for the border thickness slider, exported so an editor can never
+-- offer a value the engine would rewrite underneath it.
+CDF.BORDER_THICKNESS_MIN, CDF.BORDER_THICKNESS_MAX = 1, 10
+
+-- Ensure bar.style exists and that `preset` names a real preset. Note that
+-- "custom" is NOT one: it is a legacy sentinel, migrated away below.
+function CDF.NormalizeStyle(bar)
+    if type(bar) ~= "table" then return end
+    bar.style = bar.style or {}
+    local st = bar.style
+
+    -- `preset` names the BASE the fine settings sit on top of. It used to be
+    -- overwritten with the sentinel "custom" the moment any fine setting was
+    -- touched, and since there is no "custom" entry in SKIN_PRESETS,
+    -- ResolveStyle fell back to tomo -- so picking a border colour on a Net or
+    -- Verre bar silently rebased the whole icon to Tomo. The customisation is
+    -- now a separate flag and the base is preserved.
+    if st.preset == "custom" then
+        st.preset = "tomo"          -- what "custom" actually resolved to
+        st.customized = true
+    end
+    if not CDF.SKIN_PRESETS[st.preset] then
+        st.preset = "tomo"
+    end
+    st.customized = st.customized and true or nil
+
+    for _, axis in ipairs({ "activeSwipe", "activeBorder" }) do
+        local a = st[axis]
+        if type(a) == "table" then
+            if not CDF.ACTIVE_MODES[a.mode] then a.mode = nil end
+            if a.mode == nil or a.mode == "off" then st[axis] = nil end
+        elseif a ~= nil then
+            st[axis] = nil
+        end
+    end
+
+    if st.border and st.border.thickness ~= nil then
+        local t = tonumber(st.border.thickness) or 1
+        if t < CDF.BORDER_THICKNESS_MIN then t = CDF.BORDER_THICKNESS_MIN end
+        if t > CDF.BORDER_THICKNESS_MAX then t = CDF.BORDER_THICKNESS_MAX end
+        st.border.thickness = t
+    end
+    -- [S9] drop an unknown castability mode rather than storing it; nil
+    -- falls back to the preset value in ResolveStyle.
+    if st.unusableMode ~= nil and not (CDF.UNUSABLE_MODES or {})[st.unusableMode] then
+        st.unusableMode = nil
+    end
+    return bar.style
+end
+
+-- Axes whose preset value is a table of independent fields. An override on
+-- one field must not discard the others.
+CDF.SKIN_TABLE_AXES = { border = true, swipe = true, timer = true,
+                        activeSwipe = true, activeBorder = true }
+
+-- Effective style: preset defaults overlaid with the bar's explicit
+-- per-axis overrides. `st.preset` always names a real preset by the time this
+-- runs (NormalizeStyle guarantees it), so the fallback below is a guard, not
+-- the path a customised bar takes -- that was the "custom" sentinel bug.
+--
+-- Table axes are merged FIELD BY FIELD. Replacing them wholesale was a real
+-- defect: the studio writes one field at a time (`bar.style.border.thickness
+-- = v`), so moving the thickness slider left border = { thickness = 3 } with
+-- no `mode`, and the renderer's `if bd and bd.mode` branch then took its
+-- else path and called SetBackdrop(nil) — the outline vanished instead of
+-- getting thicker. Changing only the colour did the same, and changing only
+-- the mode silently reset the thickness to 1.
+function CDF.ResolveStyle(bar)
+    local st = (bar and bar.style) or {}
+    local base = CDF.SKIN_PRESETS[st.preset] or CDF.SKIN_PRESETS.tomo
+    local eff = {}
+    for _, axis in ipairs(CDF.SKIN_AXES) do
+        local v = st[axis]
+        local b = base[axis]
+        if CDF.SKIN_TABLE_AXES[axis] and type(v) == "table" and type(b) == "table" then
+            local merged = {}
+            for k, bv in pairs(b) do merged[k] = bv end
+            for k, ov in pairs(v) do merged[k] = ov end
+            v = merged
+        elseif v == nil then
+            v = b
+        end
+        eff[axis] = v
+    end
+    return eff
+end
+
+-- ---------------------------------------------------------------------
+-- Pixel-perfect helper: n physical pixels expressed in UI units for a
+-- frame living under UIParent (PanelPP idea, scoped to CDF).
+-- ---------------------------------------------------------------------
+-- [L1] delegated to Forge.Util.
+function CDF.Px(n)
+    local F = TomoMod_Forge
+    if F and F.Util then return F.Util.Px(n) end
+    return n or 1
+end
+
+-- ---------------------------------------------------------------------
+-- Headless self-test (dev):
+--   /script print(TomoMod_CooldownForge.__skinSelfTest())
+-- ---------------------------------------------------------------------
+function CDF.__skinSelfTest()
+    local ok, fail = 0, 0
+    local function check(cond)
+        if cond then ok = ok + 1 else fail = fail + 1 end
+    end
+    for _, p in pairs(CDF.SKIN_PRESETS) do
+        for _, axis in ipairs(CDF.SKIN_AXES) do
+            check(p[axis] ~= nil)
+        end
+        check(type(p.border) == "table" and p.border.mode ~= nil)
+        check(type(p.timer) == "table" and p.timer.pos and p.timer.size)
+    end
+    local eff = CDF.ResolveStyle({ style = { preset = "net", badge = true } })
+    check(eff.badge == true)          -- explicit override wins
+    check(eff.corners == "sharp")     -- preset default kept
+    local eff2 = CDF.ResolveStyle({})
+    check(eff2.corners == "soft")     -- fallback preset = tomo
+    local nb = { style = { preset = "wat" } }
+    CDF.NormalizeStyle(nb)
+    check(nb.style.preset == "tomo")  -- unknown preset normalized
+    local r, g, b = CDF.ClassColor()
+    check(r and g and b)
+    check(CDF.Px(1) > 0)
+    return string.format("CDF skin self-test: %d ok / %d fail", ok, fail), fail == 0
+end
