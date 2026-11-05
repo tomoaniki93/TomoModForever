@@ -73,13 +73,16 @@ end
 --------------------------------------------------
 -- HARD FILTER: does this spec EVER use a companion?
 --------------------------------------------------
+local _GetSpecInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+local _GetSpec = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
+
 local function PlayerUsesCompanion()
     local _, class = UnitClass("player")
     -- Forever may omit the retail specialization API entirely.
-    if not GetSpecialization or not GetSpecializationInfo then return false end
-    local spec = GetSpecialization()
+    if not _GetSpec or not _GetSpecInfo then return false end
+    local spec = _GetSpec()
     if not spec then return false end
-    local specID = GetSpecializationInfo(spec)
+    local specID = _GetSpecInfo(spec)
 
     if class == "HUNTER" then
         return specID == 253 or specID == 255

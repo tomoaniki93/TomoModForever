@@ -140,11 +140,13 @@ local function EntryDesc(e)
     return who .. "  -  " .. spec .. mode .. tal
 end
 
+local _GetSpecInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+
 local function SpecOptions(class)
     local opts = { { text = "Toutes spes", value = 0 } }
-    if class == (CDF and CDF.PlayerClass()) and GetNumSpecializations then
+    if class == (CDF and CDF.PlayerClass()) and GetNumSpecializations and _GetSpecInfo then
         for i = 1, (GetNumSpecializations() or 0) do
-            local id, name = GetSpecializationInfo(i)
+            local id, name = _GetSpecInfo(i)
             if id then opts[#opts + 1] = { text = name or ("Spe " .. i), value = id } end
         end
     end

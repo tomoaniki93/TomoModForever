@@ -174,10 +174,12 @@ local function PlayerProfile()
 
     local _, classFile = UnitClass("player")
     local specID, specName
-    if GetSpecialization and GetSpecializationInfo then
-        local okIndex, specIndex = pcall(GetSpecialization)
+    local getSpec = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
+    local getInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+    if getSpec and getInfo then
+        local okIndex, specIndex = pcall(getSpec)
         if okIndex and Safe(specIndex) and specIndex then
-            local okSpec, id, sName = pcall(GetSpecializationInfo, specIndex)
+            local okSpec, id, sName = pcall(getInfo, specIndex)
             if okSpec then
                 if Safe(id) then specID = id end
                 if Safe(sName) then specName = sName end

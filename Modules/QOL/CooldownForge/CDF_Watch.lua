@@ -18,7 +18,8 @@ function CDF.CurrentSpecID()
     local getIdx = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
     local idx = getIdx and getIdx()
     if not idx then return 0 end
-    local id = GetSpecializationInfo and GetSpecializationInfo(idx)
+    local getInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+    local id = getInfo and getInfo(idx)
     return id or 0
 end
 

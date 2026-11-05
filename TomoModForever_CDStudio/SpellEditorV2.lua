@@ -50,13 +50,16 @@ local function writeColor(arr, r, g, b)
     arr[1], arr[2], arr[3] = r, g, b
 end
 
+local _GetSpecInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+local _GetSpec = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
+
 local function SpecOptions(class)
     local opts = {
         { text = Loc("cds_v2_all_specs", "All specializations"), value = 0 },
     }
-    if class == CDF.PlayerClass() and GetNumSpecializations then
+    if class == CDF.PlayerClass() and GetNumSpecializations and _GetSpecInfo then
         for i = 1, (GetNumSpecializations() or 0) do
-            local id, name = GetSpecializationInfo(i)
+            local id, name = _GetSpecInfo(i)
             if id then
                 opts[#opts + 1] = { text = name or ("Spec " .. i), value = id }
             end
@@ -1303,9 +1306,9 @@ local function CurrentContext()
 end
 
 local function CurrentSpec()
-    local idx = GetSpecialization and GetSpecialization()
-    if not idx then return 0, nil end
-    local id, name = GetSpecializationInfo(idx)
+    local idx = _GetSpec and _GetSpec()
+    if not idx or not _GetSpecInfo then return 0, nil end
+    local id, name = _GetSpecInfo(idx)
     return tonumber(id) or 0, name
 end
 

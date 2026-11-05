@@ -1051,11 +1051,14 @@ local function SortSpells(group)
     end)
 end
 
+local _GetSpecInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+local _GetSpec = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
+
 local function ActiveSpecID()
-    if not (GetSpecialization and GetSpecializationInfo) then return 0 end
-    local idx = GetSpecialization()
+    if not (_GetSpec and _GetSpecInfo) then return 0 end
+    local idx = _GetSpec()
     if not idx then return 0 end
-    return tonumber((GetSpecializationInfo(idx))) or 0
+    return tonumber((_GetSpecInfo(idx))) or 0
 end
 
 local function GroupForLiveScan(data, group, activeSpecID)

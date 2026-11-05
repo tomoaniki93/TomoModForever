@@ -111,9 +111,9 @@ local function SelfData()
     local overall, equipped = SafeCall(GetAverageItemLevel)
     data.ilvl = SafeNum(equipped) or SafeNum(overall)
 
-    local idx = SafeNum(SafeCall(GetSpecialization))
+    local idx = SafeNum(SafeCall((C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization))
     if idx and idx > 0 then
-        local specID = SafeNum(SafeCall(GetSpecializationInfo, idx))
+        local specID = SafeNum(SafeCall((C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo, idx))
         local spec = SpecFromID(specID)
         if spec then
             data.specID, data.specName, data.specIcon =

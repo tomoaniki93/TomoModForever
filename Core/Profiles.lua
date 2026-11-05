@@ -170,11 +170,15 @@ end
 -- SPEC HELPERS
 -- =====================================
 
+local _GetSpecInfo = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or GetSpecializationInfo
+local _GetSpec = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
+
 function P.GetAllSpecs()
     local specs = {}
     local numSpecs = GetNumSpecializations and GetNumSpecializations() or 0
+    if not _GetSpecInfo then return specs end
     for i = 1, numSpecs do
-        local id, name, _, icon, role = GetSpecializationInfo(i)
+        local id, name, _, icon, role = _GetSpecInfo(i)
         if id then
             table.insert(specs, { index = i, id = id, name = name, icon = icon, role = role })
         end
@@ -183,9 +187,9 @@ function P.GetAllSpecs()
 end
 
 function P.GetCurrentSpecID()
-    local idx = GetSpecialization and GetSpecialization()
-    if not idx then return 0 end
-    local id = GetSpecializationInfo(idx)
+    local idx = _GetSpec and _GetSpec()
+    if not idx or not _GetSpecInfo then return 0 end
+    local id = _GetSpecInfo(idx)
     return id or 0
 end
 
