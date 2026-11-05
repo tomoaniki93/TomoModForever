@@ -227,55 +227,6 @@ local function BuildAutomationsTab(parent)
 end
 
 -- =====================================
--- Tab: Leveling Bar
--- =====================================
-
-local function BuildLevelingTab(parent)
-    local scroll = W.CreateScrollPanel(parent)
-    local c = scroll.child
-    local y = -10
-
-    local _, ny = W.CreateSectionHeader(c, L["section_leveling_bar"], y)
-    y = ny
-
-    local _, ny = W.CreateCheckbox(c, L["opt_leveling_enable"],
-        TomoModForeverDB.levelingBar and TomoModForeverDB.levelingBar.enabled or false, y, function(v)
-        if not TomoModForeverDB.levelingBar then TomoModForeverDB.levelingBar = {} end
-        TomoModForeverDB.levelingBar.enabled = v
-        if TomoMod_LevelingBar then TomoMod_LevelingBar.SetEnabled(v) end
-    end)
-    y = ny
-
-    local _, ny = W.CreateSlider(c, L["opt_leveling_width"],
-        TomoModForeverDB.levelingBar and TomoModForeverDB.levelingBar.width or 500, 300, 800, 10, y, function(v)
-        if not TomoModForeverDB.levelingBar then TomoModForeverDB.levelingBar = {} end
-        TomoModForeverDB.levelingBar.width = v
-        if TomoMod_LevelingBar then TomoMod_LevelingBar.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateSlider(c, L["opt_leveling_height"],
-        TomoModForeverDB.levelingBar and TomoModForeverDB.levelingBar.height or 28, 18, 50, 1, y, function(v)
-        if not TomoModForeverDB.levelingBar then TomoModForeverDB.levelingBar = {} end
-        TomoModForeverDB.levelingBar.height = v
-        if TomoMod_LevelingBar then TomoMod_LevelingBar.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateButton(c, L["btn_reset_leveling_pos"], 180, y, function()
-        if TomoModForeverDB.levelingBar then
-            TomoModForeverDB.levelingBar.position = nil
-        end
-        if TomoMod_LevelingBar then TomoMod_LevelingBar.SetPosition() end
-    end)
-    y = ny
-
-    c:SetHeight(math.abs(y) + 20)
-    if scroll.UpdateScroll then scroll.UpdateScroll() end
-    return scroll
-end
-
--- =====================================
 -- TAB: CVAR OPTIMIZER
 -- =====================================
 
@@ -903,7 +854,6 @@ function TomoMod_ConfigPanel_QOL(parent)
         { key = "autoquest",    label = L["tab_qol_auto_quest"],   builder = function(p) return BuildAutoQuestTab(p) end },
         { key = "automations",  label = L["tab_qol_automations"],  builder = function(p) return BuildAutomationsTab(p) end },
         { key = "bagmicro",     label = L["tab_qol_bag_micro"],    builder = function(p) return BuildBagMicroMenuTab(p) end },
-        { key = "leveling",     label = L["tab_qol_leveling"],     builder = function(p) return BuildLevelingTab(p) end },
         { key = "cvaropt",      label = L["tab_qol_cvar_opt"],     builder = function(p) return BuildCVarOptimizerTab(p) end },
         { key = "waypoint",    label = L["tab_qol_waypoint"],       builder = function(p) return BuildWaypointTab(p) end },
         { key = "merchant",    label = L["tab_qol_merchant_tools"], builder = function(p) return BuildMerchantToolsTab(p) end },

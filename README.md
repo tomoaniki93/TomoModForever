@@ -4,7 +4,7 @@
 
 **TomoModForever** is a streamlined edition of TomoMod built for **World of Warcraft: Forever**. It keeps the TomoMod interface (unit frames, party and raid frames, nameplates, castbars, resources, cooldowns, chat, bags, damage meter, skins and quality-of-life tools) and leaves out every module Forever has no use for.
 
-**Author:** TomoAniki · **Interface:** 16001 · **Version:** 1.0.1
+**Author:** TomoAniki · **Interface:** 16001 · **Version:** 1.1.0
 
 ## Installation
 
@@ -12,10 +12,6 @@ Copy these folders into the Forever client's `Interface\AddOns\` folder:
 
 - `TomoModForever`
 - `TomoModForever_Options`
-- `TomoModForever_AstralForge`
-- `TomoModForever_CDStudio`
-- `TomoModForever_GroupStudio`
-- `TomoModForever_ResourceCastStudio`
 
 Do not enable TomoMod and TomoModForever at the same time: they share their Lua globals. Settings are stored separately (`TomoModForeverDB`).
 

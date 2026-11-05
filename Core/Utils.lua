@@ -1019,3 +1019,110 @@ function U.DumpTable(tbl, indent)
         end
     end
 end
+
+-- =====================================
+-- ANIMATION HELPERS (1.1.0)
+-- =====================================
+-- Built on the client's AnimationGroup system: the work runs C-side, costs
+-- nothing between frames, and alpha / translation / scale / rotation on an
+-- insecure region or frame are allowed at any time, combat included.
+-- Each helper creates its group once per target and replays it.
+
+--- Looping alpha breathing between `lo` and `hi`. Returns the group;
+--- :Play() / :Stop() it. The target keeps `hi` when stopped.
+function U.Pulse(region, lo, hi, period)
+    if not (region and region.CreateAnimationGroup) then return nil end
+    local ag = region._tmPulse
+    if ag then return ag end
+    ag = region:CreateAnimationGroup()
+    ag:SetLooping("BOUNCE")
+    local a = ag:CreateAnimation("Alpha")
+    a:SetFromAlpha(hi or 1)
+    a:SetToAlpha(lo or 0.25)
+    a:SetDuration((period or 1) / 2)
+    a:SetSmoothing("IN_OUT")
+    region._tmPulse = ag
+    return ag
+end
+
+--- A short horizontal shake (interrupted cast, error).
+function U.Shake(frame, px, duration)
+    if not (frame and frame.CreateAnimationGroup) then return end
+    local ag = frame._tmShake
+    if not ag then
+        ag = frame:CreateAnimationGroup()
+        px = px or 5
+        local steps = { px, -2 * px, 2 * px, -2 * px, px }
+        local d = (duration or 0.3) / #steps
+        for i, dx in ipairs(steps) do
+            local t = ag:CreateAnimation("Translation")
+            t:SetOffset(dx, 0)
+            t:SetDuration(d)
+            t:SetOrder(i)
+        end
+        frame._tmShake = ag
+    end
+    if ag:IsPlaying() then ag:Stop() end
+    ag:Play()
+end
+
+--- Grows to `scale` and settles back: a "pop" for badges and icons.
+function U.Pop(region, scale, duration)
+    if not (region and region.CreateAnimationGroup) then return end
+    local ag = region._tmPop
+    if not ag then
+        ag = region:CreateAnimationGroup()
+        local up = ag:CreateAnimation("Scale")
+        up:SetScaleFrom(1, 1)
+        up:SetScaleTo(scale or 1.4, scale or 1.4)
+        up:SetDuration((duration or 0.4) * 0.4)
+        up:SetSmoothing("OUT")
+        up:SetOrder(1)
+        local down = ag:CreateAnimation("Scale")
+        down:SetScaleFrom(scale or 1.4, scale or 1.4)
+        down:SetScaleTo(1, 1)
+        down:SetDuration((duration or 0.4) * 0.6)
+        down:SetSmoothing("IN_OUT")
+        down:SetOrder(2)
+        region._tmPop = ag
+    end
+    if ag:IsPlaying() then ag:Stop() end
+    ag:Play()
+end
+
+--- Fades in while gliding into place from (dx, dy) away.
+--- Translation offsets are relative and revert when the group ends, so the
+--- group jumps out instantly (order 1, zero duration) and travels back by
+--- the opposite offset (order 2): the frame finishes exactly where it was.
+function U.SlideIn(frame, dx, dy, duration)
+    if not (frame and frame.CreateAnimationGroup) then return end
+    dx, dy, duration = dx or 0, dy or 0, duration or 0.18
+    local ag = frame._tmSlide
+    if not ag then
+        ag = frame:CreateAnimationGroup()
+        local out = ag:CreateAnimation("Translation")
+        out:SetDuration(0)
+        out:SetOrder(1)
+        local hide = ag:CreateAnimation("Alpha")
+        hide:SetFromAlpha(0)
+        hide:SetToAlpha(0)
+        hide:SetDuration(0)
+        hide:SetOrder(1)
+        local back = ag:CreateAnimation("Translation")
+        back:SetSmoothing("OUT")
+        back:SetOrder(2)
+        local fade = ag:CreateAnimation("Alpha")
+        fade:SetFromAlpha(0)
+        fade:SetToAlpha(1)
+        fade:SetSmoothing("OUT")
+        fade:SetOrder(2)
+        ag._out, ag._back, ag._fade = out, back, fade
+        frame._tmSlide = ag
+    end
+    ag._out:SetOffset(dx, dy)
+    ag._back:SetOffset(-dx, -dy)
+    ag._back:SetDuration(duration)
+    ag._fade:SetDuration(duration)
+    if ag:IsPlaying() then ag:Stop() end
+    ag:Play()
+end

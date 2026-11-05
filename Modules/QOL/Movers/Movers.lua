@@ -83,7 +83,7 @@ local LAYOUT_ROUTES = {
     { "^TomoMod_BattleRezCounter",       "raidframes" },
 
     -- Recharges
-    { "^TomoModCDM_",                    "resources" },
+    { "^TomoModCDM_",                    "cdm" },
 
     -- Habillages
     { "^TomoModObjectiveTrackerMover",   "skins" },
@@ -106,7 +106,9 @@ local LAYOUT_ROUTES = {
     { "^TomoMod_ZoneBar",                "general" },
 
     -- Confort : pages dediees
-    { "^TomoMod_LevelingBar",            { category = "comfort", page = "leveling" } },
+    { "^TomoMod_EdgeXPBar",              "xpedge" },
+    { "^TomoMod_CampfireHUD",            "campfire" },
+    { "^TomoMod_MissingBuff",            "missingbuffs" },
     { "^TomoMod_AFKDisplayFrame",        { category = "comfort", page = "automations" } },
     { "^TomoMod_RareAlertBanner",        { category = "comfort", page = "automations" } },
     { "^TomoMod_WaypointRoot",           { category = "comfort", page = "automations" } },
@@ -324,16 +326,6 @@ local function BuildEntries()
         isActive = function() return TomoModForeverDB and TomoModForeverDB.resourceBars and TomoModForeverDB.resourceBars.enabled end,
     })
     table.insert(moduleEntries, {
-        label    = L["mover_levelingbar"],
-        unlock   = function()
-            if TomoMod_LevelingBar and TomoMod_LevelingBar.IsLocked and TomoMod_LevelingBar.IsLocked() then TomoMod_LevelingBar.ToggleLock() end
-        end,
-        lock     = function()
-            if TomoMod_LevelingBar and TomoMod_LevelingBar.IsLocked and not TomoMod_LevelingBar.IsLocked() then TomoMod_LevelingBar.ToggleLock() end
-        end,
-        isActive = function() return TomoModForeverDB and TomoModForeverDB.levelingBar and TomoModForeverDB.levelingBar.enabled end,
-    })
-    table.insert(moduleEntries, {
         label    = L["mover_anchors"],
         unlock   = function()
             if TomoMod_FrameAnchors and TomoMod_FrameAnchors.IsLocked and TomoMod_FrameAnchors.IsLocked() then TomoMod_FrameAnchors.ToggleLock() end
@@ -452,7 +444,6 @@ end
 
 local function PatchIsLocked()
     local patches = {
-        { TomoMod_LevelingBar,      "IsLocked" },
         { TomoMod_FrameAnchors,     "IsLocked" },
         { TomoMod_ResourceBars,     "IsLocked" },
         { TomoMod_BossFrames,       "IsLocked" },

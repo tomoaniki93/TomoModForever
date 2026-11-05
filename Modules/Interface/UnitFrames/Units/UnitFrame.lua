@@ -50,6 +50,83 @@ local raidIconCoords = {
 -- SetMinMaxValues/SetValue sont C-side et acceptent les secret numbers TWW.
 -- =====================================
 
+-- =====================================
+-- ANIMATIONS (1.1.0)
+-- =====================================
+local function IsSecret(v)
+    return TomoMod_Utils and TomoMod_Utils.IsSecret and TomoMod_Utils.IsSecret(v) or false
+end
+
+-- Damage trail: catch up 0.4 s after the last change, eased C-side. A new
+-- unit in the frame (target swap) snaps instead of draining from the old
+-- unit's health.
+local function UpdateHealthTrail(frame, unit, current, max)
+    local trail = frame.health and frame.health.trail
+    if not (trail and trail:IsShown()) then return end
+    trail:SetMinMaxValues(0, max)
+    local ok, guid = pcall(UnitGUID, unit)
+    local same = ok and not IsSecret(guid) and guid == trail._guid
+    if not same then
+        trail._guid = (ok and not IsSecret(guid)) and guid or nil
+        trail:SetValue(current)
+        return
+    end
+    trail._target = current
+    if trail._queued then return end
+    trail._queued = true
+    C_Timer.After(0.4, function()
+        trail._queued = false
+        local interp = Enum and Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.ExponentialEaseOut
+        if interp then
+            local okSet = pcall(trail.SetValue, trail, trail._target, interp)
+            if not okSet then trail:SetValue(trail._target) end
+        else
+            trail:SetValue(trail._target)
+        end
+    end)
+end
+
+-- Low health: a red frame breathes around the player frame under the
+-- threshold. Needs readable numbers; when the client hides them the
+-- warning simply stays off rather than guessing.
+local function UpdateLowHealth(frame, current, max)
+    local db = TomoModForeverDB.unitFrames
+    local on = false
+    if db.lowHealthPulse ~= false and not IsSecret(current) and not IsSecret(max)
+        and type(current) == "number" and type(max) == "number" and max > 0 and current > 0 then
+        on = (current / max * 100) <= (db.lowHealthPct or 30)
+    end
+    local glow = frame._tmLowGlow
+    if not glow then
+        if not on then return end
+        glow = CreateFrame("Frame", nil, frame)
+        glow:SetPoint("TOPLEFT", -4, 4)
+        glow:SetPoint("BOTTOMRIGHT", 4, -4)
+        glow:SetFrameLevel(frame:GetFrameLevel() + 8)
+        local fill = glow:CreateTexture(nil, "BACKGROUND")
+        fill:SetAllPoints()
+        fill:SetColorTexture(1, 0.1, 0.05, 0.10)
+        local function Edge(a, b, horiz)
+            local t = glow:CreateTexture(nil, "OVERLAY")
+            t:SetColorTexture(1, 0.15, 0.08, 1)
+            t:SetPoint(a); t:SetPoint(b)
+            if horiz then t:SetHeight(2) else t:SetWidth(2) end
+        end
+        Edge("TOPLEFT", "TOPRIGHT", true); Edge("BOTTOMLEFT", "BOTTOMRIGHT", true)
+        Edge("TOPLEFT", "BOTTOMLEFT", false); Edge("TOPRIGHT", "BOTTOMRIGHT", false)
+        glow:Hide()
+        frame._tmLowGlow = glow
+    end
+    local pulse = TomoMod_Utils.Pulse and TomoMod_Utils.Pulse(glow, 0.15, 1, 0.9)
+    if on then
+        if not glow:IsShown() then glow:Show() end
+        if pulse and not pulse:IsPlaying() then pulse:Play() end
+    elseif glow:IsShown() then
+        if pulse then pulse:Stop() end
+        glow:Hide()
+    end
+end
+
 local function UpdateHealth(frame)
     if not frame or not frame.health or not frame.unit then return end
     if not UnitExists(frame.unit) then return end
@@ -64,6 +141,8 @@ local function UpdateHealth(frame)
     -- C-side — acceptent les secret numbers nativement
     frame.health:SetMinMaxValues(0, max)
     frame.health:SetValue(current)
+    UpdateHealthTrail(frame, unit, current, max)
+    if unit == "player" then UpdateLowHealth(frame, current, max) end
 
     -- Couleur
     --
@@ -828,13 +907,19 @@ function UF.ApplyVisuals(frame, unitKey, settings)
     frame:SetSize(settings.width, settings.healthHeight + powerH + (settings.infoBarHeight or 0))
     frame.health:SetSize(settings.width, settings.healthHeight)
 
+    if E.SetHealthTrail then E.SetHealthTrail(frame.health, globalDB.healthTrail ~= false) end
+    if frame._tmLowGlow and globalDB.lowHealthPulse == false then frame._tmLowGlow:Hide() end
     if frame.health.text     then frame.health.text:SetFont(font, fontSize,     fontOutline) end
     if frame.health.nameText then frame.health.nameText:SetFont(font, fontSize - 1, fontOutline) end
     if frame.health.levelText then frame.health.levelText:SetFont(font, fontSize - 2, fontOutline) end
 
     if frame.power and settings.powerHeight then
         frame.power:SetSize(settings.width, settings.powerHeight)
-        if frame.power.text then frame.power.text:SetFont(font, 8, fontOutline) end
+        -- Text follows the bar: readable on a thick bar, tiny on a thin one.
+        if frame.power.text then
+            local ps = math.max(8, math.min(fontSize - 1, settings.powerHeight))
+            frame.power.text:SetFont(font, ps, fontOutline)
+        end
     end
 
     if frame.infoBar and settings.infoBarHeight then
@@ -850,6 +935,11 @@ function UF.ApplyVisuals(frame, unitKey, settings)
     local barTex = globalDB.texture
     if barTex then
         ApplyBarTexture(frame.health,  barTex)
+        if frame.health.trail then
+            ApplyBarTexture(frame.health.trail, barTex)
+            frame.health.trail:SetStatusBarColor(0.90, 0.20, 0.12, 0.85)
+            if frame.health.trail.bg then frame.health.trail.bg:SetTexture(barTex) end
+        end
         ApplyBarTexture(frame.power,   barTex)
         ApplyBarTexture(frame.absorb,  barTex)
     end

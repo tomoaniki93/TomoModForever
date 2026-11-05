@@ -331,12 +331,6 @@ R.Define{
 }
 
 R.Define{
-    key = "levelingBar", label = "mod_levelingBar", group = "qol",
-    enabledPath = "levelingBar.enabled",
-    global = "TomoMod_LevelingBar", applyMode = "pair",
-}
-
-R.Define{
     key = "rareAlert", label = "mod_rareAlert", group = "qol",
     enabledPath = "rareAlert.enabled",
     global = "TomoMod_RareAlert", applyMode = "setter", apply = "SetEnabled",
@@ -449,6 +443,30 @@ R.Define{
     enabledPath = "lustSound.enabled",
     global = "TomoMod_LustSound", applyMode = "setter", apply = "SetEnabled",
     combatSafe = true,
+}
+
+-- WoW: Forever extras (1.1.0).
+R.Define{
+    key = "campfire", label = "mod_campfire", group = "qol",
+    enabledPath = "campfire.enabled",
+    anchors = { { id = "campfire", path = "campfire.position", shape = "point_relativePoint", label = "mod_campfire" } },
+    global = "TomoMod_Campfire", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "xpEdge", label = "mod_xpEdge", group = "qol",
+    enabledPath = "xpEdge.enabled",
+    global = "TomoMod_EdgeXP", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+-- Click-to-cast icons are secure buttons: switched out of combat only.
+R.Define{
+    key = "missingBuffs", label = "mod_missingBuffs", group = "qol",
+    enabledPath = "missingBuffs.enabled",
+    anchors = { { id = "missingBuffs", path = "missingBuffs.position", shape = "point_relativePoint", label = "mod_missingBuffs" } },
+    global = "TomoMod_MissingBuffs", applyMode = "setter", apply = "SetEnabled",
 }
 
 -- ---------------------------------------------------------------------

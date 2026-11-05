@@ -97,6 +97,9 @@ TomoMod_RegisterLocale("enUS", {
     ["mod_classReminder"]    = "Class Reminder",
     ["mod_afkDisplay"]       = "AFK Display",
     ["mod_lustSound"]        = "Bloodlust Sound",
+    ["mod_campfire"]         = "Camp HUD",
+    ["mod_xpEdge"]           = "Edge XP bar",
+    ["mod_missingBuffs"]     = "Missing buffs",
     ["mod_preyTracker"]      = "Prey Tracker",
     ["mod_housing"]          = "Housing",
 
@@ -305,6 +308,9 @@ TomoMod_RegisterLocale("frFR", {
     ["mod_classReminder"]    = "Rappels de classe",
     ["mod_afkDisplay"]       = "Écran AFK",
     ["mod_lustSound"]        = "Son d'Ardeur du sang",
+    ["mod_campfire"]         = "HUD de campement",
+    ["mod_xpEdge"]           = "Barre d'XP de bord d'écran",
+    ["mod_missingBuffs"]     = "Buffs manquants",
     ["mod_preyTracker"]      = "Suivi des proies",
     ["mod_housing"]          = "Logement",
 
@@ -513,6 +519,9 @@ TomoMod_RegisterLocale("deDE", {
     ["mod_classReminder"]    = "Klassenerinnerung",
     ["mod_afkDisplay"]       = "AFK-Anzeige",
     ["mod_lustSound"]        = "Kampfrausch-Sound",
+    ["mod_campfire"]         = "Lager-HUD",
+    ["mod_xpEdge"]           = "EP-Leiste am Bildschirmrand",
+    ["mod_missingBuffs"]     = "Fehlende Buffs",
     ["mod_preyTracker"]      = "Beutetracker",
     ["mod_housing"]          = "Behausung",
 
@@ -721,6 +730,9 @@ TomoMod_RegisterLocale("esES", {
     ["mod_classReminder"]    = "Recordatorio de clase",
     ["mod_afkDisplay"]       = "Pantalla AFK",
     ["mod_lustSound"]        = "Sonido de Ansia de sangre",
+    ["mod_campfire"]         = "HUD de campamento",
+    ["mod_xpEdge"]           = "Barra de experiencia en el borde",
+    ["mod_missingBuffs"]     = "Beneficios ausentes",
     ["mod_preyTracker"]      = "Seguimiento de presas",
     ["mod_housing"]          = "Vivienda",
 
@@ -929,6 +941,9 @@ TomoMod_RegisterLocale("itIT", {
     ["mod_classReminder"]    = "Promemoria classe",
     ["mod_afkDisplay"]       = "Schermata AFK",
     ["mod_lustSound"]        = "Suono Sete di sangue",
+    ["mod_campfire"]         = "HUD dell'accampamento",
+    ["mod_xpEdge"]           = "Barra dell'esperienza sul bordo",
+    ["mod_missingBuffs"]     = "Benefici mancanti",
     ["mod_preyTracker"]      = "Tracciamento prede",
     ["mod_housing"]          = "Alloggio",
 
@@ -1137,6 +1152,9 @@ TomoMod_RegisterLocale("ptBR", {
     ["mod_classReminder"]    = "Lembrete de classe",
     ["mod_afkDisplay"]       = "Tela AFK",
     ["mod_lustSound"]        = "Som de Sede de sangue",
+    ["mod_campfire"]         = "HUD de acampamento",
+    ["mod_xpEdge"]           = "Barra de experiência na borda",
+    ["mod_missingBuffs"]     = "Bônus ausentes",
     ["mod_preyTracker"]      = "Rastreador de presas",
     ["mod_housing"]          = "Moradia",
 

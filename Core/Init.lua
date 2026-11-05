@@ -368,9 +368,6 @@ SlashCmdList["TOMOMOD"] = function(msg)
             if TomoMod_FrameAnchors and TomoMod_FrameAnchors.ToggleLock then
                 TomoMod_FrameAnchors.ToggleLock()
             end
-            if TomoMod_LevelingBar and TomoMod_LevelingBar.ToggleLock then
-                TomoMod_LevelingBar.ToggleLock()
-            end
         end
     elseif msg == "cdm" or msg == "ci" then
         if TomoMod_CooldownManager then
@@ -605,7 +602,9 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("CinematicSkip",      TomoMod_CinematicSkip)
         safeInit("AutoQuest",          TomoMod_AutoQuest)
         safeInit("ObjectiveTracker",   TomoMod_ObjectiveTracker)
-        safeInit("LevelingBar",        TomoMod_LevelingBar)
+        safeInit("Campfire",           TomoMod_Campfire)
+        safeInit("EdgeXP",             TomoMod_EdgeXP)
+        safeInit("MissingBuffs",       TomoMod_MissingBuffs)
         safeInit("RareAlert",          TomoMod_RareAlert)
         safeInit("ReputationBar",      TomoMod_ReputationBar)
         safeInit("CooldownManager",    TomoMod_CooldownManager)

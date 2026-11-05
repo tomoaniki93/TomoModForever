@@ -28,8 +28,6 @@ local pairs, ipairs, type, tonumber = pairs, ipairs, type, tonumber
 local wipe = wipe
 
 HI.SCHEMA_VERSION = 1
-HI.ADDON_NAME     = "TomoModForever_GroupStudio"
-HI.STUDIO_GLOBAL  = "TomoMod_GroupStudio"
 HI.CLASS_ORDER    = { "PRIEST", "DRUID", "PALADIN", "SHAMAN", "MONK", "EVOKER" }
 
 -- Hoisted: the normalisation loop below is reachable from the aura path on
@@ -656,31 +654,16 @@ function HI.Touch(mode)
 end
 
 -- ---------------------------------------------------------------------
--- Studio bridge
+-- Settings bridge
 --
--- Loading, self-healing a DISABLED sub-addon and reporting a locale-
--- independent failure reason all live in Forge.Studio.Launch; this is only
--- the combat gate and the mode argument.
+-- The Party & Raid Studio is gone: saved healer layouts keep rendering,
+-- and old callers now open the party or raid page of the /tm window.
 -- ---------------------------------------------------------------------
 function HI.OpenStudio(mode)
-    mode = (mode == "raid") and "raid" or "party"
-
-    local Forge = TomoMod_Forge
-    if not (Forge and Forge.Studio and Forge.Studio.Launch) then
-        print("|cffffd100TomoModForever|r : Forge.Studio indisponible, Healer Studio ne peut pas s'ouvrir.")
-        return false
-    end
-
-    return Forge.Studio.Launch({
-        addon  = HI.ADDON_NAME,
-        global = HI.STUDIO_GLOBAL,
-        label  = "Party & Raid Studio",
-        -- Compatibility bridge for the old Party/Raid Options buttons:
-        -- they still call TomoMod_OpenHealerStudio(mode), but the standalone
-        -- Healer Studio no longer exists. Encode the requested mode in the
-        -- single Forge launcher argument and let GroupStudio open its Healer tab.
-        arg    = (mode == "raid") and "healer_raid" or "healer_party",
-    })
+    local cfg = TomoMod_Config
+    if not (cfg and cfg.OpenCategory) then return false end
+    cfg.OpenCategory((mode == "raid") and "raid" or "party")
+    return true
 end
 
 function TomoMod_OpenHealerStudio(mode)

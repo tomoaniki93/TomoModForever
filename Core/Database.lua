@@ -112,12 +112,6 @@ TomoMod_Defaults = {
         scale = 1.0,
         position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 },
     },
-    levelingBar = {
-        enabled = false,
-        width = 500,
-        height = 28,
-        position = nil,
-    },
     rareAlert = {
         enabled  = false,
         sound    = true,
@@ -575,6 +569,54 @@ TomoMod_Defaults = {
         debug = false,
     },
 
+    -- =====================
+    -- WOW: FOREVER EXTRAS (1.1.0)
+    -- =====================
+    -- Camp HUD: shown near a campfire, click to sit, camp bonuses around.
+    campfire = {
+        enabled = true,
+        scale = 1.0,
+        showBonuses = true,
+        clickToSit = true,
+        hideInCombat = true,
+        animatedFlames = true,
+        position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = -140 },
+    },
+
+    -- Full-width experience bar on the screen edge.
+    xpEdge = {
+        enabled = true,
+        edge = "BOTTOM",          -- BOTTOM | TOP
+        height = 6,
+        visibility = "always",    -- always | hover | gain
+        alpha = 1.0,
+        colorMode = "class",      -- class | gold
+        showRested = true,
+        showTicks = true,
+        showBadge = true,
+        badgePos = "center",      -- center | left | right
+        hideBlizzard = true,      -- hide Blizzard's own XP bar while this one is on
+        gainText = true,
+        showQuests = true,
+        repAtMax = true,
+        levelUpBurst = true,      -- golden sweep + big "Level N" on level up
+    },
+
+    -- Self-buff reminders with click-to-cast icons.
+    missingBuffs = {
+        enabled = true,
+        iconSize = 36,
+        scale = 1.0,
+        showLabel = true,
+        hideResting = true,
+        hideInCombat = false,
+        weaponEnchants = true,
+        wiggle = true,            -- icons nudge every few seconds to catch the eye
+        disabled = {},            -- [ruleKey] = true
+        custom = {},              -- extra buff names the player wants up
+        position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 190 },
+    },
+
     cooldownManager = {
         enabled = true,
         -- Masquage individuel des quatre viewers Blizzard (essential, utility,
@@ -824,13 +866,19 @@ TomoMod_Defaults = {
         -- avec les vraies données quand l'unité existe (sinon, simulation).
         previewLiveData = true,
 
+        -- 1.1.0 animations
+        healthTrail = true,       -- red chunk that drains after a hit
+        lowHealthPulse = true,    -- red frame breathing around the player frame
+        lowHealthPct = 30,
+
         -- Per-unit settings
         player = {
             enabled = true,
             width = 260,
-            height = 58,
+            height = 66,
             healthHeight = 38,
-            powerHeight = 2,
+            -- 1.1.0: a real mana / energy bar instead of a 2 px accent line.
+            powerHeight = 10,
             infoBarHeight = 18,
             useClassColor = true,
             useFactionColor = false,
@@ -1061,6 +1109,7 @@ TomoMod_Defaults = {
 
         -- Interrupt feedback
         showInterruptFeedback = true,
+        interruptShake = true,    -- 1.1.0: the bar shakes when a cast is interrupted
         interruptFeedbackColor = { r = 0.1, g = 0.8, b = 0.1 },
         interruptFeedbackFontSize = 28,
 
@@ -1802,6 +1851,26 @@ local function TomoMod_RunMigrations()
     -- did before: an upgrade that quietly rearranged someone's screen
     -- would be worse than the problem being fixed. Only positions saved
     -- after this point carry a reference and get rescaled.
+    -- 1.1.0: the player's power bar was a 2 px accent line, too thin to
+    -- read mana at a glance. Profiles still on that thin line (anything up
+    -- to 4 px, which was never a deliberate "big bar" choice) move to the
+    -- new 10 px default once. A player who sets it back keeps their value.
+    -- 1.1.0: the old leveling bar was replaced by the edge XP bar.
+    if not done.dropLevelingBar110 then
+        done.dropLevelingBar110 = true
+        TomoModForeverDB.levelingBar = nil
+    end
+
+    if not done.playerPowerBar110 then
+        done.playerPowerBar110 = true
+        local uf = TomoModForeverDB.unitFrames
+        local pl = type(uf) == "table" and uf.player
+        if type(pl) == "table" then
+            local h = tonumber(pl.powerHeight) or 0
+            if h > 0 and h <= 4 then pl.powerHeight = 10 end
+        end
+    end
+
     if not done.layoutSchemaV2 then
         done.layoutSchemaV2 = true
         if TomoMod_Layout and TomoMod_Layout.MigrateAll then

@@ -53,8 +53,11 @@
     <!-- Modules: CVar Optimizer -->
     <Include file="Optimizations\CVarOptimizer.lua" />
 
-    <!-- Modules: Leveling -->
-    <Include file="Leveling\LevelingBar.lua" />
+
+    <!-- Modules: WoW Forever extras (camp HUD, edge XP bar, missing buffs) -->
+    <Include file="Forever\Campfire.lua" />
+    <Include file="Forever\EdgeXP.lua" />
+    <Include file="Forever\MissingBuffs.lua" />
 
     <!-- Modules: FrameAnchors -->
     <Include file="FrameAnchors\FrameAnchors.lua" />

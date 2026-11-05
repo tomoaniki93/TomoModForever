@@ -823,6 +823,7 @@ function CB.CreateCastbar(unit)
             end
             if self.targetText then self.targetText:SetText("") end
             FlashBar(self)
+            if db.interruptShake ~= false and TomoMod_Utils.Shake then TomoMod_Utils.Shake(self, 5, 0.3) end
             self.failstart = GetTime(); self:SetMinMaxValues(0,100); self:SetValue(100); self:Show()
             return
         end

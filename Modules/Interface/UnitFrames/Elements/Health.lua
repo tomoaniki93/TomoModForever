@@ -330,9 +330,36 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     leaderIcon:Hide()
     health.leaderIcon = leaderIcon
 
+    -- Damage trail (1.1.0): a red bar under the health fill that catches up
+    -- a moment later, so a hit leaves a visible "chunk" that drains away.
+    -- It sits one level below the health bar and carries the background
+    -- (the health bar's own background is hidden while it is on). Values are
+    -- only handed to SetValue, C-side: secret health stays secret.
+    local trail = CreateFrame("StatusBar", nil, parent)
+    trail:SetAllPoints(health)
+    trail:SetFrameLevel(math.max(0, health:GetFrameLevel() - 1))
+    trail:SetStatusBarTexture(tex)
+    trail:SetStatusBarColor(0.90, 0.20, 0.12, 0.85)
+    trail:SetMinMaxValues(0, 100)
+    trail:SetValue(100)
+    local tbg = trail:CreateTexture(nil, "BACKGROUND")
+    tbg:SetAllPoints()
+    tbg:SetTexture(tex)
+    tbg:SetVertexColor(0.137, 0.114, 0.086, 0.8)
+    trail.bg = tbg
+    health.trail = trail
+    local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+    UF_Elements.SetHealthTrail(health, not (uf and uf.healthTrail == false))
+
     health.unit = unit
     health:EnableMouse(false)  -- Let clicks pass through to parent SecureUnitButtonTemplate
     return health
+end
+
+function UF_Elements.SetHealthTrail(health, on)
+    if not (health and health.trail) then return end
+    health.trail:SetShown(on and true or false)
+    if health.bg then health.bg:SetAlpha(on and 0 or 1) end
 end
 
 -- =====================================

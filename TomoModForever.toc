@@ -10,7 +10,7 @@
 ## SavedVariablesPerCharacter: TomoModForeverCharDB
 ## X-oUF: TomoMod_oUF
 ## Author: TomoAniki
-## Version: 1.0.1
+## Version: 1.1.0
 ## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
 
 ## =====================
@@ -35,6 +35,7 @@ Locales\Locale_407.lua
 Locales\Locale_410.lua
 Locales\Locale_100.lua
 Locales\Locale_101.lua
+Locales\Locale_110.lua
 Locales\Locale_Compat.lua
 
 ## =====================
@@ -53,7 +54,6 @@ Core\Forge\ForgeRegistry.lua
 Core\Forge\ForgeCanvas.lua
 Core\Forge\ForgeAssets.lua
 Core\Forge\ForgeSchema.lua
-Core\Forge\ForgeStudio.lua
 Core\Database.lua
 ## Module inventory: the engine, then the manifests that populate it.
 ## Both must load after Database.lua -- the manifests are validated

@@ -508,7 +508,6 @@ local BASE = {
 
     -- Conservative settings: off by default, user opts in
     ["cursorRing.enabled"]              = false,
-    ["levelingBar.enabled"]             = false,
     ["hideTalkingHead.enabled"]         = false,
     ["autoFillDelete.enabled"]          = true,   -- harmless & handy
     ["autoAcceptInvite.enabled"]        = false,

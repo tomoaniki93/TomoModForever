@@ -62,7 +62,7 @@ function UF_Elements.CreatePower(parent, unit, settings)
 
     -- Power text (optional, only for standard-height power bars)
     local text = power:CreateFontString(nil, "OVERLAY")
-    text:SetFont(font, 8, "OUTLINE")
+    text:SetFont(font, math.max(8, math.min(11, settings.powerHeight)), "OUTLINE")
     text:SetPoint("CENTER", 0, 0)
     text:SetTextColor(1, 1, 1, 0.8)
     text:SetText("")

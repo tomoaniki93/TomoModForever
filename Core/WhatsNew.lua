@@ -63,6 +63,19 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.1.0",
+        highlights = {
+            L["wn_110_gui"],
+            L["wn_110_studios"],
+            L["wn_110_showme"],
+            L["wn_110_search"],
+            L["wn_110_adventure"],
+            L["wn_110_xpbar"],
+            L["wn_110_power"],
+            L["wn_110_anim"],
+        },
+    },
+    {
         version = "1.0.1",
         highlights = {
             L["wn_101_minimap_daycycle"],
