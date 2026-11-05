@@ -50,8 +50,4 @@ ignore:
 # Sub-addons shipped from this repository: the packager moves them out of
 # the main TomoModForever folder so they install as sibling addons.
 move-folders:
-  TomoModForever/TomoModForever_CDStudio: TomoModForever_CDStudio
-  TomoModForever/TomoModForever_GroupStudio: TomoModForever_GroupStudio
-  TomoModForever/TomoModForever_ResourceCastStudio: TomoModForever_ResourceCastStudio
-  TomoModForever/TomoModForever_AstralForge: TomoModForever_AstralForge
   TomoModForever/TomoModForever_Options: TomoModForever_Options
