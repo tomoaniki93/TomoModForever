@@ -6,10 +6,15 @@
 -- buff picked up since arriving at the camp is shown around the ring so
 -- it can be read before it is forgotten.
 --
--- Nothing is hard-coded about the camp itself: the fire is recognised by
--- the localized word "campfire" in the player's aura names, and the camp
--- bonuses are simply the buffs gained while the fire is up. That keeps it
--- working whatever objects a camp holds, in every client language.
+-- Finding the fire. The client only puts a "campfire" aura on the player
+-- while sitting, so an aura alone cannot say "you are near a fire". Four
+-- signals mark the camp: that aura appearing, pointing at a fire with the
+-- mouse, a fire in soft-interact range, or lighting one yourself. Each one
+-- records where the player stands (UnitPosition); the HUD then stays while
+-- the player is within a few yards of that spot and leaves as soon as they
+-- walk away, even if the timed aura is still running. Fires are recognised
+-- by the localized word "campfire", so every client language works, and the
+-- camp bonuses are simply the buffs gained while at the fire.
 -- =====================================================================
 
 TomoMod_Campfire = TomoMod_Campfire or {}
@@ -35,7 +40,11 @@ local KEYWORDS = {
 }
 
 local MAX_BONUS = 8
-local LINGER = 8          -- seconds the HUD stays after leaving the fire
+local LINGER = 2          -- seconds the HUD stays after leaving the fire
+local RADIUS_SIT   = 12   -- yards: a fire you sat at, interacted with or lit
+local RADIUS_HOVER = 20   -- yards: a fire you only pointed at with the mouse
+local FORGET_AT    = 3    -- forget the camp beyond RADIUS x this
+local NOPOS_WINDOW = 30   -- seconds a signal keeps the HUD up where positions are hidden
 
 local hud
 local state = {
@@ -314,14 +323,92 @@ end
 -- ---------------------------------------------------------------------
 -- State
 -- ---------------------------------------------------------------------
-local function Scan()
+-- ---------------------------------------------------------------------
+-- Where is the camp?
+-- ---------------------------------------------------------------------
+-- camp = { y, x, inst, radius } with positions, or { noPos = true,
+-- expires } where the client hides them (instances).
+local camp
+local auraUp = false
+local Scan, QueueScan
+
+local function PlayerPos()
+    if not UnitPosition then return nil end
+    local ok, y, x, _, inst = pcall(UnitPosition, "player")
+    if not ok or Secret(y) or Secret(x) or type(y) ~= "number" or type(x) ~= "number" then return nil end
+    return y, x, inst
+end
+
+local function Distance()
+    if not (camp and not camp.noPos) then return nil end
+    local y, x, inst = PlayerPos()
+    if not y or inst ~= camp.inst then return math.huge end
+    local dy, dx = y - camp.y, x - camp.x
+    return math.sqrt(dy * dy + dx * dx)
+end
+
+local function InCamp()
+    if not camp then return false end
+    if camp.noPos then return GetTime() < camp.expires end
+    local d = Distance()
+    return d ~= nil and d <= camp.radius
+end
+
+-- While a camp is known, watch the distance twice a second: walking away
+-- hides the HUD without waiting for an aura event.
+local ticker
+local wasIn = false
+local function StopWatch()
+    if ticker then ticker:Cancel(); ticker = nil end
+end
+local function StartWatch()
+    if ticker then return end
+    ticker = C_Timer.NewTicker(0.5, function()
+        if not camp then StopWatch() return end
+        local inNow = InCamp()
+        if not camp.noPos then
+            local d = Distance()
+            if d and d > camp.radius * FORGET_AT then camp = nil end
+        elseif not inNow and not auraUp then
+            camp = nil
+        end
+        if inNow ~= wasIn or not camp then
+            wasIn = inNow
+            Scan()
+        end
+        if not camp then StopWatch() end
+    end)
+end
+
+local function MarkCamp(radius)
+    local db = DB()
+    if not (db and db.enabled) then return end
+    local y, x, inst = PlayerPos()
+    if y then
+        -- A closer signal (sitting) narrows a wide one (hover), never the reverse.
+        if camp and not camp.noPos and camp.inst == inst and (Distance() or math.huge) <= camp.radius then
+            radius = math.min(radius, camp.radius)
+        end
+        camp = { y = y, x = x, inst = inst, radius = radius }
+    else
+        camp = { noPos = true, expires = GetTime() + NOPOS_WINDOW }
+    end
+    wasIn = true
+    StartWatch()
+    QueueScan()
+end
+
+-- ---------------------------------------------------------------------
+-- State
+-- ---------------------------------------------------------------------
+Scan = function()
     local db = DB()
     if not (db and db.enabled) or state.preview then return end
     local buffs = PlayerBuffs()
-    local near, timed = false, nil
+    local hasAura, timed = false, nil
     for _, a in ipairs(buffs) do
         if IsCampfireName(a.name) then
-            near = true
+            hasAura = true
             local dur, exp = Num(a.duration), Num(a.expirationTime)
             if dur and exp and dur > 0 and exp > 0 then
                 if not timed or exp > timed.start + timed.duration then
@@ -330,6 +417,18 @@ local function Scan()
             end
         end
     end
+
+    -- Sitting down at a fire: that is exactly where the camp is.
+    if hasAura and not auraUp then
+        auraUp = true
+        MarkCamp(RADIUS_SIT)
+    elseif not hasAura then
+        auraUp = false
+    end
+
+    -- Near = inside the camp radius. Without any known spot (positions
+    -- hidden and no other signal), the aura is all there is to go on.
+    local near = InCamp() or (hasAura and camp == nil)
 
     if near and not state.near then
         -- Arriving: everything already on the player is not a camp bonus.
@@ -340,7 +439,7 @@ local function Scan()
         state.bonuses = {}
     end
     state.near = near
-    state.timed = timed
+    state.timed = near and timed or nil
 
     if near then
         state.leftAt = nil
@@ -362,13 +461,12 @@ local function Scan()
         end
     elseif hud and hud:IsShown() and not state.leftAt then
         state.leftAt = GetTime()
-        state.timed = nil
         Render()
     end
 end
 
 local pending = false
-local function QueueScan()
+QueueScan = function()
     if pending then return end
     pending = true
     C_Timer.After(0.15, function() pending = false; Scan() end)
@@ -421,6 +519,8 @@ function CF.SetEnabled(v)
         Scan()
     else
         if CF._events then CF._events:UnregisterEvent("UNIT_AURA") end
+        camp, auraUp = nil, false
+        StopWatch()
         state.preview = false
         if hud then hud:Hide() end
     end
@@ -435,15 +535,57 @@ function CF.Initialize()
     f:RegisterEvent("PLAYER_REGEN_DISABLED")
     f:RegisterEvent("PLAYER_REGEN_ENABLED")
     if db.enabled then f:RegisterUnitEvent("UNIT_AURA", "player") end
-    f:SetScript("OnEvent", function(_, event)
+    f:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    pcall(f.RegisterEvent, f, "PLAYER_SOFT_INTERACT_CHANGED")
+    f:SetScript("OnEvent", function(_, event, _, _, spellID)
         local d = DB()
         if not (d and d.enabled) then return end
         if event == "PLAYER_REGEN_DISABLED" then
             if d.hideInCombat and hud and not state.preview then hud:Hide() end
+        elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+            -- Lighting a fire yourself.
+            if spellID and not Secret(spellID) and C_Spell and C_Spell.GetSpellName then
+                local ok, name = pcall(C_Spell.GetSpellName, spellID)
+                if ok and IsCampfireName(name) then MarkCamp(RADIUS_SIT) end
+            end
+        elseif event == "PLAYER_SOFT_INTERACT_CHANGED" then
+            -- A fire close enough to interact with.
+            local ok, name = pcall(UnitName, "softinteract")
+            if ok and IsCampfireName(name) then MarkCamp(RADIUS_SIT) end
+        elseif event == "PLAYER_ENTERING_WORLD" then
+            camp, auraUp = nil, false
+            StopWatch()
+            QueueScan()
         else
             QueueScan()
         end
     end)
+
+    -- Pointing at a fire in the world: a tooltip with a "campfire" title
+    -- that belongs to no unit, item, spell or button. World objects use the
+    -- default anchor, owned by UIParent; the Campfire spell on an action
+    -- bar or in the spellbook is owned by its button, so it is ignored.
+    if GameTooltip and GameTooltip.HookScript then
+        GameTooltip:HookScript("OnShow", function(tip)
+            local d = DB()
+            if not (d and d.enabled) then return end
+            local owner = tip.GetOwner and tip:GetOwner()
+            if owner and owner ~= UIParent and owner ~= WorldFrame then return end
+            local okU, unitName = pcall(tip.GetUnit, tip)
+            if okU and unitName then return end
+            if tip.GetSpell then
+                local okS, _, sid = pcall(tip.GetSpell, tip)
+                if okS and sid then return end
+            end
+            if tip.GetItem then
+                local okI, _, link = pcall(tip.GetItem, tip)
+                if okI and link then return end
+            end
+            local line = _G.GameTooltipTextLeft1
+            local ok, text = pcall(line and line.GetText or function() end, line)
+            if ok and IsCampfireName(text) then MarkCamp(RADIUS_HOVER) end
+        end)
+    end
 
     if TomoMod_Movers and TomoMod_Movers.RegisterEntry then
         TomoMod_Movers.RegisterEntry({
