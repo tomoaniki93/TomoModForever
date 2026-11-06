@@ -10,7 +10,7 @@
 ## SavedVariablesPerCharacter: TomoModForeverCharDB
 ## X-oUF: TomoMod_oUF
 ## Author: TomoAniki
-## Version: 1.1.0
+## Version: 1.1.1
 ## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
 
 ## =====================
@@ -36,6 +36,7 @@ Locales\Locale_410.lua
 Locales\Locale_100.lua
 Locales\Locale_101.lua
 Locales\Locale_110.lua
+Locales\Locale_111.lua
 Locales\Locale_Compat.lua
 
 ## =====================

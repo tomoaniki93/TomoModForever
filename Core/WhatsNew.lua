@@ -63,6 +63,14 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.1.1",
+        highlights = {
+            L["wn_111_camp"],
+            L["wn_111_leave"],
+            L["wn_111_signals"],
+        },
+    },
+    {
         version = "1.1.0",
         highlights = {
             L["wn_110_gui"],

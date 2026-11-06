@@ -1,5 +1,22 @@
 ## ####################################
 
+## CHANGELOG 1.1.1
+
+#### Camp HUD
+
+- **Fixed** - The camp HUD only appeared while sitting. The client puts its "campfire" aura on the player only when seated, and the HUD relied on that aura alone. It now appears as soon as you reach the fire.
+- **Fixed** - The camp HUD stayed on screen after walking away from the fire, as long as the one-minute rest aura was still running. It now hides about 2 seconds after you leave.
+- **Changed** - The camp spot is recorded from four signals: sitting at the fire, pointing at it with the mouse, a fire in soft-interact range, or lighting one yourself. The HUD stays while you are within about 12 yards of that spot (20 yards when the fire was only pointed at from a distance) and follows the distance twice a second.
+- **Changed** - Hovering the Campfire spell on an action bar or in the spellbook does not count as being at a fire.
+- **Changed** - In instances, where the client hides positions, the HUD falls back to the sitting aura as before.
+
+#### Release Notes And Version Metadata
+
+- **Changed** - Every `.toc` declares version 1.1.1.
+- **New** - The What's New popup has a 1.1.1 entry, translated into all six languages (enUS, frFR, deDE, esES, itIT, ptBR).
+
+## ####################################
+
 ## CHANGELOG 1.1.0
 
 #### Settings Window (GUI v2)
