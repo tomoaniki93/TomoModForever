@@ -31,7 +31,10 @@ local FLAMES    = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Camp\\Fl
 local FLAME_FRAMES, FLAME_COLS, FLAME_FPS = 16, 4, 14
 
 local IS_FR = GetLocale() == "frFR"
-local function T(fr, en) return IS_FR and fr or en end
+local function T(fr, en)
+    if TomoMod_GUIT then return TomoMod_GUIT(fr, en) end
+    return IS_FR and fr or en
+end
 
 -- The word for "campfire" in each client language, lower case.
 local KEYWORDS = {

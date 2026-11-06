@@ -28,7 +28,10 @@ local pairs, ipairs, type, tonumber = pairs, ipairs, type, tonumber
 local wipe = wipe
 
 HI.SCHEMA_VERSION = 1
-HI.CLASS_ORDER    = { "PRIEST", "DRUID", "PALADIN", "SHAMAN", "MONK", "EVOKER" }
+-- Forever has no Monk or Evoker: only the four classic healers are offered.
+HI.CLASS_ORDER    = { "PRIEST", "DRUID", "PALADIN", "SHAMAN" }
+local CLASS_SET = {}
+for _, c in ipairs(HI.CLASS_ORDER) do CLASS_SET[c] = true end
 
 -- Hoisted: the normalisation loop below is reachable from the aura path on
 -- the first call after a profile swap, and a table constructor there would
@@ -44,8 +47,6 @@ HI.SPELL_ORDER = {
     DRUID   = { 774, 8936, 33763, 48438, 155777, 207386, 200389, 391891, 102342 },
     PALADIN = { 53563, 156910, 223306, 287280, 388013 },
     SHAMAN  = { 61295, 974, 382024, 383009, 157153 },
-    MONK    = { 119611, 124682, 325209, 191840, 116849 },
-    EVOKER  = { 366155, 376788, 355941, 378001, 373267, 363502 },
 }
 
 -- Category is a display grouping for the studio list only; it never gates
@@ -64,12 +65,6 @@ HI.SPELL_CATEGORY = {
 
     [61295]  = "hot",      [974]    = "shield",   [382024] = "hot",
     [383009] = "marker",   [157153] = "marker",
-
-    [119611] = "hot",      [124682] = "hot",      [325209] = "hot",
-    [191840] = "hot",      [116849] = "external",
-
-    [366155] = "hot",      [376788] = "marker",   [355941] = "hot",
-    [378001] = "hot",      [373267] = "marker",   [363502] = "hot",
 }
 
 HI.CATEGORY_ORDER = { "hot", "shield", "beacon", "marker", "external" }
@@ -166,7 +161,7 @@ function HI.GetSpellsForClass(class)
 end
 
 function HI.IsHealerClass(class)
-    return (class and AD and AD.HEALER_HOTS and type(AD.HEALER_HOTS[class]) == "table") and true or false
+    return (class and CLASS_SET[class] and AD and AD.HEALER_HOTS and type(AD.HEALER_HOTS[class]) == "table") and true or false
 end
 
 function HI.GetSpellDisplay(spellID)
@@ -656,13 +651,13 @@ end
 -- ---------------------------------------------------------------------
 -- Settings bridge
 --
--- The Party & Raid Studio is gone: saved healer layouts keep rendering,
--- and old callers now open the party or raid page of the /tm window.
+-- The Party & Raid Studio is gone: its healer editor is now the
+-- "Healer indicators" page of the /tm window.
 -- ---------------------------------------------------------------------
 function HI.OpenStudio(mode)
     local cfg = TomoMod_Config
     if not (cfg and cfg.OpenCategory) then return false end
-    cfg.OpenCategory((mode == "raid") and "raid" or "party")
+    cfg.OpenCategory("healer")
     return true
 end
 

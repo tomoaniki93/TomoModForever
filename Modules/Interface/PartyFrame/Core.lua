@@ -461,104 +461,6 @@ function PF.CreateFrame(index, unit)
         f.hotContainer = hotContainer
     end
 
-    -- ---- CD TRACKER CONTAINER ----
-    if db.showInterruptCD or db.showBrezCD then
-        local cdSize = db.cdIconSize or 18
-        local cdContainer = CreateFrame("Frame", nil, f)
-        cdContainer:SetFrameLevel(f:GetFrameLevel() + 10)
-
-        -- Use horizontal CD layout when growDirection is RIGHT/LEFT
-        local dir = db.growDirection or "DOWN"
-        local effectiveCDLayout = db.cdLayout
-        if dir == "RIGHT" or dir == "LEFT" then
-            effectiveCDLayout = "horizontal"
-        end
-
-        if effectiveCDLayout == "horizontal" then
-            cdContainer:SetPoint("TOP", f, "BOTTOM", 0, -1)
-            cdContainer:SetSize(cdSize * 2 + 4, cdSize)
-        else
-            cdContainer:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, -2)
-            cdContainer:SetSize(cdSize, cdSize * 2 + 2)
-        end
-
-        cdContainer.icons = {}
-        -- Interrupt icon
-        if db.showInterruptCD then
-            local kickIcon = CreateFrame("Frame", nil, cdContainer, "BackdropTemplate")
-            kickIcon:SetSize(cdSize, cdSize)
-            kickIcon:SetBackdrop({
-                bgFile   = "Interface\\Buttons\\WHITE8x8",
-                edgeFile = "Interface\\Buttons\\WHITE8X8",
-                edgeSize = 1,
-            })
-            kickIcon:SetBackdropColor(0.05, 0.05, 0.05, 0.90)
-            kickIcon:SetBackdropBorderColor(0.20, 0.20, 0.20, 1)
-            local tex = kickIcon:CreateTexture(nil, "ARTWORK")
-            tex:SetPoint("TOPLEFT", 1, -1)
-            tex:SetPoint("BOTTOMRIGHT", -1, 1)
-            tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            kickIcon.texture = tex
-            local cd = CreateFrame("Cooldown", nil, kickIcon, "CooldownFrameTemplate")
-            cd:SetAllPoints()
-            cd:SetDrawEdge(false)
-            cd:SetSwipeColor(0, 0, 0, 0.6)
-            kickIcon.cooldown = cd
-            local dur = kickIcon:CreateFontString(nil, "OVERLAY")
-            dur:SetFont(db.font or ADDON_FONT, 9, "OUTLINE")
-            dur:SetPoint("CENTER", 0, 0)
-            kickIcon.durationText = dur
-            kickIcon:Hide()
-            cdContainer.kickIcon = kickIcon
-            cdContainer.icons[#cdContainer.icons + 1] = kickIcon
-        end
-
-        -- Brez icon
-        if db.showBrezCD then
-            local brezIcon = CreateFrame("Frame", nil, cdContainer, "BackdropTemplate")
-            brezIcon:SetSize(cdSize, cdSize)
-            brezIcon:SetBackdrop({
-                bgFile   = "Interface\\Buttons\\WHITE8x8",
-                edgeFile = "Interface\\Buttons\\WHITE8X8",
-                edgeSize = 1,
-            })
-            brezIcon:SetBackdropColor(0.05, 0.05, 0.05, 0.90)
-            brezIcon:SetBackdropBorderColor(0.20, 0.20, 0.20, 1)
-            local tex = brezIcon:CreateTexture(nil, "ARTWORK")
-            tex:SetPoint("TOPLEFT", 1, -1)
-            tex:SetPoint("BOTTOMRIGHT", -1, 1)
-            tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            brezIcon.texture = tex
-            local cd = CreateFrame("Cooldown", nil, brezIcon, "CooldownFrameTemplate")
-            cd:SetAllPoints()
-            cd:SetDrawEdge(false)
-            cd:SetSwipeColor(0, 0, 0, 0.6)
-            brezIcon.cooldown = cd
-            local dur = brezIcon:CreateFontString(nil, "OVERLAY")
-            dur:SetFont(db.font or ADDON_FONT, 9, "OUTLINE")
-            dur:SetPoint("CENTER", 0, 0)
-            brezIcon.durationText = dur
-            brezIcon:Hide()
-            cdContainer.brezIcon = brezIcon
-            cdContainer.icons[#cdContainer.icons + 1] = brezIcon
-        end
-
-        -- Layout CD icons
-        local function LayoutCDs()
-            local idx = 0
-            for _, icon in ipairs(cdContainer.icons) do
-                icon:ClearAllPoints()
-                if effectiveCDLayout == "horizontal" then
-                    icon:SetPoint("LEFT", cdContainer, "LEFT", idx * (cdSize + 2), 0)
-                else
-                    icon:SetPoint("TOP", cdContainer, "TOP", 0, -idx * (cdSize + 2))
-                end
-                idx = idx + 1
-            end
-        end
-        LayoutCDs()
-        f.cdContainer = cdContainer
-    end
 
     f:SetFrameLevel(10)
     f:Hide()  -- the secure visibility driver takes over from here
@@ -962,9 +864,8 @@ function PF.UpdateFrame(f)
     PF.UpdateGroupBuff(f)
     PF.UpdateSummon(f)
     PF.UpdateDefensive(f)
-    -- HoTs and CDs are updated by their own modules
+    -- HoTs are updated by their own module
     if TomoMod_PartyHoTs then TomoMod_PartyHoTs.UpdateUnit(f) end
-    if TomoMod_PartyCooldowns then TomoMod_PartyCooldowns.UpdateFrame(f) end
 end
 
 -- =====================================
@@ -1506,6 +1407,15 @@ function PF.ApplySettings()
                 f.health:SetHeight(healthH)
             end
 
+            -- Font and size are live settings too (the name-size slider
+            -- only reached frames built after a /reload before this).
+            if f.nameText then
+                f.nameText:SetFont(db.font or ADDON_FONT, db.fontSize or 11, db.fontOutline or "OUTLINE")
+            end
+            if f.healthText then
+                f.healthText:SetFont(db.font or ADDON_FONT, math.max(6, (db.fontSize or 11) - 1), db.fontOutline or "OUTLINE")
+            end
+
             if db.showPower and powerH > 0 then
                 if f.power then
                     f.power:SetHeight(powerH)
@@ -1515,37 +1425,6 @@ function PF.ApplySettings()
             else
                 if f.power then f.power:Hide() end
                 if f.powerBG then f.powerBG:Hide() end
-            end
-
-            -- Resize CD tracker icons
-            if f.cdContainer then
-                local cdSize = db.cdIconSize or 18
-                local dir = db.growDirection or "DOWN"
-                local effectiveCDLayout = db.cdLayout
-                if dir == "RIGHT" or dir == "LEFT" then
-                    effectiveCDLayout = "horizontal"
-                end
-
-                f.cdContainer:ClearAllPoints()
-                if effectiveCDLayout == "horizontal" then
-                    f.cdContainer:SetPoint("TOP", f, "BOTTOM", 0, -1)
-                    f.cdContainer:SetSize(cdSize * 2 + 4, cdSize)
-                else
-                    f.cdContainer:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, -2)
-                    f.cdContainer:SetSize(cdSize, cdSize * 2 + 2)
-                end
-
-                local idx = 0
-                for _, icon in ipairs(f.cdContainer.icons) do
-                    icon:SetSize(cdSize, cdSize)
-                    icon:ClearAllPoints()
-                    if effectiveCDLayout == "horizontal" then
-                        icon:SetPoint("LEFT", f.cdContainer, "LEFT", idx * (cdSize + 2), 0)
-                    else
-                        icon:SetPoint("TOP", f.cdContainer, "TOP", 0, -idx * (cdSize + 2))
-                    end
-                    idx = idx + 1
-                end
             end
 
             -- HoT row. Size and count are live settings, so both the host

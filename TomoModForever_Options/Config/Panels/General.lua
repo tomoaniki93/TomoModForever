@@ -427,38 +427,7 @@ function TomoMod_ConfigPanel_General(parent)
 
     y = W.FinalizeCard(card2, cy)
 
-    -- ═══════════════════════════════════════════════
-    -- BLIZZARD AURA FRAMES
-    -- ═══════════════════════════════════════════════
-    local auraCard, ay = W.CreateCard(c, L["section_blizzard_auras"], y)
-    local _, ay = W.CreateInfoText(auraCard.inner, L["info_blizzard_auras"], ay)
-
-    TomoModForeverDB.blizzardAuraFrames = TomoModForeverDB.blizzardAuraFrames or {
-        enabled = true,
-        showBuffs = true,
-        showDebuffs = true,
-    }
-    local auraDB = TomoModForeverDB.blizzardAuraFrames
-    local function ApplyBlizzardAuraFrames()
-        if TomoMod_BlizzardAuraFrames and TomoMod_BlizzardAuraFrames.ApplySettings then
-            TomoMod_BlizzardAuraFrames.ApplySettings()
-        end
-    end
-
-    local _, ay = W.CreateCheckbox(auraCard.inner, L["opt_blizzard_auras_manage"], auraDB.enabled ~= false, ay, function(v)
-        auraDB.enabled = v
-        ApplyBlizzardAuraFrames()
-    end)
-    local _, ay = W.CreateCheckbox(auraCard.inner, L["opt_blizzard_buffs"], auraDB.showBuffs ~= false, ay, function(v)
-        auraDB.showBuffs = v
-        ApplyBlizzardAuraFrames()
-    end)
-    local _, ay = W.CreateCheckbox(auraCard.inner, L["opt_blizzard_debuffs"], auraDB.showDebuffs ~= false, ay, function(v)
-        auraDB.showDebuffs = v
-        ApplyBlizzardAuraFrames()
-    end)
-
-    y = W.FinalizeCard(auraCard, ay)
+    -- (Blizzard aura frames moved to My frames > Player)
 
     -- ═══════════════════════════════════════════════
     -- BLIZZARD FLOATING COMBAT TEXT

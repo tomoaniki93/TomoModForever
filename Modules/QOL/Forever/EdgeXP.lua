@@ -20,7 +20,10 @@ local TEX       = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoanik
 local WHITE     = "Interface\\Buttons\\WHITE8x8"
 
 local IS_FR = GetLocale() == "frFR"
-local function T(fr, en) return IS_FR and fr or en end
+local function T(fr, en)
+    if TomoMod_GUIT then return TomoMod_GUIT(fr, en) end
+    return IS_FR and fr or en
+end
 
 local GOLD   = { 0.788, 0.635, 0.322 }
 local RESTED = { 0.30, 0.55, 1.00 }
@@ -38,7 +41,8 @@ local function DB() return TomoModForeverDB and TomoModForeverDB.xpEdge end
 local function Fmt(n)
     n = math.floor(n or 0)
     local s = tostring(n)
-    local sep = IS_FR and " " or ","
+    local L = GetLocale()
+    local sep = (IS_FR and " ") or ((L == "deDE" or L == "esES" or L == "esMX" or L == "itIT" or L == "ptBR") and ".") or ","
     while true do
         local k
         s, k = s:gsub("^(%d+)(%d%d%d)", "%1" .. sep .. "%2")

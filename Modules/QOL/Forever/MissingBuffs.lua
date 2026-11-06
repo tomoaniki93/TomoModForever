@@ -21,7 +21,10 @@ local FONT_BOLD = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Sem
 local WHITE     = "Interface\\Buttons\\WHITE8x8"
 
 local IS_FR = GetLocale() == "frFR"
-local function T(fr, en) return IS_FR and fr or en end
+local function T(fr, en)
+    if TomoMod_GUIT then return TomoMod_GUIT(fr, en) end
+    return IS_FR and fr or en
+end
 
 -- ---------------------------------------------------------------------
 -- Rules

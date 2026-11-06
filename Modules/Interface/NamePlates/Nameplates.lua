@@ -91,6 +91,18 @@ local SPARK_TEX = NP_MEDIA .. "cast_spark.tga"
 local SHIELD_TEX = NP_MEDIA .. "shield.png"
 local ARROW_LEFT = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\arrow_left"
 local ARROW_RIGHT = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\arrow_right"
+local StyleTargetArrows -- defined below, before plates are built
+local ARROW_DIR = NP_MEDIA .. "Arrows\\"
+-- Target arrow styles. "classic" keeps the original pair; the others are a
+-- single right-pointing texture that the right-hand arrow mirrors.
+-- ratio = width / height of the drawn arrow.
+local ARROW_STYLES = {
+    classic  = { left = ARROW_LEFT, right = ARROW_RIGHT, ratio = 0.6 },
+    chevron  = { tex = ARROW_DIR .. "chevron",  ratio = 1 },
+    triangle = { tex = ARROW_DIR .. "triangle", ratio = 1 },
+    double   = { tex = ARROW_DIR .. "double",   ratio = 1 },
+    glow     = { tex = ARROW_DIR .. "glow",     ratio = 1 },
+}
 
 local BORDER_CORNER = 6
 local GLOW_MARGIN = 0.48
@@ -252,6 +264,32 @@ end
 -- =====================================
 -- CREATE NAMEPLATE
 -- =====================================
+
+
+-- Size, style, colour and anchor of the two target arrows (nameplates.targetArrow*).
+StyleTargetArrows = function(plate)
+    local L, R = plate.targetArrowLeft, plate.targetArrowRight
+    if not (L and R) then return end
+    local s = DB()
+    local st = ARROW_STYLES[s.targetArrowStyle or "classic"] or ARROW_STYLES.classic
+    local hgt = ((s.height or 17) + 6) * (s.targetArrowScale or 1)
+    local wid = hgt * st.ratio
+    if st.tex then
+        L:SetTexture(st.tex); L:SetTexCoord(0, 1, 0, 1)
+        R:SetTexture(st.tex); R:SetTexCoord(1, 0, 0, 1)
+    else
+        L:SetTexture(st.left);  L:SetTexCoord(0, 1, 0, 1)
+        R:SetTexture(st.right); R:SetTexCoord(0, 1, 0, 1)
+    end
+    L:SetSize(wid, hgt); R:SetSize(wid, hgt)
+    local c = s.targetArrowColor or { r = 1, g = 1, b = 1 }
+    L:SetVertexColor(c.r or 1, c.g or 1, c.b or 1, 0.9)
+    R:SetVertexColor(c.r or 1, c.g or 1, c.b or 1, 0.9)
+    local host = (s.targetArrowAnchor == "health" and plate.health) or plate.nameText or plate.health
+    local gap = s.targetArrowOffset or 2
+    L:ClearAllPoints(); L:SetPoint("RIGHT", host, "LEFT", -gap, 0)
+    R:ClearAllPoints(); R:SetPoint("LEFT", host, "RIGHT", gap, 0)
+end
 
 local function CreatePlate(baseFrame)
     local settings = DB()
@@ -584,20 +622,11 @@ local function CreatePlate(baseFrame)
     -- =========== ENEMY BUFFS (left of health bar) ===========
 
     -- =========== TARGET ARROWS ===========
-    local arrowSize = h + 6
     plate.targetArrowLeft = plate:CreateTexture(nil, "OVERLAY")
-    plate.targetArrowLeft:SetTexture(ARROW_LEFT)
-    plate.targetArrowLeft:SetSize(arrowSize * 0.6, arrowSize)
-    plate.targetArrowLeft:SetPoint("RIGHT", plate.nameText, "LEFT", -2, 0)
-    plate.targetArrowLeft:SetVertexColor(1, 1, 1, 0.9)
     plate.targetArrowLeft:Hide()
-
     plate.targetArrowRight = plate:CreateTexture(nil, "OVERLAY")
-    plate.targetArrowRight:SetTexture(ARROW_RIGHT)
-    plate.targetArrowRight:SetSize(arrowSize * 0.6, arrowSize)
-    plate.targetArrowRight:SetPoint("LEFT", plate.nameText, "RIGHT", 2, 0)
-    plate.targetArrowRight:SetVertexColor(1, 1, 1, 0.9)
     plate.targetArrowRight:Hide()
+    StyleTargetArrows(plate)
 
     -- =========== QUEST ICON ===========
     plate.questIcon = plate:CreateTexture(nil, "OVERLAY")
@@ -658,11 +687,7 @@ local function UpdateSize(plate)
         plate.nameText:SetWidth(w - 20)
     end
 
-    if plate.targetArrowLeft then
-        local arrowSize = h + 6
-        plate.targetArrowLeft:SetSize(arrowSize * 0.6, arrowSize)
-        plate.targetArrowRight:SetSize(arrowSize * 0.6, arrowSize)
-    end
+    if plate.targetArrowLeft then StyleTargetArrows(plate) end
 
     -- Raid marker : seule la TAILLE se regle ici, la position appartient
     -- au registre (ApplyElements en fin de fonction).
@@ -1677,7 +1702,7 @@ local function UpdatePlate(plate, unit)
             if isTarget then plate.glowFrame:Show() else plate.glowFrame:Hide() end
         end
         if plate.targetArrowLeft and plate.targetArrowRight then
-            if isTarget then
+            if isTarget and s.targetArrows ~= false then
                 plate.targetArrowLeft:Show(); plate.targetArrowRight:Show()
             else
                 plate.targetArrowLeft:Hide(); plate.targetArrowRight:Hide()
@@ -2062,7 +2087,7 @@ local function OnTargetChanged_Deferred()
                 if isTarget and not skipDecor then p.glowFrame:Show() else p.glowFrame:Hide() end
             end
             if p.targetArrowLeft and p.targetArrowRight then
-                if isTarget and not skipDecor then
+                if isTarget and not skipDecor and s.targetArrows ~= false then
                     p.targetArrowLeft:Show(); p.targetArrowRight:Show()
                 else
                     p.targetArrowLeft:Hide(); p.targetArrowRight:Hide()

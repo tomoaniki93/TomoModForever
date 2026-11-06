@@ -225,6 +225,17 @@ local function BuildUnitPage(page, u)
         c:Done()
     end
 
+    -- ---- Blizzard's own buff / debuff frames (top-right of the screen) -------
+    if unit == "player" then
+        c = page:Card(T("Cadres d'auras Blizzard", "Blizzard aura frames"))
+        c:Info(T("Les buffs et débuffs Blizzard en haut à droite de l'écran. N'affecte pas les auras des cadres TomoMod.",
+                 "Blizzard's buffs and debuffs at the top right of the screen. Does not affect TomoMod frame auras."))
+        c:Toggle(T("Laisser TomoMod gérer ces cadres", "Let TomoMod manage these frames"), "blizzardAuraFrames.enabled", "baf")
+        c:Pair(function(l) l:Toggle(T("Buffs Blizzard", "Blizzard buffs"), "blizzardAuraFrames.showBuffs", "baf") end,
+               function(r) r:Toggle(T("Débuffs Blizzard", "Blizzard debuffs"), "blizzardAuraFrames.showDebuffs", "baf") end)
+        c:Done()
+    end
+
     -- ---- Text placement (expert) -------------------------------------------
     c = page:Card(T("Position des textes", "Text placement"), { adv = true })
     c:Seg(T("Nom", "Name"), ElementBinding(unit, "name", NAME_POS), {

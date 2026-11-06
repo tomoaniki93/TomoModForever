@@ -31,7 +31,11 @@ K.FONT, K.FONT_BOLD, K.WHITE = FONT, FONT_BOLD, WHITE
 -- Language
 -- ---------------------------------------------------------------------
 K.IS_FR = (GetLocale and GetLocale() == "frFR") and true or false
-function K.T(fr, en) if K.IS_FR then return fr end return en or fr end
+function K.T(fr, en)
+    if TomoMod_GUIT then return TomoMod_GUIT(fr, en) end
+    if K.IS_FR then return fr end
+    return en or fr
+end
 local T = K.T
 
 -- ---------------------------------------------------------------------
@@ -255,6 +259,11 @@ end, true)
 K.RegisterApplier("np", function()
     local NP = TomoMod_Nameplates
     if NP and NP.ApplySettings then NP.ApplySettings() end
+end, true)
+
+K.RegisterApplier("baf", function()
+    local BAF = TomoMod_BlizzardAuraFrames
+    if BAF and BAF.ApplySettings then BAF.ApplySettings() end
 end, true)
 
 K.RegisterApplier("party", function()

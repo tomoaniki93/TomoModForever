@@ -338,7 +338,18 @@ end
 
 -- ══ Mode management ══════════════════════════════════════════════════
 
+-- The beacon and the edge arrow can each be turned off. A part that is off
+-- falls back to Blizzard's own marker, exactly as without the addon.
+local function Filter(mode)
+    local db = TomoModForeverDB and TomoModForeverDB.waypoint
+    if not db then return mode end
+    if mode == "WAYPOINT" and db.showBeacon == false then return "HIDDEN" end
+    if mode == "NAVIGATOR" and db.showArrow == false then return "HIDDEN" end
+    return mode
+end
+
 function WP.SetMode(mode)
+    mode = Filter(mode)
     if mode == currentMode then return end
     currentMode = mode
 
@@ -441,8 +452,9 @@ end
 local function ShouldBeActive()
     if not C_SuperTrack then return false end
     if not C_SuperTrack.IsSuperTrackingAnything() then return false end
-    -- Zone-only restriction
     local db = TomoModForeverDB and TomoModForeverDB.waypoint
+    if db and (db.enabled == false or (db.showBeacon == false and db.showArrow == false)) then return false end
+    -- Zone-only restriction
     if db and db.zoneOnly and not IsInWaypointZone() then return false end
     -- Hide when player is already inside the quest objective area (prevents
     -- a stuck "0 m" beacon that never moves because the nav frame is

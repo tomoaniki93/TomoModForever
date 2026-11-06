@@ -408,8 +408,6 @@ local BASE = {
     ["partyFrames.oorAlpha"]                 = 0.40,
     ["partyFrames.showHealthText"]           = true,
     ["partyFrames.healthTextFormat"]         = "percent",
-    ["partyFrames.showInterruptCD"]          = true,
-    ["partyFrames.showBrezCD"]               = true,
     ["partyFrames.sortByRole"]               = true,
     ["partyFrames.showRoleIcon"]             = true,
 
@@ -541,8 +539,6 @@ local DELTAS = {
         ["unitFrames.target.showThreat"]         = true,
         ["unitFrames.target.threatText.enabled"] = true,
 
-        ["partyFrames.showInterruptCD"]          = true,
-        ["partyFrames.showBrezCD"]               = true,
         ["partyFrames.defensiveShowPersonals"]   = true,
         ["partyFrames.maxDefensives"]            = 3,
         ["partyFrames.showHoTs"]                 = false,
@@ -644,7 +640,6 @@ local DELTAS = {
         ["nameplates.maxEnemyBuffs"]              = 4,
 
         ["partyFrames.showHoTs"]                  = false,
-        ["partyFrames.showInterruptCD"]           = true,
         ["raidFrames.showHoTs"]                   = false,
         ["raidFrames.height"]                     = 30,
 

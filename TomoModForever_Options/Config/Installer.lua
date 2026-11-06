@@ -534,8 +534,6 @@ pages.custom_frames = {
 
         y = Sec(c, L["ins_pf_section"], y)
         local _, ny = CbPath(c, L["ins_pf_enable"],         "partyFrames.enabled", true, y); y = ny
-        local _, ny = CbPath(c, L["ins_pf_show_interrupt"], "partyFrames.showInterruptCD", true, y); y = ny
-        local _, ny = CbPath(c, L["ins_pf_show_brez"],      "partyFrames.showBrezCD", true, y); y = ny
 
         y = Sec(c, L["ins_rf_section"], y)
         local _, ny = CbPath(c, L["ins_rf_enable"],          "raidFrames.enabled", true, y); y = ny

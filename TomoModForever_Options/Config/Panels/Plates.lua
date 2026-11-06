@@ -48,6 +48,24 @@ K.RegisterPage({
                    function(r) r:Slider(T("Taille de la vie", "Health size"), "nameplates.fontSize", 6, 20, 1, "np") end)
             c:Done()
 
+            c = page:Card(T("Flèches de la cible", "Target arrows"))
+            c:Toggle(T("Flèches de chaque côté de la cible", "Arrows on each side of the target"), "nameplates.targetArrows", "np")
+            c:Seg(T("Style", "Style"), "nameplates.targetArrowStyle", {
+                { text = T("Classique", "Classic"),       value = "classic" },
+                { text = T("Chevron", "Chevron"),         value = "chevron" },
+                { text = T("Triangle", "Triangle"),       value = "triangle" },
+                { text = T("Double", "Double"),           value = "double" },
+                { text = T("Lumineuse", "Glowing"),       value = "glow" },
+            }, "np", 3)
+            c:Pair(function(l) l:Slider(T("Taille", "Size"), "nameplates.targetArrowScale", 0.5, 2.5, 0.05, "np", "%.2f") end,
+                   function(r) r:Slider(T("Écart", "Gap"), "nameplates.targetArrowOffset", -10, 30, 1, "np") end)
+            c:Pair(function(l) l:Seg(T("Autour de", "Around"), "nameplates.targetArrowAnchor", {
+                        { text = T("Nom", "Name"),   value = "name" },
+                        { text = T("Barre", "Bar"),  value = "health" },
+                    }, "np", 2) end,
+                   function(r) r:Color(T("Couleur", "Colour"), "nameplates.targetArrowColor", "np") end)
+            c:Done()
+
             c = page:Card(T("Couleurs", "Colours"))
             c:Toggle(T("Couleur de classe pour les joueurs", "Class colour for players"), "nameplates.useClassColors", "np")
             c:Toggle(T("Couleur selon le type (lanceur, élite...)", "Colour by type (caster, elite...)"), "nameplates.useClassificationColors", "np")

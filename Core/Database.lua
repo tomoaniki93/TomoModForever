@@ -542,6 +542,8 @@ TomoMod_Defaults = {
 
     waypoint = {
         enabled      = true,
+        showBeacon   = true,  -- TomoMod marker in the world (off: Blizzard's marker)
+        showArrow    = true,  -- edge arrow when the target is off screen
         beaconScale  = 1.0,   -- global scale multiplier on the in-world beacon
         showBeam     = true,  -- show the vertical teal beam below the beacon
         showETA      = true,  -- append arrival-time estimate to distance text
@@ -1250,6 +1252,12 @@ TomoMod_Defaults = {
         -- nameplates.elements.raidMarker (registre AstralForge) ; seule la
         -- taille reste ici.
         raidIconSize = 24,
+        targetArrows      = true,       -- arrows either side of the target's plate
+        targetArrowStyle  = "classic",  -- classic | chevron | triangle | double | glow
+        targetArrowScale  = 1.0,
+        targetArrowOffset = 2,
+        targetArrowAnchor = "name",     -- name | health
+        targetArrowColor  = { r = 1, g = 1, b = 1 },
         tankColors = {
             noThreat      = { r = 1.00, g = 0.22, b = 0.17 },
             lowThreat     = { r = 0.81, g = 0.72, b = 0.19 },
@@ -1335,12 +1343,6 @@ TomoMod_Defaults = {
         defensiveShowExternals = true,
         defensiveShowRaidWide = false,
         defensiveShowPersonals = false,
-
-        -- Cooldown trackers (M+)
-        showInterruptCD = true,
-        showBrezCD = true,
-        cdIconSize = 18,
-        cdLayout = "vertical",  -- "vertical" (on health bar), "horizontal" (below frame)
 
         -- Resurrection indicator (incoming res cast on this member)
         showResurrectIndicator = true,
@@ -1859,6 +1861,16 @@ local function TomoMod_RunMigrations()
     if not done.dropLevelingBar110 then
         done.dropLevelingBar110 = true
         TomoModForeverDB.levelingBar = nil
+    end
+
+    -- 1.1.2: the class cooldown icons (interrupt / battle-rez) on party
+    -- frames were removed.
+    if not done.dropPartyCD112 then
+        done.dropPartyCD112 = true
+        local pf = TomoModForeverDB.partyFrames
+        if type(pf) == "table" then
+            pf.showInterruptCD, pf.showBrezCD, pf.cdIconSize, pf.cdLayout = nil, nil, nil, nil
+        end
     end
 
     if not done.playerPowerBar110 then

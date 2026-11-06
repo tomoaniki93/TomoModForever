@@ -145,7 +145,7 @@ local ALIASES = {
     bossframe = "uf_boss", boss = "uf_boss",
     castbars = "castbar", cast = "castbar", combat = "castbar",
     resources = "resources",
-    partyframes = "party", raidframes = "raid", healer = "party", group = "party",
+    partyframes = "party", raidframes = "raid", healers = "healer", group = "party",
     cdforge = "spellbars", cooldown = "spellbars", cooldownforge = "spellbars",
     nameplate = "nameplates",
     leveling = "xpedge", levelingbar = "xpedge", xp = "xpedge",
@@ -346,7 +346,7 @@ function C.SwitchCategory(key)
         entry.holder:ClearAllPoints()
         entry.holder:SetAllPoints(content)
         entry.holder:Show()
-        if K.Animated() and TomoMod_Utils.SlideIn then TomoMod_Utils.SlideIn(entry.holder, 16, 0, 0.18) end
+        if not C._noGlide and K.Animated() and TomoMod_Utils.SlideIn then TomoMod_Utils.SlideIn(entry.holder, 16, 0, 0.18) end
     end
     if def.onShow then pcall(def.onShow) end
     SetCrumb(def)
@@ -357,7 +357,7 @@ function C.SwitchCategory(key)
     if RelayoutNav then RelayoutNav() end
 
     -- Show me, automatically, without nagging when nothing is on screen.
-    if def.locate and GuiDB().autoLocate ~= false then
+    if def.locate and GuiDB().autoLocate ~= false and not C._noGlide then
         C_Timer.After(0.15, function()
             if current == key and frame:IsShown() then K.Locate(def.locate, def.label, true) end
         end)
@@ -368,6 +368,12 @@ function C.RebuildCurrentPage()
     if not current then return end
     local entry = built[current]
     local def = PAGE_BY_KEY[current]
+    -- A rebuild is an in-place refresh: keep the scroll position and skip
+    -- the page glide, so the player does not lose their place.
+    local offset
+    if entry and entry.panel and entry.panel.scroll and entry.panel.scroll.GetVerticalScroll then
+        offset = entry.panel.scroll:GetVerticalScroll()
+    end
     if entry then
         if def and def.onHide then pcall(def.onHide) end
         Park(entry)
@@ -375,7 +381,18 @@ function C.RebuildCurrentPage()
     end
     local key = current
     current = nil
+    C._noGlide = true
     C.SwitchCategory(key)
+    C._noGlide = nil
+    local ne = built[key]
+    local sc = offset and offset > 0 and ne and ne.panel and ne.panel.scroll
+    if sc then
+        C_Timer.After(0, function()
+            local range = sc:GetVerticalScrollRange() or 0
+            sc:SetVerticalScroll(math.min(offset, range))
+            if ne.panel.UpdateScroll then ne.panel.UpdateScroll() end
+        end)
+    end
 end
 
 function C.InvalidateCategory(key)
@@ -1083,7 +1100,7 @@ local STUDIO_TO_PAGE = {
     astral = "uf_player", group = "party", resourcecast = "resources", cooldown = "spellbars",
 }
 local ARG_TO_PAGE = {
-    party = "party", raid = "raid", healer = "party", nameplate = "nameplates",
+    party = "party", raid = "raid", healer = "healer", nameplate = "nameplates",
     cast = "castbar", resources = "resources", bossframe = "uf_boss",
     player = "uf_player", target = "uf_target", targettarget = "uf_targettarget",
     focus = "uf_focus", pet = "uf_pet",

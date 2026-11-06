@@ -560,6 +560,36 @@ local function BuildWaypointTab(parent)
     local _, ny = W.CreateSectionHeader(c, L["section_waypoint"], y)
     y = ny
 
+    local GT = TomoMod_GUIT or function(fr, en) return en end
+    if not TomoModForeverDB.waypoint then TomoModForeverDB.waypoint = {} end
+    local wdb = TomoModForeverDB.waypoint
+
+    -- Master switch + the two visible parts. Each one off gives Blizzard's
+    -- own marker back, so nothing is lost by turning it off.
+    local _, ny = W.CreateCheckbox(c, GT("Activer le point de route TomoMod", "Enable the TomoMod waypoint"),
+        wdb.enabled ~= false, y, function(v)
+        wdb.enabled = v and true or false
+        WY_Apply()
+    end)
+    y = ny
+    local _, ny = W.CreateCheckbox(c, GT("Balise dans le monde (sinon : marqueur Blizzard)", "Beacon in the world (otherwise: Blizzard's marker)"),
+        wdb.showBeacon ~= false, y, function(v)
+        wdb.showBeacon = v and true or false
+        if TomoMod_Waypoint and TomoMod_Waypoint.SetMode then TomoMod_Waypoint.SetMode("HIDDEN") end
+        WY_Apply()
+    end)
+    y = ny
+    local _, ny = W.CreateCheckbox(c, GT("Flèche de suivi au bord de l'écran", "Tracking arrow at the screen edge"),
+        wdb.showArrow ~= false, y, function(v)
+        wdb.showArrow = v and true or false
+        if TomoMod_Waypoint and TomoMod_Waypoint.SetMode then TomoMod_Waypoint.SetMode("HIDDEN") end
+        WY_Apply()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+
     -- Zone-only toggle
     local _, ny = W.CreateCheckbox(c, L["opt_way_zone_only"],
         TomoModForeverDB.waypoint and TomoModForeverDB.waypoint.zoneOnly or false, y, function(v)
