@@ -247,7 +247,6 @@ R.Define{
     enabledPath = "partyFrames.enabled",
     anchors = {
         { id = "partyFrames",       path = "partyFrames.position",       shape = "point_relativePoint", label = "frame_party" },
-        { id = "partyFrames.arena", path = "partyFrames.arena.position", shape = "point_relativePoint", label = "frame_arena" },
     },
     global = "TomoMod_PartyFrames", applyMode = "setter", apply = "SetEnabled",
 }

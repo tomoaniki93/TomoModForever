@@ -78,7 +78,6 @@ local LAYOUT_ROUTES = {
 
     -- Groupe et raid
     { "^TomoMod_PartyAnchor",            "partyframes" },
-    { "^TomoMod_ArenaAnchor",            "partyframes" },
     { "^TomoMod_RaidAnchor",             "raidframes" },
     { "^TomoMod_BattleRezCounter",       "raidframes" },
 
@@ -383,16 +382,10 @@ local function BuildEntries()
             if TomoMod_PartyFrames and TomoMod_PartyFrames.ToggleLock then
                 if TomoMod_PartyFrames.IsLocked and TomoMod_PartyFrames.IsLocked() then TomoMod_PartyFrames.ToggleLock() end
             end
-            if TomoMod_ArenaFrames and TomoMod_ArenaFrames.ToggleLock then
-                if TomoMod_ArenaFrames.IsLocked and TomoMod_ArenaFrames.IsLocked() then TomoMod_ArenaFrames.ToggleLock() end
-            end
         end,
         lock     = function()
             if TomoMod_PartyFrames and TomoMod_PartyFrames.ToggleLock then
                 if TomoMod_PartyFrames.IsLocked and not TomoMod_PartyFrames.IsLocked() then TomoMod_PartyFrames.ToggleLock() end
-            end
-            if TomoMod_ArenaFrames and TomoMod_ArenaFrames.ToggleLock then
-                if TomoMod_ArenaFrames.IsLocked and not TomoMod_ArenaFrames.IsLocked() then TomoMod_ArenaFrames.ToggleLock() end
             end
         end,
         isActive = function()

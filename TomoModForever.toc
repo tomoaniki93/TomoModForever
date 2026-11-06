@@ -10,7 +10,7 @@
 ## SavedVariablesPerCharacter: TomoModForeverCharDB
 ## X-oUF: TomoMod_oUF
 ## Author: TomoAniki
-## Version: 1.1.2
+## Version: 1.1.1
 ## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
 
 ## =====================

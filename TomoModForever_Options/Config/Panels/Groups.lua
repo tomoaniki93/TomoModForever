@@ -122,10 +122,6 @@ K.RegisterPage({
             c:Done()
 
             CommonCards(page, "partyFrames", "party")
-
-            c = page:Card(T("JcJ", "PvP"), { adv = true })
-            c:Toggle(T("Cadres d'arène ennemis", "Enemy arena frames"), "partyFrames.arena.enabled", K.NeedReload)
-            c:Done()
         end)
     end,
 })
@@ -336,6 +332,7 @@ local function BuildHealerPreview(parent, y)
                     icon.tex:SetPoint("BOTTOMRIGHT", -1, 1)
                     icon.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
                     icon.dur = icon:CreateFontString(nil, "OVERLAY")
+                    icon.dur:SetFont(K.FONT, 9, "OUTLINE") -- a font before any SetText
                     icon.dur:SetPoint("CENTER")
                     icon.dur:SetText("12")
                     icon:SetScript("OnClick", function()

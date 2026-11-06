@@ -635,7 +635,6 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("ResourceBars",       TomoMod_ResourceBars)
         safeInit("Castbar",            TomoMod_Castbar)
         safeInit("PartyFrames",        TomoMod_PartyFrames)
-        safeInit("ArenaFrames",        TomoMod_ArenaFrames)
         safeInit("RaidFrames",         TomoMod_RaidFrames)
         safeInit("ResurrectTracker",   TomoMod_ResurrectTracker)
 

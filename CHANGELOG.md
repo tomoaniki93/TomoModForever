@@ -9,9 +9,11 @@
 - **New** - The Party and Raid pages have a "Place my heals on the frame..." button that opens the editor on the matching frame type.
 - **Changed** - Only Priest, Druid, Paladin and Shaman are offered: Monk and Evoker were removed from the editor and from the indicator engine, as they do not exist on Forever.
 - **Changed** - Old links to the healer studio now open this page.
+- **Fixed** - The Healer indicators page could fail to build ("Font not set") when a spell icon was shown on the preview.
 
 #### Party Frames
 
+- **Removed** - The enemy arena frames, with their module, mover, layout anchor and option. There are no arenas on Forever; their saved settings are dropped once. This also ends the "action blocked" errors they raised when laid out in combat.
 - **Removed** - The class cooldown icons (interrupt and battle-rez) on party frames, with their module, options, installer step and preset entries. Their saved settings are dropped once. The raid battle-rez counter is unchanged.
 - **Fixed** - Party (5) > Name and icons: the text size slider only changed the preview. The real frames now follow the font and size live, like the raid frames.
 

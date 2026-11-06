@@ -1,8 +1,7 @@
 ﻿-- =====================================
 -- PartyFrame/Core.lua — Party & Group Frames
 -- Secure frames with health, absorb, heal prediction, HoTs,
--- interrupt/brez CD tracking, dispel highlight, range check
--- Arena enemy frames with PvP trinket CD
+-- dispel highlight, range check
 -- NO COMBAT_LOG_EVENT_UNFILTERED
 -- =====================================
 

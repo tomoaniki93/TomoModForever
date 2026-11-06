@@ -165,7 +165,6 @@ local function FindFrame(anchorID)
     if anchorID == "castbars.player" then return _G.TomoMod_Castbar_player end
     if anchorID == "resourceBars" then return _G.TomoMod_ResourceBars_Container end
     if anchorID == "partyFrames" then return _G.TomoMod_PartyAnchor end
-    if anchorID == "partyFrames.arena" then return _G.TomoMod_ArenaAnchor end
     if anchorID == "raidFrames" then return _G.TomoMod_RaidAnchor end
     if anchorID == "battleRez" then return _G.TomoMod_BattleRezCounter end
     if anchorID == "objectiveTracker" then return _G.TomoModObjectiveTrackerMover end
@@ -191,7 +190,6 @@ function P.ResolveAnchorID(frame)
     if name == "TomoMod_Castbar_player" then return "castbars.player" end
     if name == "TomoMod_ResourceBars_Container" then return "resourceBars" end
     if name == "TomoMod_PartyAnchor" then return "partyFrames" end
-    if name == "TomoMod_ArenaAnchor" then return "partyFrames.arena" end
     if name == "TomoMod_RaidAnchor" then return "raidFrames" end
     if name == "TomoMod_BattleRezCounter" then return "battleRez" end
     if name == "TomoModObjectiveTrackerMover" then return "objectiveTracker" end
@@ -432,7 +430,7 @@ local SELECTION_ANCHORS = {
     "unitFrames.player", "unitFrames.target", "unitFrames.targettarget",
     "unitFrames.focus", "unitFrames.pet", "unitFrames.bossFrames",
     "castbars.player", "resourceBars",
-    "partyFrames", "partyFrames.arena", "raidFrames", "battleRez",
+    "partyFrames", "raidFrames", "battleRez",
     "objectiveTracker", "minimap",
 }
 
@@ -510,7 +508,6 @@ local PAGE_BY_ANCHOR = {
     ["castbars.pet"]            = "castbar",
     ["castbars.boss"]           = "castbar",
     ["partyFrames"]             = "party",
-    ["partyFrames.arena"]       = "party",
     ["raidFrames"]              = "raid",
     ["battleRez"]               = "raid",
 }

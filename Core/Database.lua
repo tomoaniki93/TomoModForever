@@ -1358,23 +1358,6 @@ TomoMod_Defaults = {
             x = 20,
             y = 0,
         },
-
-        -- Arena (enemy frames)
-        arena = {
-            enabled = true,
-            width = 160,
-            height = 40,
-            spacing = 2,
-            showTrinketCD = true,
-            trinketSize = 20,
-            showSpecIcon = true,
-            position = {
-                point = "RIGHT",
-                relativePoint = "RIGHT",
-                x = -20,
-                y = 0,
-            },
-        },
     },
 
     -- =====================
@@ -1861,6 +1844,13 @@ local function TomoMod_RunMigrations()
     if not done.dropLevelingBar110 then
         done.dropLevelingBar110 = true
         TomoModForeverDB.levelingBar = nil
+    end
+
+    -- 1.1.2: the enemy arena frames were removed (no arenas on Forever).
+    if not done.dropArena112 then
+        done.dropArena112 = true
+        local pf = TomoModForeverDB.partyFrames
+        if type(pf) == "table" then pf.arena = nil end
     end
 
     -- 1.1.2: the class cooldown icons (interrupt / battle-rez) on party

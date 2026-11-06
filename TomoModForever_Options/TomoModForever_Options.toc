@@ -5,7 +5,7 @@
 ## Author: TomoAniki
 ## Category: |cffC9A252HUD|r
 ## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
-## Version: 1.1.2
+## Version: 1.1.1
 ## LoadOnDemand: 1
 ## Dependencies: TomoModForever
 

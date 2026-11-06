@@ -3,6 +3,5 @@
 
     <Script file="Core.lua" />
     <Script file="HoTs.lua" />
-    <Script file="ArenaFrames.lua" />
 
 </Ui>
