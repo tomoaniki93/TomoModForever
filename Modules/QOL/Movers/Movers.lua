@@ -982,6 +982,12 @@ function M.IsUnlocked()
     return isUnlocked
 end
 
+-- Grid geometry for the snap in TomoLayout: lines every GRID_SPACING units
+-- from the screen centre; "disabled" means the grid (and its snap) is off.
+function M.GetGrid()
+    return GRID_SPACING, gridMode
+end
+
 -- =====================================
 -- INITIALIZE
 -- =====================================

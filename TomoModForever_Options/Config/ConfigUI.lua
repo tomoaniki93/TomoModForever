@@ -1046,7 +1046,13 @@ local function CreateWindow()
     grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-    grip:SetScript("OnMouseDown", function(_, b) if b == "LeftButton" then frame:StartSizing("BOTTOMRIGHT") end end)
+    local widthAtGrab
+    grip:SetScript("OnMouseDown", function(_, b)
+        if b == "LeftButton" then
+            widthAtGrab = frame:GetWidth()
+            frame:StartSizing("BOTTOMRIGHT")
+        end
+    end)
     grip:SetScript("OnMouseUp", function()
         frame:StopMovingOrSizing()
         local d = GuiDB()
@@ -1054,6 +1060,21 @@ local function CreateWindow()
         d.h = math.floor((frame:GetHeight() or DEF_H) + 0.5)
         -- StartSizing re-anchors to TOPLEFT: keep the dock if there was one.
         if d.dock ~= "free" then ApplyDock() end
+        -- Pages lay their rows out once, at the width they were built for:
+        -- wrapped texts got taller in a narrower window and ran into the
+        -- next row. A new width rebuilds the open page and forgets the
+        -- cached ones, which rebuild when next opened.
+        local nw = frame:GetWidth() or 0
+        if widthAtGrab and math.abs(nw - widthAtGrab) > 2 then
+            for k, entry in pairs(built) do
+                if k ~= current then
+                    Park(entry)
+                    built[k] = nil
+                end
+            end
+            C.RebuildCurrentPage()
+        end
+        widthAtGrab = nil
     end)
 
     RelayoutNav()

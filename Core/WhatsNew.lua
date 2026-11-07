@@ -63,6 +63,29 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.1.3",
+        highlights = {
+            L["wn_113_actionbars"],
+            L["wn_113_layout"],
+            L["wn_113_magnet"],
+            L["wn_113_tracker"],
+            L["wn_113_chat"],
+            L["wn_113_bags"],
+            L["wn_113_narrow"],
+        },
+    },
+    {
+        version = "1.1.2",
+        highlights = {
+            L["wn_112_healer"],
+            L["wn_112_arrows"],
+            L["wn_112_waypoint"],
+            L["wn_112_i18n"],
+            L["wn_112_removed"],
+            L["wn_112_fixes"],
+        },
+    },
+    {
         version = "1.1.1",
         highlights = {
             L["wn_111_camp"],

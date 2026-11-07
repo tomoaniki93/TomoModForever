@@ -625,6 +625,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("BagsV4",             TomoMod_BagSkin)
         safeInit("GameMenuSkin",       TomoMod_GameMenuSkin)
         safeInit("BlizzardAuraFrames", TomoMod_BlizzardAuraFrames)
+        safeInit("ActionBarSkin",      TomoMod_ActionBarSkin)
         safeInit("TooltipSkin",        TomoMod_TooltipSkin)
         safeInit("GroupManagerSkin",   TomoMod_GroupManagerSkin)
 

@@ -489,6 +489,19 @@ TomoMod_Defaults = {
     gameMenuSkin = {
         enabled = true,
     },
+    -- Cosmetic skin of Blizzard's action bars (look only, no secure change).
+    barSkin = {
+        enabled       = true,
+        skin          = "forever",   -- forever | pixel | thick | shadow | glass | round
+        borderMode    = "skin",      -- skin | class | custom
+        borderColor   = { r = 0.788, g = 0.635, b = 0.322 },
+        zoom          = 0.08,        -- icon crop on each side
+        showHotkey    = true,
+        hotkeySize    = 11,
+        countSize     = 12,
+        showMacroName = true,
+        hideArt       = false,       -- end caps and border strip of the main bar
+    },
     blizzardAuraFrames = {
         enabled = true,
         showBuffs = true,

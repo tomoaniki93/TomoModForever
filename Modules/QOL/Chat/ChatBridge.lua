@@ -1,7 +1,8 @@
 -- =====================================================================
 -- ChatBridge.lua — secure-safe bridge from Blizzard chat to TomoMod Chat V4
--- No FCF_* function is hooked. AddMessage/scroll post-hooks only touch
--- TomoMod-owned frames and are gated by chatV4.enabled.
+-- FCF_* functions are only post-hooked (hooksecurefunc), to notice a new
+-- tab; nothing of Blizzard's is replaced. AddMessage/scroll post-hooks
+-- only touch TomoMod-owned frames and are gated by chatV4.enabled.
 -- =====================================================================
 
 local Chat = TomoMod_ChatFrameSkin
@@ -157,8 +158,56 @@ function Bridge:ScanFrames()
     if layout then layout:RefreshGeometry() end
 end
 
+-- A tab created by the player (right-click > New window, a whisper tab...)
+-- fires no UPDATE_CHAT_WINDOWS, so it was never mirrored: the new Blizzard
+-- window stayed selected underneath our panel. Pick it up on the next frame
+-- and make it the visible tab, the way Blizzard does.
+local function AdoptNewWindow()
+    C_Timer.After(0, function()
+        Bridge:ScanFrames()
+        if not Chat.IsEnabled() then return end
+        -- Follow Blizzard's own selection: a new window is selected by
+        -- Blizzard, a login-time re-dock is not.
+        local target = GENERAL_CHAT_DOCK and FCFDock_GetSelectedWindow and FCFDock_GetSelectedWindow(GENERAL_CHAT_DOCK)
+        local tabs = Chat.Modules.Tabs
+        if target and tabs and tabs.SetSelectedFrame then tabs:SetSelectedFrame(target) end
+        RefreshSelection()
+    end)
+end
+
+local function InstallWindowHooks()
+    if Bridge.windowHooksInstalled then return end
+    Bridge.windowHooksInstalled = true
+    if type(_G.FCF_OpenNewWindow) == "function" then
+        hooksecurefunc("FCF_OpenNewWindow", function() AdoptNewWindow() end)
+    end
+    if type(_G.FCF_OpenTemporaryWindow) == "function" then
+        hooksecurefunc("FCF_OpenTemporaryWindow", function() AdoptNewWindow() end)
+    end
+    if type(_G.FCF_DockFrame) == "function" then
+        hooksecurefunc("FCF_DockFrame", function() AdoptNewWindow() end)
+    end
+    if type(_G.FCF_UnDockFrame) == "function" then
+        hooksecurefunc("FCF_UnDockFrame", function() C_Timer.After(0, RefreshSelection) end)
+    end
+    if type(_G.FCF_Close) == "function" then
+        hooksecurefunc("FCF_Close", function()
+            C_Timer.After(0, function()
+                local tabs = Chat.Modules.Tabs
+                if tabs and tabs.SetSelectedFrame and GENERAL_CHAT_DOCK and FCFDock_GetSelectedWindow then
+                    local sel = FCFDock_GetSelectedWindow(GENERAL_CHAT_DOCK)
+                    if sel then tabs:SetSelectedFrame(sel) end
+                end
+                RefreshSelection()
+            end)
+        end)
+    end
+end
+
 function Bridge:Initialize()
+    InstallWindowHooks()
     local events = CreateFrame("Frame")
+    events:RegisterEvent("UPDATE_FLOATING_CHAT_WINDOWS")
     events:RegisterEvent("ADDON_LOADED")
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
     events:RegisterEvent("UPDATE_CHAT_WINDOWS")

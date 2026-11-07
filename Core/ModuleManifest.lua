@@ -192,6 +192,13 @@ R.Define{
 }
 
 R.Define{
+    key = "actionBarSkin", label = "mod_actionBarSkin", group = "skins",
+    enabledPath = "barSkin.enabled",
+    global = "TomoMod_ActionBarSkin", applyMode = "gate", apply = "ApplySettings",
+    combatSafe = true,
+}
+
+R.Define{
     key = "mailSkin", label = "mod_mailSkin", group = "skins",
     enabledPath = "mailSkin.enabled",
     requiresReload = true,

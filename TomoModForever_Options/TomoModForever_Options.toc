@@ -5,7 +5,7 @@
 ## Author: TomoAniki
 ## Category: |cffC9A252HUD|r
 ## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
-## Version: 1.1.1
+## Version: 1.1.3
 ## LoadOnDemand: 1
 ## Dependencies: TomoModForever
 
@@ -27,6 +27,7 @@ Config\Panels\Frames.lua
 Config\Panels\Groups.lua
 Config\Panels\Plates.lua
 Config\Panels\SpellBars.lua
+Config\Panels\ActionBars.lua
 Config\Panels\Forever.lua
 Config\ConfigUI.lua
 Config\Installer.lua

@@ -8,6 +8,7 @@ if not Bags then return end
 local Slots = {
     byKey = {},
     list = {},
+    byButton = {},   -- native item button -> wrapper (middle-click pinning)
 }
 Bags.RegisterModule("Slots", Slots)
 
@@ -263,6 +264,7 @@ function Slots:CreatePhysicalSlot(bagID, slotID)
     -- Do not re-add an input script to this protected item button.
 
     self.byKey[key] = wrapper
+    self.byButton[button] = wrapper
     self.list[#self.list + 1] = wrapper
     return wrapper
 end
@@ -461,6 +463,65 @@ function Slots:ApplySettings()
     Bags.RequestRefresh(true)
 end
 
+-- ---------------------------------------------------------------------
+-- Middle-click: pin / unpin the item under the mouse.
+-- The secure item button must keep pristine input scripts (see above), so
+-- the click is read from GLOBAL_MOUSE_DOWN and matched against the frame
+-- under the cursor instead. Nothing is attached to Blizzard's button.
+-- ---------------------------------------------------------------------
+local function L(key, fallback)
+    local value = TomoMod_L and TomoMod_L[key]
+    if type(value) == "string" and value ~= key and value ~= "" then return value end
+    return fallback
+end
+
+local function WrapperUnderMouse()
+    local foci
+    if GetMouseFoci then
+        foci = GetMouseFoci()
+    elseif GetMouseFocus then
+        foci = { GetMouseFocus() }
+    end
+    for _, f in ipairs(foci or {}) do
+        local w = Slots.byButton[f]
+        if w then return w end
+    end
+end
+
+local function ItemIDAt(w)
+    local id = C_Container and C_Container.GetContainerItemID and C_Container.GetContainerItemID(w.bagID, w.slotID)
+    if type(id) == "number" then return id end
+end
+
+function Slots:InstallPinClick()
+    if self.pinFrame then return end
+    local f = CreateFrame("Frame")
+    f:RegisterEvent("GLOBAL_MOUSE_DOWN")
+    f:SetScript("OnEvent", function(_, _, button)
+        if button ~= "MiddleButton" or not Bags.IsVisible() then return end
+        local w = WrapperUnderMouse()
+        local id = w and ItemIDAt(w)
+        if id then Bags.Modules.Data:TogglePinned(id) end
+    end)
+    self.pinFrame = f
+    -- Tooltip hint, added after Blizzard fills the bag tooltip.
+    if GameTooltip and GameTooltip.SetBagItem then
+        hooksecurefunc(GameTooltip, "SetBagItem", function(tip)
+            local owner = tip:GetOwner()
+            local w = owner and Slots.byButton[owner]
+            local id = w and ItemIDAt(w)
+            if not id then return end
+            if Bags.Modules.Data:IsPinned(id) then
+                tip:AddLine(L("bags_v4_slot_unpin", "Middle-click: unpin"), ACCENT[1], ACCENT[2], ACCENT[3])
+            else
+                tip:AddLine(L("bags_v4_slot_pin", "Middle-click: pin"), 0.65, 0.72, 0.74)
+            end
+            tip:Show()
+        end)
+    end
+end
+
 function Slots:Initialize()
     self:EnsurePool()
+    self:InstallPinClick()
 end

@@ -21,6 +21,7 @@ local skinFrame
 local headerBar
 local headerTitle
 local headerCount
+local IsMinimized, UpdateMinimizeButton, ToggleMinimized -- defined further down
 local headerDash
 local headerOptions
 local isInitialized = false
@@ -755,10 +756,31 @@ local function CreateOrUpdateHeader()
         accent:SetPoint("BOTTOMRIGHT", headerBar, "BOTTOMRIGHT", 0, 0)
         accent:SetColorTexture(0.788, 0.635, 0.322, 0.60)
 
+        -- Fold / unfold everything
+        local minBtn = CreateFrame("Button", nil, headerBar)
+        minBtn:SetSize(22, 22)
+        minBtn:SetPoint("LEFT", headerBar, "LEFT", 6, 0)
+        minBtn.text = minBtn:CreateFontString(nil, "OVERLAY")
+        minBtn.text:SetFont(ADDON_FONT_BLACK, 15, "OUTLINE")
+        minBtn.text:SetPoint("CENTER", 0, 1)
+        minBtn.text:SetTextColor(0.788, 0.635, 0.322, 1)
+        minBtn:SetScript("OnClick", function() ToggleMinimized() end)
+        minBtn:SetScript("OnEnter", function(self)
+            self.text:SetTextColor(1, 0.82, 0, 1)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:SetText(IsMinimized() and (L["ot_expand_all"] or "Expand all") or (L["ot_collapse_all"] or "Collapse all"))
+            GameTooltip:Show()
+        end)
+        minBtn:SetScript("OnLeave", function(self)
+            self.text:SetTextColor(0.788, 0.635, 0.322, 1)
+            GameTooltip:Hide()
+        end)
+        headerBar.minBtn = minBtn
+
         -- Title
         headerTitle = headerBar:CreateFontString(nil, "OVERLAY")
         headerTitle:SetFont(ADDON_FONT_BLACK, s.headerFontSize or 13, "OUTLINE")
-        headerTitle:SetPoint("LEFT", headerBar, "LEFT", 10, 0)
+        headerTitle:SetPoint("LEFT", minBtn, "RIGHT", 2, 0)
         headerTitle:SetTextColor(0.949, 0.922, 0.859, 1)
         headerTitle:SetText(L["ot_header_title"])
 
@@ -801,6 +823,7 @@ local function CreateOrUpdateHeader()
 
     -- Update fonts from settings
     headerTitle:SetFont(ADDON_FONT_BLACK, s.headerFontSize or 13, "OUTLINE")
+    UpdateMinimizeButton()
 
     headerBar:Show()
 end
@@ -913,7 +936,15 @@ local function BucketsCollapsedTable()
     return db.bucketsCollapsed
 end
 
+-- Whole-tracker fold (header button): every quest bucket counts as
+-- collapsed and the bucket headers themselves are not drawn.
+IsMinimized = function()
+    local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
+    return db and db.minimized == true
+end
+
 local function IsBucketCollapsed(key)
+    if IsMinimized() then return true end
     local t = BucketsCollapsedTable()
     return t and t[key] == true
 end
@@ -1107,6 +1138,37 @@ local function ToggleBucket(key)
     -- Heights of just-expanded blocks may be stale for a frame or two
     C_Timer.After(0,    function() if LayoutBuckets then LayoutBuckets() end end)
     C_Timer.After(0.05, function() if LayoutBuckets then LayoutBuckets() end end)
+end
+
+UpdateMinimizeButton = function()
+    if headerBar and headerBar.minBtn then
+        headerBar.minBtn.text:SetText(IsMinimized() and "+" or "-")
+    end
+end
+
+OT.ToggleMinimized = function() ToggleMinimized() end
+
+-- Fold / unfold the whole tracker. With buckets off, Blizzard's own
+-- collapse is used (out of combat: the tracker holds secure item buttons).
+ToggleMinimized = function()
+    local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
+    if not db then return end
+    db.minimized = not db.minimized
+    UpdateMinimizeButton()
+    if bucketEnabled then
+        LayoutBuckets()
+        C_Timer.After(0,    function() if LayoutBuckets then LayoutBuckets() end end)
+        C_Timer.After(0.05, function() if LayoutBuckets then LayoutBuckets() end end)
+    else
+        local tracker = ObjectiveTrackerFrame
+        if tracker and not InCombatLockdown() then
+            if tracker.SetCollapsed then
+                pcall(tracker.SetCollapsed, tracker, db.minimized)
+            elseif tracker.ToggleCollapsed then
+                pcall(tracker.ToggleCollapsed, tracker)
+            end
+        end
+    end
 end
 
 local function GetOrCreateBucket(key)
@@ -1617,8 +1679,12 @@ LayoutBuckets = function()
                 bf.frame:ClearAllPoints()
                 bf.frame:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  PAD_LEFT_HEADER,  yOffset)
                 bf.frame:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -PAD_RIGHT,       yOffset)
-                bf.frame:Show()
-                yOffset = yOffset - 22
+                if IsMinimized() then
+                    bf.frame:Hide()           -- folded: only the main header stays
+                else
+                    bf.frame:Show()
+                    yOffset = yOffset - 22
+                end
 
                 if collapsed then
                     for _, block in ipairs(group) do

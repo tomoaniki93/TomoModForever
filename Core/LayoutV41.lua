@@ -20,6 +20,7 @@ local DIM    = { 0.66, 0.62, 0.54 }
 
 local selectedFrame
 local selectedAnchorID
+local selectedSurface   -- frame that owns the drag script (generic selection)
 local editModeActive = false
 local nudger
 local anchorIndex
@@ -36,6 +37,7 @@ local function Settings()
     db.nudgeStep = tonumber(db.nudgeStep) or 1
     if db.nudgeStep ~= 1 and db.nudgeStep ~= 5 and db.nudgeStep ~= 10 then db.nudgeStep = 1 end
     if db.playerTargetMirror == nil then db.playerTargetMirror = false end
+    if db.gridSnap == nil then db.gridSnap = true end
     return db
 end
 
@@ -211,7 +213,46 @@ local function ApplyAndNotify(anchorID, store, frame)
     P.RefreshUI()
 end
 
+-- ---------------------------------------------------------------------
+-- Generic elements. Anything with a drag handle in move mode (chat, bags,
+-- auras, frame anchors such as the loot frame, tooltip, XP bar, camp HUD,
+-- spell bars...) can be selected even without a layout anchor. Such an
+-- element saves its position its own way, so TomoLayout never writes its
+-- storage: it moves the frame, then runs the element's own drag-stop
+-- handler, exactly as if the player had dropped it there.
+-- ---------------------------------------------------------------------
+local function Persist(surface)
+    if not surface or not surface.GetScript then return end
+    local fn = surface:GetScript("OnDragStop") or surface:GetScript("OnMouseUp")
+    if fn then pcall(fn, surface, "LeftButton") end
+end
+
+local function MoveFrameBy(frame, dx, dy)
+    local l, b = frame:GetLeft(), frame:GetBottom()
+    if not (l and b) then return false end
+    local ratio = FrameRatio(frame)
+    frame:ClearAllPoints()
+    frame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", (l * ratio + dx) / ratio, (b * ratio + dy) / ratio)
+    return true
+end
+
+local function GenericMove(frame, dx, dy)
+    if not CanMove(frame) or (dx == 0 and dy == 0) then return false end
+    if not MoveFrameBy(frame, dx, dy) then return false end
+    Persist(selectedSurface or frame)
+    P.RefreshUI()
+    return true
+end
+
+local function HasStore(anchorID)
+    return anchorID ~= nil and Store(anchorID) ~= nil
+end
+
 function P.Nudge(anchorID, frame, dxPixels, dyPixels)
+    if not HasStore(anchorID) then
+        local px, py = P.PixelSize()
+        return GenericMove(frame, (tonumber(dxPixels) or 0) * px, (tonumber(dyPixels) or 0) * py)
+    end
     if not CanMove(frame) or not Layout or not Layout.Save then return false end
     local store = Store(anchorID)
     if not store then return false end
@@ -226,7 +267,178 @@ function P.Nudge(anchorID, frame, dxPixels, dyPixels)
     return true
 end
 
+-- ---------------------------------------------------------------------
+-- Grid magnet. After a drag, the nearest edge or centre of the frame is
+-- pulled onto a grid line when it lands within SNAP_RANGE of one. The grid
+-- is the one drawn by the move mode (lines every N units from the centre).
+-- ---------------------------------------------------------------------
+local SNAP_RANGE = 10
+
+local function NearestLine(value, origin, spacing)
+    local k = Round((value - origin) / spacing)
+    return origin + k * spacing
+end
+
+-- Best correction on one axis: among the given edges, the one closest to a line.
+local function AxisDelta(edges, origin, spacing)
+    local best
+    for _, v in ipairs(edges) do
+        local d = NearestLine(v, origin, spacing) - v
+        if not best or math.abs(d) < math.abs(best) then best = d end
+    end
+    if best and math.abs(best) <= SNAP_RANGE and math.abs(best) > 0.01 then return best end
+    return 0
+end
+
+function P.IsGridSnap()
+    local db = Settings()
+    return db and db.gridSnap ~= false or false
+end
+
+function P.SetGridSnap(enabled)
+    local db = Settings()
+    if db then db.gridSnap = enabled and true or false end
+    P.RefreshUI()
+end
+
+function P.SnapToGrid(anchorID, frame)
+    if not P.IsGridSnap() or not CanMove(frame) then return false end
+    local M = _G.TomoMod_Movers
+    if not (M and M.GetGrid) then return false end
+    local spacing, mode = M.GetGrid()
+    if mode == "disabled" or not spacing or spacing <= 0 then return false end
+    local store = HasStore(anchorID) and Store(anchorID) or nil
+    local l, r, t, b = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
+    if not (l and r and t and b) then return false end
+    local ratio = FrameRatio(frame)
+    l, r, t, b = l * ratio, r * ratio, t * ratio, b * ratio
+    local w, h = UIParent:GetWidth(), UIParent:GetHeight()
+    local cx, cy = math.floor(w / 2), math.floor(h / 2)
+    -- Vertical lines sit at cx + k*spacing; horizontal ones at cy + k*spacing
+    -- counted from the top, i.e. at (h - cy) + k*spacing counted from the bottom.
+    local dx = AxisDelta({ l, (l + r) / 2, r }, cx, spacing)
+    local dy = AxisDelta({ b, (b + t) / 2, t }, h - cy, spacing)
+    if dx == 0 and dy == 0 then return false end
+    if not store then return GenericMove(frame, dx, dy) end
+    if not Layout or not Layout.Save then return false end
+    Layout.Save(store, frame)
+    store.x = (tonumber(store.x) or 0) + dx
+    store.y = (tonumber(store.y) or 0) + dy
+    local sw, sh = Layout.ScreenSize()
+    store.refW, store.refH = sw, sh
+    ApplyAndNotify(anchorID, store, frame)
+    return true
+end
+
+-- A drag ends on mouse-up; the module saves its own position on that same
+-- event, so the snap runs a moment later, on top of the saved position.
+-- Only a real drag snaps: the selected frame must have moved between the
+-- press and the release (a plain click or a nudge button never snaps).
+-- Holding Shift while releasing places the frame freely.
+local dragWatch
+local function CenterKey(frame)
+    local x, y = frame and frame:GetCenter()
+    if not x then return nil end
+    return math.floor(x * 10 + 0.5) .. ":" .. math.floor(y * 10 + 0.5)
+end
+
+-- Frames that belong to the move mode itself or to the settings window.
+local function IsLayoutChrome(frame)
+    local name = frame.GetName and frame:GetName()
+    if not name then return false end
+    return name:find("^TomoModLayout") ~= nil or name == "TomoModConfigFrame"
+end
+
+-- Only TomoMod elements are offered: a Blizzard window with its own drag
+-- handle (character panel...) is never picked, so no Blizzard frame is moved.
+local function IsTomoMod(f)
+    local depth = 0
+    while f and depth < 8 do
+        if f == _G.Minimap or rawget(f, "_tmMoverLayerOwner") then return true end
+        local name = f.GetName and f:GetName()
+        if name and name:find("^TomoMod") then return true end
+        f = f.GetParent and f:GetParent() or nil
+        depth = depth + 1
+    end
+    return false
+end
+
+local function DragSurfaceOf(f)
+    local depth = 0
+    while f and f ~= UIParent and f ~= WorldFrame and depth < 6 do
+        if IsLayoutChrome(f) then return nil end
+        if f.GetScript and f:GetScript("OnDragStop") then
+            local owner = rawget(f, "_tmMoverLayerOwner")
+            local target = owner
+            if not target then
+                if f.IsMovable and f:IsMovable() then
+                    target = f
+                else
+                    local parent = f.GetParent and f:GetParent()
+                    if parent and parent ~= UIParent and parent.IsMovable and parent:IsMovable() then target = parent end
+                end
+            end
+            if target and target ~= UIParent and (IsTomoMod(f) or IsTomoMod(target)) then return f, target end
+        end
+        f = f.GetParent and f:GetParent() or nil
+        depth = depth + 1
+    end
+end
+
+function P.PickUnderMouse()
+    if not editModeActive then return false end
+    local foci
+    if GetMouseFoci then foci = GetMouseFoci()
+    elseif GetMouseFocus then foci = { GetMouseFocus() } end
+    for _, focus in ipairs(foci or {}) do
+        local surface, target = DragSurfaceOf(focus)
+        if surface then
+            if target == selectedFrame then return true end
+            return P.SelectFrame(target, surface)
+        end
+    end
+    return false
+end
+
+local function EnsureDragWatch()
+    if dragWatch then return end
+    dragWatch = CreateFrame("Frame")
+    dragWatch:RegisterEvent("GLOBAL_MOUSE_DOWN")
+    dragWatch:RegisterEvent("GLOBAL_MOUSE_UP")
+    dragWatch:SetScript("OnEvent", function(self, event, button)
+        if not editModeActive or button ~= "LeftButton" then return end
+        if event == "GLOBAL_MOUSE_DOWN" then
+            self.armed = not (nudger and nudger:IsShown() and nudger:IsMouseOver())
+            self.startKey, self.startFrame = nil, nil
+            -- Pick whatever movable element is under the mouse, then read
+            -- the selection next frame (movers also select on OnMouseDown).
+            if self.armed then P.PickUnderMouse() end
+            C_Timer.After(0, function()
+                if selectedFrame then
+                    self.startFrame = selectedFrame
+                    self.startKey = CenterKey(selectedFrame)
+                end
+            end)
+            return
+        end
+        if not self.armed then return end
+        self.armed = false
+        if IsShiftKeyDown() then return end
+        C_Timer.After(0.05, function()
+            local frame, anchorID = selectedFrame, selectedAnchorID
+            if not frame or frame ~= self.startFrame then return end
+            if CenterKey(frame) == self.startKey then return end
+            P.SnapToGrid(anchorID, frame)
+        end)
+    end)
+end
+
 function P.CenterAxis(anchorID, frame, axis)
+    if not HasStore(anchorID) then
+        local x, y = P.CenterOffset(frame)
+        if not x then return false end
+        return GenericMove(frame, axis == "x" and -x or 0, axis == "y" and -y or 0)
+    end
     if not CanMove(frame) or not Layout or not Layout.Save then return false end
     local store = Store(anchorID)
     if not store then return false end
@@ -409,12 +621,15 @@ local function RefreshMoverFocus()
     end
 end
 
-function P.SelectFrame(frame)
-    if not editModeActive then return false end
+function P.SelectFrame(frame, surface)
+    if not editModeActive or not frame then return false end
     local anchorID = P.ResolveAnchorID(frame)
-    if not anchorID or not Store(anchorID) then return false end
+    if anchorID and not Store(anchorID) then anchorID = nil end
+    -- Without a layout anchor the element needs a drag handle to persist.
+    if not anchorID and not surface then return false end
     selectedFrame = frame
     selectedAnchorID = anchorID
+    selectedSurface = surface
     RefreshMoverFocus()
     RefreshSelectionOutline()
     if nudger then nudger:Show() end
@@ -584,7 +799,7 @@ local function EnsureNudger(headerBar)
 
     local f = CreateFrame("Frame", "TomoModLayoutNudger", UIParent, "BackdropTemplate")
     nudger = f
-    f:SetSize(390, 214)
+    f:SetSize(390, 246)
     f:SetFrameStrata("DIALOG")
     f:SetFrameLevel(610)
     f:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
@@ -661,6 +876,12 @@ local function EnsureNudger(headerBar)
     pp:SetPoint("TOPLEFT", 112, -148)
     f._pixel = pp
 
+    local snap = MakeButton(f, 110, 28, "Aimant : ON", function()
+        P.SetGridSnap(not P.IsGridSnap())
+    end)
+    snap:SetPoint("TOPLEFT", 18, -180)
+    f._snap = snap
+
     local mirror = MakeButton(f, 148, 28, "Player <-> Target", function()
         P.SetPlayerTargetMirror(not P.IsPlayerTargetMirror())
     end)
@@ -675,16 +896,20 @@ local function EnsureNudger(headerBar)
         if selectedFrame then P.CenterAxis(selectedAnchorID, selectedFrame, "y") end
     end)
     centerY:SetPoint("LEFT", centerX, "RIGHT", 6, 0)
-    local reset = MakeButton(f, 62, 28, "Reset", function()
+    local reset
+    reset = MakeButton(f, 62, 28, "Reset", function()
         if selectedFrame then P.Reset(selectedAnchorID, selectedFrame) end
     end)
     reset:SetPoint("LEFT", centerY, "RIGHT", 6, 0)
+    f._reset = reset
 
     local hint = f:CreateFontString(nil, "OVERLAY")
     hint:SetFont(FONT, 9, "")
     hint:SetPoint("BOTTOMLEFT", 12, 10)
+    hint:SetPoint("BOTTOMRIGHT", -12, 10)
+    hint:SetJustifyH("LEFT")
     hint:SetTextColor(0.42, 0.45, 0.48)
-    hint:SetText("Cliquez ou déplacez un élément pour ouvrir TomoLayout.")
+    hint:SetText((TomoMod_L and TomoMod_L["layout_nudger_hint"]) or "Cliquez ou déplacez un élément pour ouvrir TomoLayout. Maj : placer sans aimant.")
 
     f:SetScript("OnUpdate", function(self, elapsed)
         self._elapsed = (self._elapsed or 0) + elapsed
@@ -696,8 +921,25 @@ local function EnsureNudger(headerBar)
     return f
 end
 
-local function SelectionLabel(anchorID)
-    return Layout and Layout.Label and Layout.Label(anchorID, anchorID) or anchorID
+-- Name shown in the panel: the anchor label, else the mover's own caption,
+-- else a cleaned-up frame name.
+local function SelectionLabel(anchorID, frame, surface)
+    if anchorID then
+        return Layout and Layout.Label and Layout.Label(anchorID, anchorID) or anchorID
+    end
+    for _, f in ipairs({ surface, frame }) do
+        if f and f.GetRegions then
+            for _, r in ipairs({ f:GetRegions() }) do
+                if r.GetObjectType and r:GetObjectType() == "FontString" and r:IsShown() then
+                    local t = r:GetText()
+                    if type(t) == "string" and t ~= "" and #t < 48 then return t end
+                end
+            end
+        end
+    end
+    local name = frame and frame.GetName and frame:GetName() or "?"
+    name = name:gsub("^TomoModAnchor_", ""):gsub("^TomoMod_?", ""):gsub("_", " ")
+    return name
 end
 
 function P.RefreshUI()
@@ -705,9 +947,9 @@ function P.RefreshUI()
     local db = Settings()
     if not db then return end
 
-    if selectedFrame and selectedAnchorID then
+    if selectedFrame then
         RefreshSelectionOutline()
-        nudger._selected:SetText(SelectionLabel(selectedAnchorID))
+        nudger._selected:SetText(SelectionLabel(selectedAnchorID, selectedFrame, selectedSurface))
         nudger._selected:SetTextColor(0.949, 0.922, 0.859)
         local x, y = P.PixelCoordinates(selectedFrame)
         if x and y then
@@ -718,6 +960,8 @@ function P.RefreshUI()
         if nudger._config then
             if HasSelectionConfiguration() then nudger._config:Show() else nudger._config:Hide() end
         end
+        -- Reset needs a stored default: only layout anchors have one.
+        if nudger._reset then nudger._reset:SetAlpha(HasStore(selectedAnchorID) and 1 or 0.35) end
     else
         if selectionOutline then selectionOutline:Hide() end
         if nudger._config then nudger._config:Hide() end
@@ -728,18 +972,24 @@ function P.RefreshUI()
     nudger._step._text:SetText(string.format("Pas : %d px", db.nudgeStep))
     SetToggleVisual(nudger._pixel, db.pixelPerfect, "Pixel : ON", "Pixel : OFF")
     SetToggleVisual(nudger._mirror, db.playerTargetMirror, "Player <-> Target : ON", "Player <-> Target")
+    if nudger._snap then
+        local LL = TomoMod_L or {}
+        SetToggleVisual(nudger._snap, db.gridSnap ~= false,
+            LL["layout_snap_on"] or "Aimant : ON", LL["layout_snap_off"] or "Aimant : OFF")
+    end
 end
 
 function P.SetEditMode(enabled, headerBar)
     editModeActive = enabled and true or false
     local f = EnsureNudger(headerBar)
-    selectedFrame, selectedAnchorID = nil, nil
+    selectedFrame, selectedAnchorID, selectedSurface = nil, nil, nil
     RefreshMoverFocus()
     if TomoMod_Utils and TomoMod_Utils.SetMoverLayerMode then
         TomoMod_Utils.SetMoverLayerMode(editModeActive)
     end
     if selectionOutline then selectionOutline:Hide() end
     if editModeActive then
+        EnsureDragWatch()
         P.BindSelectionFrames()
         -- v1.2: TomoLayout only appears after the player selects a mover.
         f:Hide()
