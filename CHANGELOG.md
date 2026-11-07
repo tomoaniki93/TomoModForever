@@ -22,6 +22,7 @@
 
 #### Chat
 
+- **Fixed** - Clicking a name or a link in the TomoMod chat raised a Blizzard error ("editBox" nil): the link is now handed to the real chat window, so whispering a name or linking into chat opens its input box.
 - **Fixed** - A chat tab created by the player (new window, whisper tab) was not picked up by the TomoMod chat and sat behind it. New docked tabs now appear in the TomoMod tab row and are selected, as in Blizzard's chat. Closing or undocking a tab updates the panel too.
 
 #### Bags
