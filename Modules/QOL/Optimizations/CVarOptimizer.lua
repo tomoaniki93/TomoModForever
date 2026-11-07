@@ -286,6 +286,55 @@ local function RegisterDialog()
 end
 
 -- =====================================
+-- CONFORT : CAMÉRA ET EFFETS D'ÉCRAN (1.2.0)
+-- =====================================
+-- Bascules persistantes, contrairement au tableau "optimal" ci-dessus qui
+-- s'applique une fois. Réglages dans TomoModForeverDB.cameraFx ; la valeur
+-- trouvée avant notre premier changement est gardée dans cameraFx.orig et
+-- remise quand on décoche, pour ne jamais écraser un réglage du joueur.
+OPT.COMFORT = {
+    -- Le client Forever plafonne le facteur de zoom à 2.6 (1.9 par défaut).
+    { key = "maxZoom",     cvar = "cameraDistanceMaxZoomFactor", on = "2.6" },
+    -- ffxGlow porte le flou d'ivresse (et le léger halo plein écran).
+    { key = "noDrunkHaze", cvar = "ffxGlow",   on = "0" },
+    -- Écran gris à la mort et teinte violette du Néant.
+    { key = "noDeathFx",   cvar = "ffxDeath",  on = "0" },
+    { key = "noDeathFx",   cvar = "ffxNether", on = "0" },
+}
+
+local comfortPending = false
+
+-- "2.6" et "2.5999999046326" sont la même valeur pour le client.
+local function Same(a, b)
+    local na, nb = tonumber(a), tonumber(b)
+    if na and nb then return math.abs(na - nb) < 0.01 end
+    return tostring(a) == tostring(b)
+end
+
+function OPT.ApplyComfort()
+    local db = TomoModForeverDB and TomoModForeverDB.cameraFx
+    if not db then return end
+    -- Certaines CVars caméra sont refusées en combat : on rejoue après.
+    if InCombatLockdown() then comfortPending = true; return end
+    comfortPending = false
+    db.orig = db.orig or {}
+    for _, e in ipairs(OPT.COMFORT) do
+        local raw = OPT.GetRaw(e.cvar)
+        if raw then
+            if db[e.key] then
+                if not Same(raw, e.on) then
+                    if db.orig[e.cvar] == nil then db.orig[e.cvar] = raw end
+                    pcall(SetCVar, e.cvar, e.on)
+                end
+            elseif db.orig[e.cvar] ~= nil then
+                pcall(SetCVar, e.cvar, db.orig[e.cvar])
+                db.orig[e.cvar] = nil
+            end
+        end
+    end
+end
+
+-- =====================================
 -- INITIALISATION
 -- =====================================
 function OPT.Initialize()
@@ -299,6 +348,17 @@ function OPT.Initialize()
     end
 
     RegisterDialog()
+
+    -- Le jeu remet parfois le zoom max par défaut au chargement : on
+    -- réapplique à chaque entrée dans le monde.
+    local f = CreateFrame("Frame")
+    f:RegisterEvent("PLAYER_ENTERING_WORLD")
+    f:RegisterEvent("PLAYER_REGEN_ENABLED")
+    f:SetScript("OnEvent", function(_, event)
+        if event == "PLAYER_REGEN_ENABLED" and not comfortPending then return end
+        OPT.ApplyComfort()
+    end)
+    OPT.ApplyComfort()
 end
 
 _G.TomoMod_CVarOptimizer = OPT

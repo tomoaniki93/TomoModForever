@@ -649,6 +649,36 @@ TomoMod_Defaults = {
         position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 190 },
     },
 
+    -- Small adventure comforts (1.2.0): resurrection, red errors, trainer.
+    adventureTweaks = {
+        autoRes = false,          -- accept resurrection requests
+        autoResNoCombat = true,   -- ...unless the caster is in combat
+        autoResMessage = true,    -- one chat line saying who raised you
+        hideErrors = false,       -- hide the red error text (and its voice)
+        hideErrorsMode = "always",-- always | combat
+        keepImportantErrors = true, -- bags full, quest log full, dead...
+        trainAll = true,          -- "Train all" button at class trainers
+    },
+
+    -- Camera and screen effects, set through CVars (CVarOptimizer.lua).
+    cameraFx = {
+        maxZoom = false,          -- cameraDistanceMaxZoomFactor at its cap
+        noDrunkHaze = false,      -- ffxGlow off
+        noDeathFx = false,        -- ffxDeath + ffxNether off
+        orig = {},                -- values found before the first change
+    },
+
+    -- Flight timer bar. Learned times live in TomoModForeverFlightDB
+    -- (account-wide, outside profiles).
+    flightTimer = {
+        enabled = true,
+        scale = 1.0,
+        width = 260,
+        fillMode = "drain",       -- drain | fill
+        mapTooltip = true,        -- duration in the flight map node tooltip
+        position = { point = "TOP", relativePoint = "TOP", x = 0, y = -150 },
+    },
+
     cooldownManager = {
         enabled = true,
         -- Masquage individuel des quatre viewers Blizzard (essential, utility,

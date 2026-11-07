@@ -58,6 +58,11 @@
     <Include file="Forever\Campfire.lua" />
     <Include file="Forever\EdgeXP.lua" />
     <Include file="Forever\MissingBuffs.lua" />
+    <Include file="Forever\AdventureTweaks.lua" />
+    <Include file="Forever\FlightTimer.lua" />
+
+    <!-- Modules: Mail (TomoMail port) -->
+    <Include file="Mail\Mail.xml" />
 
     <!-- Modules: FrameAnchors -->
     <Include file="FrameAnchors\FrameAnchors.lua" />

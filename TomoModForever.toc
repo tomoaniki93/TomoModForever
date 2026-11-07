@@ -5,12 +5,12 @@
 ## Notes-frFR: Remplacement d'interface TomoMod allégé pour WoW : Forever.
 ## Category: |cffC9A252HUD|r
 ## 
-## SavedVariables: TomoModForeverDB, TomoModForeverCompanionDB, TomoModForeverDamageMeterDB
+## SavedVariables: TomoModForeverDB, TomoModForeverCompanionDB, TomoModForeverDamageMeterDB, TomoModForeverFlightDB, TomoModForeverMailDB
 ## OptionalDeps: Blizzard_DamageMeter
 ## SavedVariablesPerCharacter: TomoModForeverCharDB
 ## X-oUF: TomoMod_oUF
 ## Author: TomoAniki
-## Version: 1.1.3
+## Version: 1.2.0
 ## IconTexture: Interface\AddOns\TomoModForever\Assets\Textures\Logo64.tga
 
 ## =====================
@@ -38,6 +38,7 @@ Locales\Locale_101.lua
 Locales\Locale_110.lua
 Locales\Locale_111.lua
 Locales\Locale_113.lua
+Locales\Locale_120.lua
 Locales\Locale_GUI.lua
 Locales\Locale_Compat.lua
 

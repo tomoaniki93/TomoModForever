@@ -63,6 +63,18 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.0",
+        highlights = {
+            L["wn_120_mail"],
+            L["wn_120_flight"],
+            L["wn_120_flightmap"],
+            L["wn_120_res"],
+            L["wn_120_errors"],
+            L["wn_120_train"],
+            L["wn_120_camera"],
+        },
+    },
+    {
         version = "1.1.3",
         highlights = {
             L["wn_113_actionbars"],

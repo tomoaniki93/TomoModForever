@@ -1,0 +1,15 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+    <!-- Mail (TomoMail 2.2.0 port, Forever palette). Order matters:
+         locales, core, UI kit, sub-modules, then the settings panel. -->
+    <Include file="MailLocales.lua" />
+    <Include file="MailCore.lua" />
+    <Include file="MailUI.lua" />
+    <Include file="MailContacts.lua" />
+    <Include file="MailQuickSend.lua" />
+    <Include file="MailSkin.lua" />
+    <Include file="MailWindow.lua" />
+    <Include file="MailInbox.lua" />
+    <Include file="MailCompose.lua" />
+    <Include file="MailConfig.lua" />
+</Ui>

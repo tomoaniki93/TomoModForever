@@ -1,5 +1,31 @@
 ## ####################################
 
+## CHANGELOG 1.2.0
+
+#### Mail (TomoMail)
+
+- **New** - Comfort > Mail: TomoMail 2.2.0 is now part of TomoModForever, in the Forever palette (antique gold, aged bronze, off-white, Poppins). Mail window with Inbox and Send tabs, inbox filters (players, auction house, system) and "Take all", reader with reply / delete, contacts panel (your characters, guild A-Z with online status, recent recipients), send to every alt at once, recipient autocomplete and the reskin of Blizzard's mail frames.
+- **Changed** - Uses the existing "Mail skin" switch (mailSkin.enabled), which had no module behind it until now. Changing it needs a /reload.
+- **Changed** - Alts, recent recipients and display options live in their own SavedVariable (TomoModForeverMailDB), outside TomoMod profiles. `/tml` still opens the full mail settings.
+- **Changed** - If the standalone TomoMail addon is enabled too, the module pauses with one chat line instead of skinning the mailbox twice. The Mythic+ keystone library TomoMail bundled is not included (unused by mail, and Forever has no keystones).
+- **Changed** - Listens to MAIL_SHOW / MAIL_CLOSED as well as the interaction-manager events, so the mailbox opens the same on every client.
+
+#### Flight Timer
+
+- **New** - Adventure > Flight timer: a bar during flights with the destination and the time left, in the Forever palette. Movable from the move mode, size, width, drain or fill.
+- **New** - Times are learned: the first flight on a route counts up ("measuring") and is saved on landing; after that the bar counts down. A route never flown whole but made of known pieces gets an estimate marked "≈".
+- **New** - The flight map tooltip shows the duration of each reachable destination.
+- **Changed** - Learned times live in their own account-wide SavedVariable (TomoModForeverFlightDB), shared by every character and untouched by profile swaps or resets. Frequent Flier flights are stored at normal speed. Early landings, summons, battleground ports and deaths are never saved. A /reload in flight keeps the bar.
+
+#### Adventure Comforts
+
+- **New** - Adventure > Adventure comforts: accept resurrections automatically, unless the caster is in combat (option), with an optional chat line.
+- **New** - Hide the red error text and its voice, always or in combat only; important messages (bags full, quest log full, dead...) can be kept. UIErrorsFrame only stops listening to the event: no Blizzard script is replaced.
+- **New** - "Train all" button at trainers: learns every skill you can afford, cheapest first; its tooltip shows the count and the cost. Hidden at pet trainers.
+- **New** - Max camera zoom, no drunken haze, no grey death screen (CVars, in CVarOptimizer). Unticking puts back the value found before.
+
+## ####################################
+
 ## CHANGELOG 1.1.3
 
 #### Action Bar Skins

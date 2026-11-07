@@ -475,6 +475,38 @@ R.Define{
     global = "TomoMod_MissingBuffs", applyMode = "setter", apply = "SetEnabled",
 }
 
+-- 1.2.0: adventure comforts. No master switch: each toggle stands alone
+-- and Apply() re-reads them all.
+R.Define{
+    key = "adventureTweaks", label = "mod_adventureTweaks", group = "qol",
+    toggles = {
+        { path = "adventureTweaks.autoRes",    label = "mod_adventureTweaks_autoRes"    },
+        { path = "adventureTweaks.hideErrors", label = "mod_adventureTweaks_hideErrors" },
+        { path = "adventureTweaks.trainAll",   label = "mod_adventureTweaks_trainAll"   },
+    },
+    global = "TomoMod_AdventureTweaks", applyMode = "gate", apply = "Apply",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "cameraFx", label = "mod_cameraFx", group = "qol",
+    toggles = {
+        { path = "cameraFx.maxZoom",     label = "mod_cameraFx_maxZoom"     },
+        { path = "cameraFx.noDrunkHaze", label = "mod_cameraFx_noDrunkHaze" },
+        { path = "cameraFx.noDeathFx",   label = "mod_cameraFx_noDeathFx"   },
+    },
+    global = "TomoMod_CVarOptimizer", applyMode = "gate", apply = "ApplyComfort",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "flightTimer", label = "mod_flightTimer", group = "qol",
+    enabledPath = "flightTimer.enabled",
+    anchors = { { id = "flightTimer", path = "flightTimer.position", shape = "point_relativePoint", label = "mod_flightTimer" } },
+    global = "TomoMod_FlightTimer", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
 -- ---------------------------------------------------------------------
 -- INTERNAL
 -- ---------------------------------------------------------------------

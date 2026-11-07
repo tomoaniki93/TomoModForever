@@ -1,0 +1,488 @@
+-- TomoMod_Mail | Modules/Skin.lua
+-- Reskin Blizzard mail frames in the dark TomoSuite theme
+
+local TM = TomoMod_Mail
+local UI = TM.UI
+local Skin = {}
+TM:RegisterModule("Skin", Skin)
+
+local skinApplied = false
+
+-- ============================================================
+--  Helpers
+-- ============================================================
+
+local BACKDROP_DARK = {
+    bgFile   = "Interface\\Buttons\\WHITE8x8",
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 1,
+}
+
+--- Strip all non-essential textures from a region
+local function StripTextures(frame, ...)
+    if not frame or not frame.GetRegions then return end
+    local keepLayers = {}
+    for i = 1, select("#", ...) do
+        local layer = select(i, ...)
+        if layer then keepLayers[layer] = true end
+    end
+
+    for _, region in pairs({ frame:GetRegions() }) do
+        if region:IsObjectType("Texture") then
+            local layer = region:GetDrawLayer()
+            if not keepLayers[layer] then
+                region:SetTexture(nil)
+                region:SetAtlas("")
+                region:Hide()
+            end
+        end
+    end
+end
+
+--- Unpack a UI.COLORS entry into r, g, b, a (alpha defaults to 1)
+local function Unpack(c)
+    if type(c) ~= "table" then return 1, 1, 1, 1 end
+    return c[1] or 1, c[2] or 1, c[3] or 1, c[4] or 1
+end
+
+--- Colour the text of an arbitrary widget without assuming it is a FontString.
+-- Blizzard periodically converts plain mail labels into composite widgets
+-- (Midnight turned OpenMailSender into a container that no longer exposes
+-- SetTextColor), which made a blind obj:SetTextColor() raise
+-- "attempt to call a nil value" and abort the whole OpenMail section.
+-- Resolution order: direct method -> common text sub-widgets -> button font
+-- string -> every FontString region parented to the widget.
+local function SetTextColorSafe(obj, r, g, b, a)
+    if type(obj) ~= "table" then return false end
+    a = a or 1
+
+    -- 1. Real FontString / EditBox / anything exposing the method
+    if type(obj.SetTextColor) == "function" then
+        if pcall(obj.SetTextColor, obj, r, g, b, a) then return true end
+    end
+
+    -- 2. Common parentKey text children on composite widgets
+    for _, key in ipairs({ "Text", "text", "Label", "label", "Name", "Title" }) do
+        local child = rawget(obj, key)
+        if type(child) == "table" and type(child.SetTextColor) == "function" then
+            if pcall(child.SetTextColor, child, r, g, b, a) then return true end
+        end
+    end
+
+    -- 3. Button-style font string
+    if type(obj.GetFontString) == "function" then
+        local ok, fs = pcall(obj.GetFontString, obj)
+        if ok and type(fs) == "table" and type(fs.SetTextColor) == "function" then
+            if pcall(fs.SetTextColor, fs, r, g, b, a) then return true end
+        end
+    end
+
+    -- 4. Fall back to every FontString region under the widget
+    if type(obj.GetRegions) == "function" then
+        local applied = false
+        local ok, regions = pcall(function() return { obj:GetRegions() } end)
+        if ok then
+            for _, region in pairs(regions) do
+                if type(region) == "table" and region.IsObjectType
+                   and region:IsObjectType("FontString") then
+                    pcall(region.SetTextColor, region, r, g, b, a)
+                    applied = true
+                end
+            end
+        end
+        return applied
+    end
+
+    return false
+end
+
+--- Apply dark backdrop to a frame
+local function ApplyDarkBackdrop(frame, r, g, b, a, br, bg, bb)
+    -- Only real Frames can carry a backdrop; FontStrings/Textures must be skipped
+    if type(frame) ~= "table" or type(frame.HookScript) ~= "function" then return end
+
+    r  = r  or UI.COLORS.bg[1]
+    g  = g  or UI.COLORS.bg[2]
+    b  = b  or UI.COLORS.bg[3]
+    a  = a  or 1
+    br = br or UI.COLORS.border[1]
+    bg = bg or UI.COLORS.border[2]
+    bb = bb or UI.COLORS.border[3]
+
+    if not frame.SetBackdrop then
+        Mixin(frame, BackdropTemplateMixin)
+        frame:HookScript("OnSizeChanged", frame.OnBackdropSizeChanged)
+    end
+
+    frame:SetBackdrop(BACKDROP_DARK)
+    frame:SetBackdropColor(r, g, b, a)
+    frame:SetBackdropBorderColor(br, bg, bb, 1)
+end
+
+--- Skin a standard Blizzard button
+local function SkinButton(btn, isPrimary)
+    if not btn then return end
+
+    StripTextures(btn)
+
+    ApplyDarkBackdrop(btn,
+        UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+
+    SetTextColorSafe(btn, Unpack(isPrimary and UI.COLORS.accent or UI.COLORS.text))
+
+    if type(btn.HookScript) ~= "function" then return end
+
+    btn:HookScript("OnEnter", function(self)
+        self:SetBackdropBorderColor(unpack(UI.COLORS.accent))
+    end)
+    btn:HookScript("OnLeave", function(self)
+        self:SetBackdropBorderColor(unpack(UI.COLORS.border))
+    end)
+end
+
+--- Skin an EditBox
+local function SkinEditBox(editbox)
+    if not editbox then return end
+
+    -- Try stripping existing textures
+    StripTextures(editbox)
+
+    -- Remove named sub-textures
+    local name = editbox:GetName()
+    if name then
+        for _, suffix in pairs({ "Left", "Right", "Mid", "Middle" }) do
+            local tex = _G[name .. suffix]
+            if tex then
+                tex:SetTexture(nil)
+                tex:Hide()
+            end
+        end
+    end
+
+    ApplyDarkBackdrop(editbox,
+        UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+
+    SetTextColorSafe(editbox, 0.85, 0.85, 0.85)
+end
+
+--- Reskin a native mail item button (Send/Open attachment) WITHOUT wiping its icon.
+-- The item icon lives on the button's BACKGROUND layer (parentKey "icon"); the old
+-- layer-based strip kept only OVERLAY/ARTWORK and so cleared + hid the icon, leaving a
+-- placed item as its stack count over the dark backdrop (a black square). Protect the
+-- icon by object identity, hide only the ornate quickslot art, lift the icon above the
+-- backdrop (BORDER, so the ARTWORK count still reads on top) and inset it to match the
+-- reader slots.
+local function SkinAttachmentSlot(slot)
+    if not slot then return end
+    local icon = slot.icon or (slot.GetName and _G[(slot:GetName() or "") .. "IconTexture"])
+
+    if slot.GetNormalTexture then
+        local nt = slot:GetNormalTexture()
+        if nt then nt:SetTexture(nil); nt:Hide() end
+    end
+    pcall(function() slot:SetNormalTexture("") end)
+
+    for _, region in pairs({ slot:GetRegions() }) do
+        if region ~= icon and region:IsObjectType("Texture") then
+            local layer = region:GetDrawLayer()
+            if layer ~= "OVERLAY" and layer ~= "ARTWORK" then
+                region:SetTexture(nil); region:SetAtlas(""); region:Hide()
+            end
+        end
+    end
+
+    ApplyDarkBackdrop(slot, UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+
+    if icon then
+        icon:SetDrawLayer("BORDER")
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        icon:ClearAllPoints()
+        icon:SetPoint("TOPLEFT", slot, "TOPLEFT", 1, -1)
+        icon:SetPoint("BOTTOMRIGHT", slot, "BOTTOMRIGHT", -1, 1)
+    end
+end
+
+-- ============================================================
+--  Skin the main MailFrame container
+-- ============================================================
+
+local function SkinMailFrame()
+    local mf = MailFrame
+    if not mf then return end
+
+    -- Strip the ornate Blizzard border / parchment textures
+    StripTextures(mf)
+
+    -- Apply dark backdrop
+    ApplyDarkBackdrop(mf)
+
+    -- Title text
+    SetTextColorSafe(MailFrameTitleText, Unpack(UI.COLORS.accent))
+
+    -- Close button — leave untouched so the X stays visible
+    -- (Blizzard close buttons use Normal/Pushed/Highlight textures)
+
+    -- Tab buttons at the bottom
+    for i = 1, 2 do
+        local tab = _G["MailFrameTab" .. i]
+        if tab then
+            StripTextures(tab)
+            ApplyDarkBackdrop(tab,
+                UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+
+            SetTextColorSafe(tab, Unpack(UI.COLORS.text))
+
+            tab:HookScript("OnEnter", function(self)
+                self:SetBackdropBorderColor(unpack(UI.COLORS.accent))
+            end)
+            tab:HookScript("OnLeave", function(self)
+                self:SetBackdropBorderColor(unpack(UI.COLORS.border))
+            end)
+        end
+    end
+end
+
+-- ============================================================
+--  Skin the Inbox (InboxFrame)
+-- ============================================================
+
+local function SkinInbox()
+    local inbox = InboxFrame
+    if not inbox then return end
+
+    StripTextures(inbox)
+
+    -- Skin each mail item row
+    for i = 1, INBOXITEMS_TO_DISPLAY or 7 do
+        local item = _G["MailItem" .. i]
+        if item then
+            StripTextures(item)
+
+            -- Dark row background
+            local rowBg = item:CreateTexture(nil, "BACKGROUND")
+            rowBg:SetAllPoints()
+            rowBg:SetColorTexture(UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 0.5)
+
+            -- Row divider
+            local divider = item:CreateTexture(nil, "BORDER")
+            divider:SetHeight(1)
+            divider:SetPoint("BOTTOMLEFT", item, "BOTTOMLEFT", 0, 0)
+            divider:SetPoint("BOTTOMRIGHT", item, "BOTTOMRIGHT", 0, 0)
+            divider:SetColorTexture(UI.COLORS.borderDim[1], UI.COLORS.borderDim[2], UI.COLORS.borderDim[3], 1)
+
+            -- Hover highlight
+            local hl = item:CreateTexture(nil, "HIGHLIGHT")
+            hl:SetAllPoints()
+            hl:SetColorTexture(UI.COLORS.bgHover[1], UI.COLORS.bgHover[2], UI.COLORS.bgHover[3], 0.6)
+
+            -- Skin the item button/icon
+            local button = _G["MailItem" .. i .. "Button"]
+            if button then
+                StripTextures(button, "OVERLAY", "ARTWORK")
+                ApplyDarkBackdrop(button,
+                    UI.COLORS.bg[1], UI.COLORS.bg[2], UI.COLORS.bg[3], 1)
+            end
+
+            -- Color the sender/subject text
+            SetTextColorSafe(_G["MailItem" .. i .. "Sender"], 0.85, 0.85, 0.85)
+            SetTextColorSafe(_G["MailItem" .. i .. "Subject"], Unpack(UI.COLORS.textDim))
+        end
+    end
+
+    -- Navigation buttons — keep arrow textures, don't strip
+    -- Just leave them as-is so Préc/Suiv arrows remain visible
+
+    -- "Tout ouvrir" (OpenAllMail) button
+    if OpenAllMail then
+        SkinButton(OpenAllMail, true)
+    end
+end
+
+-- ============================================================
+--  Skin the Send Mail frame
+-- ============================================================
+
+local function SkinSendMail()
+    local sm = SendMailFrame
+    if not sm then return end
+
+    StripTextures(sm)
+
+    -- Edit boxes: To, Subject
+    SkinEditBox(SendMailNameEditBox)
+    SkinEditBox(SendMailSubjectEditBox)
+
+    -- Money fields
+    SkinEditBox(SendMailMoneyGold)
+    SkinEditBox(SendMailMoneySilver)
+    SkinEditBox(SendMailMoneyCopper)
+
+    -- Body scroll frame
+    if SendMailScrollFrame then
+        StripTextures(SendMailScrollFrame)
+        ApplyDarkBackdrop(SendMailScrollFrame,
+            UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+    end
+
+    -- Body editbox
+    SetTextColorSafe(SendMailBodyEditBox, 0.8, 0.8, 0.8)
+
+    -- Attachment item slots
+    for i = 1, ATTACHMENTS_MAX_SEND or 7 do
+        SkinAttachmentSlot(_G["SendMailAttachment" .. i])
+    end
+
+    -- Send & Cancel buttons
+    SkinButton(SendMailMailButton, true)
+    SkinButton(SendMailCancelButton)
+
+    -- Stationery / radio buttons for COD / money
+    pcall(function()
+        SetTextColorSafe(SendMailSendMoneyButton or _G["SendMailSendMoneyButtonText"],
+            Unpack(UI.COLORS.text))
+        SetTextColorSafe(SendMailCODButton or _G["SendMailCODButtonText"],
+            Unpack(UI.COLORS.text))
+    end)
+
+    -- "Montant à envoyer" label
+    pcall(function()
+        SetTextColorSafe(SendMailMoneyText, Unpack(UI.COLORS.textDim))
+    end)
+
+    -- "Port:" cost label
+    pcall(function()
+        if SendMailCostMoneyFrame then
+            -- Find text children
+            for _, region in pairs({ SendMailCostMoneyFrame:GetRegions() }) do
+                if region:IsObjectType("FontString") then
+                    region:SetTextColor(unpack(UI.COLORS.textDim))
+                end
+            end
+        end
+    end)
+end
+
+-- ============================================================
+--  Skin the OpenMail (reading) frame
+-- ============================================================
+
+local function SkinOpenMail()
+    local om = OpenMailFrame
+    if not om then return end
+
+    StripTextures(om)
+    ApplyDarkBackdrop(om)
+
+    -- Header labels. These are resolved through SetTextColorSafe because
+    -- Blizzard changed several of them from FontStrings to composite widgets.
+    SetTextColorSafe(OpenMailFrameTitleText, Unpack(UI.COLORS.accent))
+    SetTextColorSafe(OpenMailSender,         0.85, 0.85, 0.85)
+    SetTextColorSafe(OpenMailSenderLabel,    Unpack(UI.COLORS.textDim))
+    SetTextColorSafe(OpenMailSubject,        Unpack(UI.COLORS.text))
+    SetTextColorSafe(OpenMailSubjectLabel,   Unpack(UI.COLORS.textDim))
+
+    -- Body scroll
+    if OpenMailScrollFrame then
+        StripTextures(OpenMailScrollFrame)
+        ApplyDarkBackdrop(OpenMailScrollFrame,
+            UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+    end
+
+    -- Body text
+    SetTextColorSafe(OpenMailBodyText, 0.8, 0.8, 0.8)
+
+    -- Buttons
+    SkinButton(OpenMailReplyButton, true)
+    SkinButton(OpenMailDeleteButton)
+    SkinButton(OpenMailCancelButton)
+    SkinButton(OpenMailReportSpamButton)
+
+    -- Close button — leave untouched so the X stays visible
+
+    -- Money frame
+    pcall(function()
+        if OpenMailMoneyButton then
+            StripTextures(OpenMailMoneyButton, "OVERLAY", "ARTWORK")
+            ApplyDarkBackdrop(OpenMailMoneyButton,
+                UI.COLORS.bgLight[1], UI.COLORS.bgLight[2], UI.COLORS.bgLight[3], 1)
+        end
+    end)
+
+    -- Attachment slots
+    for i = 1, ATTACHMENTS_MAX_RECEIVE or 16 do
+        SkinAttachmentSlot(_G["OpenMailAttachmentButton" .. i])
+    end
+end
+
+-- ============================================================
+--  Scale management
+-- ============================================================
+
+local function ApplyScale()
+    if not MailFrame then return end
+    local scale = TM.db and TM.db.profile.mailScale or 1.0
+    MailFrame:SetScale(scale)
+end
+
+function Skin:UpdateScale(scale)
+    if not TM.db then return end
+    TM.db.profile.mailScale = scale
+    ApplyScale()
+end
+
+function Skin:GetScale()
+    return TM.db and TM.db.profile.mailScale or 1.0
+end
+
+-- ============================================================
+--  Apply all skins
+-- ============================================================
+
+local function ApplySkin()
+    if skinApplied then return end
+
+    -- Check if skinning is enabled
+    if TM.db and TM.db.profile.skinEnabled == false then return end
+
+    skinApplied = true
+
+    -- When the modern UI is active, the dedicated Inbox/Compose modules
+    -- own the inbox list and the send frame, so we only skin the outer
+    -- MailFrame chrome and the native OpenMail reader here.
+    local modern = TM.db and TM.db.profile.modernUI ~= false
+
+    -- The standalone TomoMod_Mail window fully replaces the Blizzard mail frame
+    -- when the modern UI is active, so Skin only touches the native OpenMail
+    -- reader (used by rare confirmation dialogs). The classic in-place reskin
+    -- still runs when modernUI is disabled.
+    local sections = {}
+    if not modern then
+        table.insert(sections, { "MailFrame", SkinMailFrame })
+        table.insert(sections, { "Inbox",     SkinInbox })
+        table.insert(sections, { "SendMail",  SkinSendMail })
+    end
+    table.insert(sections, { "OpenMail", SkinOpenMail })
+
+    for _, sec in ipairs(sections) do
+        local ok, err = pcall(sec[2])
+        if not ok then
+            TM:Print("|cFFFF4444Skin " .. sec[1] .. ":|r " .. tostring(err))
+        end
+    end
+end
+
+-- ============================================================
+--  Module hooks
+-- ============================================================
+
+function Skin:OnInitialize()
+    if MailFrame then
+        ApplySkin()
+        ApplyScale()
+    end
+end
+
+function Skin:OnMailShow()
+    ApplySkin()
+    ApplyScale()
+end

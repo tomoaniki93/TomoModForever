@@ -206,3 +206,183 @@ K.RegisterPage({
         end)
     end,
 })
+
+-- ---------------------------------------------------------------------
+-- Adventure comforts (1.2.0): resurrection, red errors, trainer, camera
+-- ---------------------------------------------------------------------
+local function ATApply() Call("TomoMod_AdventureTweaks", "Apply") end
+local function FXApply() Call("TomoMod_CVarOptimizer", "ApplyComfort") end
+
+K.RegisterPage({
+    key = "adventuretweaks",
+    section = SECTION,
+    label = T("Confort d'aventure", "Adventure comforts"),
+    kw = "resurrection rez res erreur error rouge red message entraineur trainer apprendre train camera zoom ivresse drunk mort death effet effect ecran screen cvar",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Confort d'aventure", "Adventure comforts"),
+                T("Petits réglages du quotidien : résurrections acceptées seules, erreurs rouges masquées, bouton « Tout apprendre » chez les maîtres, caméra plus éloignée.",
+                  "Everyday tweaks: resurrections accepted for you, red errors hidden, a \"Train all\" button at trainers, a farther camera."))
+
+            local c = page:Card(T("Résurrection", "Resurrection"))
+            c:Toggle(T("Accepter les résurrections automatiquement", "Accept resurrections automatically"), "adventureTweaks.autoRes", ATApply)
+            c:Toggle(T("Sauf si la personne qui me relève est en combat", "Unless the caster is in combat"), "adventureTweaks.autoResNoCombat", ATApply,
+                T("En combat, mieux vaut parfois attendre la fin du pull avant de se relever.",
+                  "In combat it is sometimes better to wait for the pull to end before getting up."))
+            c:Toggle(T("Une ligne dans le chat à chaque résurrection acceptée", "A chat line for each accepted resurrection"), "adventureTweaks.autoResMessage", ATApply)
+            c:Done()
+
+            c = page:Card(T("Erreurs rouges", "Red errors"))
+            c:Toggle(T("Masquer les erreurs rouges (et leur voix)", "Hide red errors (and their voice)"), "adventureTweaks.hideErrors", ATApply,
+                T("« Pas assez de mana », « Hors de portée », « Le sort n'est pas prêt »… Les messages jaunes d'information restent affichés.",
+                  "\"Not enough mana\", \"Out of range\", \"Spell is not ready yet\"... Yellow info messages still show."))
+            c:Seg(T("Quand les masquer ?", "When to hide them?"), "adventureTweaks.hideErrorsMode", {
+                { text = T("Toujours", "Always"), value = "always" },
+                { text = T("En combat", "In combat"), value = "combat" },
+            }, ATApply, 2)
+            c:Toggle(T("Garder les messages importants (sacs pleins, journal de quêtes plein, mort…)", "Keep important ones (bags full, quest log full, dead...)"),
+                "adventureTweaks.keepImportantErrors", ATApply)
+            c:Done()
+
+            c = page:Card(T("Maîtres", "Trainers"))
+            c:Toggle(T("Bouton « Tout apprendre » chez les maîtres", "\"Train all\" button at trainers"), "adventureTweaks.trainAll", ATApply,
+                T("Apprend tout ce que tu peux payer, du moins cher au plus cher. Le survol du bouton montre le nombre et le coût.",
+                  "Learns everything you can afford, cheapest first. Hovering the button shows the count and the cost."))
+            c:Done()
+
+            c = page:Card(T("Caméra et effets d'écran", "Camera and screen effects"))
+            c:Toggle(T("Zoom caméra maximal", "Max camera zoom"), "cameraFx.maxZoom", FXApply,
+                T("Permet d'éloigner la caméra au maximum autorisé par le client.", "Lets the camera go as far as the client allows."))
+            c:Toggle(T("Désactiver le flou d'ivresse", "Disable the drunken haze"), "cameraFx.noDrunkHaze", FXApply,
+                T("Coupe aussi le léger halo lumineux plein écran.", "Also turns off the soft full-screen glow."))
+            c:Toggle(T("Désactiver l'écran gris à la mort", "Disable the grey death screen"), "cameraFx.noDeathFx", FXApply)
+            c:Info(T("Décocher remet la valeur que tu avais avant.", "Unticking puts back the value you had before."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- Flight timer
+-- ---------------------------------------------------------------------
+local function FTApply() Call("TomoMod_FlightTimer", "ApplySettings") end
+
+K.RegisterPage({
+    key = "flighttimer",
+    section = SECTION,
+    label = T("Temps de vol", "Flight timer"),
+    kw = "vol flight trajet taxi griffon gryphon wyvern coursier maitre de vol flight master temps time duree duration barre bar",
+    locate = "TomoMod_FlightTimerBar",
+    noCache = true,   -- the learned-routes count changes after each flight
+    onHide = function() if TomoMod_FlightTimer and TomoMod_FlightTimer.IsPreview and TomoMod_FlightTimer.IsPreview() then TomoMod_FlightTimer.Preview(false) end end,
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Temps de vol", "Flight timer"),
+                T("Une barre pendant les trajets aériens : destination et temps restant. Chaque trajet est mesuré la première fois que tu le fais, puis le compte à rebours est exact.",
+                  "A bar during flights: destination and time left. Each route is measured the first time you fly it, then the countdown is exact."),
+                "TomoMod_FlightTimerBar", T("Temps de vol", "Flight timer"))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "flightTimer", T("Afficher la barre de temps de vol", "Show the flight timer bar"))
+            c:Button(T("Tester l'affichage", "Test the display"), function()
+                local FTm = TomoMod_FlightTimer
+                if FTm and FTm.Preview then FTm.Preview(not FTm.IsPreview()) end
+            end, 200, T("Affiche la barre avec un faux trajet. Recliquer pour cacher.",
+                        "Shows the bar with a sample flight. Click again to hide."))
+            c:Done()
+
+            c = page:Card(T("Affichage", "Display"))
+            c:Slider(T("Taille", "Size"), "flightTimer.scale", 0.6, 2, 0.05, FTApply, "%.2f")
+            c:Slider(T("Largeur", "Width"), "flightTimer.width", 160, 500, 5, FTApply)
+            c:Seg(T("La barre…", "The bar..."), "flightTimer.fillMode", {
+                { text = T("se vide", "drains"), value = "drain" },
+                { text = T("se remplit", "fills"), value = "fill" },
+            }, FTApply, 2)
+            c:Toggle(T("Durée dans la bulle d'aide de la carte des vols", "Duration in the flight map tooltip"), "flightTimer.mapTooltip", FTApply)
+            c:Info(T("« ≈ » : trajet jamais fait en entier, durée estimée à partir des morceaux connus. Pour placer la barre : bouton « Déplacer » en haut de la fenêtre.",
+                     "\"≈\": route never flown whole, estimated from known pieces. To place the bar: \"Move\" button at the top of the window."))
+            c:Done()
+
+            c = page:Card(T("Temps appris", "Learned times"))
+            local FTm = TomoMod_FlightTimer
+            local n = FTm and FTm.CountRoutes and FTm.CountRoutes() or 0
+            c:Info(string.format(T("%d trajet(s) mesuré(s), partagés par tous tes personnages.", "%d route(s) measured, shared by all your characters."), n))
+            c:Danger(T("Oublier tous les temps", "Forget all times"), function()
+                if FTm and FTm.ForgetAll then FTm.ForgetAll() end
+                K.Toast(T("Temps de vol effacés", "Flight times cleared"))
+                K.RefreshPage()
+            end, 200)
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- Mail (TomoMail port, 1.2.0)
+-- ---------------------------------------------------------------------
+-- Display options live per character in TomoModForeverMailDB; the page
+-- binds to them directly. Before the module runs (off, or not yet
+-- reloaded) only the on/off switch is offered.
+local function MailP() return TomoMod_Mail and TomoMod_Mail.db and TomoMod_Mail.db.profile end
+
+local function MailBind(key, after)
+    return {
+        get = function() local p = MailP(); return p and p[key] end,
+        set = function(v)
+            local p = MailP()
+            if not p then return end
+            p[key] = v
+            if after then after() end
+        end,
+    }
+end
+
+local function MailCall(fn) return function() Call("TomoMod_Mail", fn) end end
+
+K.RegisterPage({
+    key = "mail",
+    section = "comfort",
+    noCache = true,   -- content depends on whether the module is running
+    label = T("Courrier", "Mail"),
+    kw = "courrier mail boite aux lettres mailbox alts reroll guilde guild contacts envoi send tomomail",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Courrier", "Mail"),
+                T("La boîte aux lettres de TomoMail aux couleurs de Forever : réception avec filtres et « Tout prendre », envoi, contacts (tes personnages, ta guilde, les récents), envoi groupé à tous tes alts et autocomplétion.",
+                  "TomoMail's mailbox in the Forever palette: inbox with filters and \"Take all\", send tab, contacts (your characters, your guild, recent), send to every alt at once and autocomplete."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "mailSkin", T("Activer le module Courrier", "Enable the Mail module"))
+            c:Info(T("Changer ce réglage demande un /reload. Si l'addon TomoMail est aussi activé, le module se met en pause.",
+                     "Changing this needs a /reload. If the TomoMail addon is enabled too, the module pauses."))
+            c:Done()
+
+            if not MailP() then
+                c = page:Card(T("Réglages", "Settings"))
+                c:Info(T("Les réglages apparaissent une fois le module actif (après /reload).",
+                         "Settings appear once the module is running (after /reload)."))
+                c:Done()
+                return
+            end
+
+            c = page:Card(T("Contacts", "Contacts"))
+            c:Pair(function(l) l:Toggle(T("Mes personnages", "My characters"), MailBind("showAlts"), nil) end,
+                   function(r) r:Toggle(T("Membres de guilde", "Guild members"), MailBind("showGuild"), nil) end)
+            c:Pair(function(l) l:Toggle(T("Guilde : en ligne seulement", "Guild: online only"), MailBind("guildOnlineOnly"), nil) end,
+                   function(r) r:Toggle(T("Destinataires récents", "Recent recipients"), MailBind("showRecent"), nil) end)
+            c:Slider(T("Récents à garder", "Recent to keep"), MailBind("maxRecent", MailCall("TrimRecent")), 5, 25, 1, nil)
+            c:Toggle(T("Autocomplétion du destinataire", "Recipient autocomplete"), MailBind("useAutocomplete", MailCall("ApplyAutocomplete")), nil)
+            c:Done()
+
+            c = page:Card(T("Apparence", "Appearance"))
+            c:Toggle(T("Fenêtre TomoMail (sinon, seulement l'habillage des cadres Blizzard)", "TomoMail window (otherwise only Blizzard's frames are skinned)"),
+                MailBind("modernUI"), nil, nil, function() K.NeedReload() end)
+            c:Slider(T("Échelle", "Scale"), MailBind("mailScale", MailCall("ApplyScale")), 0.8, 1.5, 0.05, nil, "%.2f")
+            c:Slider(T("Taille des icônes d'objets", "Item icon size"), MailBind("inboxIconSize", MailCall("ApplyIconSize")), 18, 36, 2, nil)
+            c:Button(T("Tous les réglages du courrier…", "All mail settings..."), MailCall("OpenSettings"), 220,
+                T("Police, taille du texte, effacement des récents et des alts. Aussi avec /tml.",
+                  "Font, text size, clearing recent and alts. Also with /tml."))
+            c:Done()
+        end)
+    end,
+})
