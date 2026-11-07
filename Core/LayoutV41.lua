@@ -337,16 +337,34 @@ end
 -- Holding Shift while releasing places the frame freely.
 local dragWatch
 local function CenterKey(frame)
-    local x, y = frame and frame:GetCenter()
-    if not x then return nil end
+    if not frame then return nil end
+    -- (a "frame and frame:GetCenter()" would keep only the first value)
+    local x, y = frame:GetCenter()
+    if not x or not y then return nil end
     return math.floor(x * 10 + 0.5) .. ":" .. math.floor(y * 10 + 0.5)
 end
 
--- Frames that belong to the move mode itself or to the settings window.
+-- Windows that are tools, not HUD elements: the move mode itself, the
+-- settings window, diagnostics, What's New, the installer. Anything inside
+-- one of them is never picked.
+local CHROME_PATTERNS = {
+    "^TomoModLayout", "^TomoModConfigFrame", "^TomoMod_Diag", "^TomoModDiag",
+    "^TomoModWhatsNew", "^TomoModInstaller", "^TomoMod_Installer",
+}
+
 local function IsLayoutChrome(frame)
-    local name = frame.GetName and frame:GetName()
-    if not name then return false end
-    return name:find("^TomoModLayout") ~= nil or name == "TomoModConfigFrame"
+    local depth = 0
+    while frame and depth < 12 do
+        local name = frame.GetName and frame:GetName()
+        if name then
+            for _, pat in ipairs(CHROME_PATTERNS) do
+                if name:find(pat) then return true end
+            end
+        end
+        frame = frame.GetParent and frame:GetParent() or nil
+        depth = depth + 1
+    end
+    return false
 end
 
 -- Only TomoMod elements are offered: a Blizzard window with its own drag

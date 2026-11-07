@@ -342,8 +342,122 @@ function ABS.ApplySettings()
     BarArt()
 end
 
+-- =====================================================================
+-- Per-bar visibility: on mouseover and / or in combat / with a target.
+-- Alpha only (allowed in combat, never protected): the bar keeps working,
+-- keybinds still fire, and a faded bar can still be clicked where it sits.
+-- Hover is read by polling IsMouseOver on the bar, so nothing is hooked on
+-- the secure buttons. Bars always show while Blizzard's Edit Mode or the
+-- TomoMod move mode is open, and while a spell or item is on the cursor.
+-- =====================================================================
+ABS.BAR_KEYS = { "bar1", "bar2", "bar3", "bar4", "bar5", "bar6", "bar7", "bar8", "pet", "stance" }
+local BAR_FRAMES = {
+    bar1   = { "MainActionBar", "MainMenuBar" },
+    bar2   = { "MultiBarBottomLeft" },
+    bar3   = { "MultiBarBottomRight" },
+    bar4   = { "MultiBarRight" },
+    bar5   = { "MultiBarLeft" },
+    bar6   = { "MultiBar5" },
+    bar7   = { "MultiBar6" },
+    bar8   = { "MultiBar7" },
+    pet    = { "PetActionBar", "PetActionBarFrame" },
+    stance = { "StanceBar", "StanceBarFrame" },
+}
+
+local function BarFrame(key)
+    for _, name in ipairs(BAR_FRAMES[key] or {}) do
+        local f = _G[name]
+        if type(f) == "table" and f.SetAlpha then return f end
+    end
+end
+
+local fadeState = {}   -- key -> current alpha
+local fader
+
+local function ForceShow()
+    if EditModeManagerFrame and EditModeManagerFrame.IsShown and EditModeManagerFrame:IsShown() then return true end
+    local M = TomoMod_Movers
+    if M and M.IsUnlocked and M.IsUnlocked() then return true end
+    if GetCursorInfo and GetCursorInfo() then return true end
+    if SpellFlyout and SpellFlyout.IsShown and SpellFlyout:IsShown() then return true end
+    return false
+end
+
+local function WantVisible(key, cfg, bar)
+    if not (cfg.mouseover or cfg.combat) then return true end
+    if ForceShow() then return true end
+    if cfg.combat and (InCombatLockdown() or UnitExists("target")) then return true end
+    if cfg.mouseover and bar:IsMouseOver(4, -4, -4, 4) then return true end
+    if cfg.mouseover and SpellFlyout and SpellFlyout.IsMouseOver and SpellFlyout:IsShown() and SpellFlyout:IsMouseOver() then return true end
+    return false
+end
+
+local function AnyFade(db)
+    for _, k in ipairs(ABS.BAR_KEYS) do
+        local cfg = db.bars and db.bars[k]
+        if type(cfg) == "table" and (cfg.mouseover or cfg.combat) then return true end
+    end
+    return false
+end
+
+local function FadeTick(_, elapsed)
+    local db = DB()
+    if not db then return end
+    local low  = tonumber(db.fadeAlpha) or 0
+    local time = math.max(0.01, tonumber(db.fadeTime) or 0.2)
+    local step = (elapsed or 0.05) / time
+    for _, k in ipairs(ABS.BAR_KEYS) do
+        local bar = BarFrame(k)
+        local cfg = db.bars and db.bars[k]
+        if bar and type(cfg) == "table" then
+            local goal = WantVisible(k, cfg, bar) and 1 or low
+            -- Read back the real alpha: Blizzard may reset it (Edit Mode
+            -- opacity, bar refresh), and the fade then simply resumes.
+            local cur = bar:GetAlpha() or 1
+            if math.abs(cur - goal) < 0.01 then cur = goal end
+            if cur ~= goal then
+                if cur < goal then cur = math.min(goal, cur + step) else cur = math.max(goal, cur - step) end
+                fadeState[k] = cur
+                bar:SetAlpha(cur)
+            end
+        end
+    end
+end
+
+ABS._FadeTickForTest = function(dt) FadeTick(nil, dt) end
+
+function ABS.ApplyFade()
+    local db = DB()
+    if not db then return end
+    if not fader then
+        fader = CreateFrame("Frame")
+        fader.acc = 0
+        fader:SetScript("OnUpdate", function(self, elapsed)
+            self.acc = self.acc + elapsed
+            if self.acc < 0.05 then return end
+            FadeTick(self, self.acc)
+            self.acc = 0
+        end)
+    end
+    if AnyFade(db) then
+        fader:Show()
+    else
+        fader:Hide()
+    end
+    -- Bars with no condition (or all, when nothing fades) go back to full.
+    for _, k in ipairs(ABS.BAR_KEYS) do
+        local cfg = db.bars and db.bars[k]
+        if not (type(cfg) == "table" and (cfg.mouseover or cfg.combat)) then
+            local bar = BarFrame(k)
+            if bar and fadeState[k] and fadeState[k] ~= 1 then bar:SetAlpha(1) end
+            fadeState[k] = nil
+        end
+    end
+end
+
 function ABS.Initialize()
     ABS.ApplySettings()
+    ABS.ApplyFade()
 end
 
 local ev = CreateFrame("Frame")
@@ -353,6 +467,8 @@ ev:RegisterEvent("UPDATE_BONUS_ACTIONBAR")
 ev:RegisterEvent("PET_BAR_UPDATE")
 ev:RegisterEvent("UPDATE_SHAPESHIFT_FORMS")
 ev:SetScript("OnEvent", function(_, event)
+    -- Bar visibility runs whether or not the skin itself is on.
+    if event == "PLAYER_ENTERING_WORLD" then ABS.ApplyFade() end
     if event == "PLAYER_REGEN_ENABLED" then
         if pending then ABS.ApplySettings() end
         return

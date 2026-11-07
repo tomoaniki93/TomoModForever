@@ -501,6 +501,23 @@ TomoMod_Defaults = {
         countSize     = 12,
         showMacroName = true,
         hideArt       = false,       -- end caps and border strip of the main bar
+        -- When each bar shows. Both off = always. mouseover: shown while the
+        -- mouse is over it. combat: shown in combat or with a target.
+        -- With both on, either condition shows the bar.
+        fadeAlpha     = 0,           -- opacity of a bar while it is "hidden"
+        fadeTime      = 0.2,
+        bars = {
+            bar1   = { mouseover = false, combat = false },
+            bar2   = { mouseover = false, combat = false },
+            bar3   = { mouseover = false, combat = false },
+            bar4   = { mouseover = false, combat = false },
+            bar5   = { mouseover = false, combat = false },
+            bar6   = { mouseover = false, combat = false },
+            bar7   = { mouseover = false, combat = false },
+            bar8   = { mouseover = false, combat = false },
+            pet    = { mouseover = false, combat = false },
+            stance = { mouseover = false, combat = false },
+        },
     },
     blizzardAuraFrames = {
         enabled = true,
@@ -558,13 +575,13 @@ TomoMod_Defaults = {
         showBeacon   = true,  -- TomoMod marker in the world (off: Blizzard's marker)
         showArrow    = true,  -- edge arrow when the target is off screen
         beaconScale  = 1.0,   -- global scale multiplier on the in-world beacon
-        showBeam     = true,  -- show the vertical teal beam below the beacon
+        showBeam     = true,  -- show the vertical beam of light below the beacon
         showETA      = true,  -- append arrival-time estimate to distance text
         sessionName  = nil,   -- restored label after /reload
         zoneOnly     = true,  -- hide waypoint when not in the same zone
-        beaconSize   = 32,    -- icon diameter (px)
+        beaconSize   = 16,    -- icon diameter (px)
         shape        = "ring", -- "ring" or "arrow"
-        color        = { r = 0.330, g = 0.870, b = 0.980 }, -- accent cyan électrique
+        color        = { r = 0.788, g = 0.635, b = 0.322 }, -- antique gold (Forever)
     },
 
 
@@ -1857,6 +1874,26 @@ local function TomoMod_RunMigrations()
     if not done.dropLevelingBar110 then
         done.dropLevelingBar110 = true
         TomoModForeverDB.levelingBar = nil
+    end
+
+    -- 1.1.3: the beacon ring is half its old stock size (32 -> 16 px).
+    if not done.waypointSize113 then
+        done.waypointSize113 = true
+        local w = TomoModForeverDB.waypoint
+        if type(w) == "table" and (w.beaconSize == nil or w.beaconSize == 32) then w.beaconSize = 16 end
+    end
+
+    -- 1.1.3: the waypoint takes the Forever palette. Only the two old
+    -- stock colours are replaced; a colour the player picked is kept.
+    if not done.waypointForever113 then
+        done.waypointForever113 = true
+        local w = TomoModForeverDB.waypoint
+        local c = type(w) == "table" and w.color
+        local function near(a, b) return type(a) == "number" and math.abs(a - b) < 0.01 end
+        if type(c) == "table" and ((near(c.r, 0.330) and near(c.g, 0.870) and near(c.b, 0.980))
+            or (near(c.r, 0.180) and near(c.g, 0.847) and near(c.b, 0.518))) then
+            c.r, c.g, c.b = 0.788, 0.635, 0.322
+        end
     end
 
     -- 1.1.2: the enemy arena frames were removed (no arenas on Forever).

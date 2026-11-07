@@ -2,12 +2,14 @@
 
 TomoMod_RegisterLocale("enUS", {
     ["wn_113_actionbars"] = "New - Action bars: six skins for Blizzard's action bars (Forever, Pixel, Thick border, Shadow, Glass, Round), picked from live tiles. Look only: no taint, position stays in Edit Mode.",
+    ["wn_113_barfade"]    = "New - Action bars: each bar can show only on mouseover and / or in combat or with a target.",
     ["wn_113_layout"]     = "New - TomoLayout selects every movable element: chat, bags, auras, loot frame and other anchors, tooltip, camp HUD, spell bars...",
     ["wn_113_magnet"]     = "New - Grid magnet in move mode: a dropped element snaps onto the nearest grid line. Hold Shift to place it freely.",
     ["wn_113_tracker"]    = "New - Objective tracker: the - / + button on its header folds the whole tracker.",
     ["wn_113_chat"]       = "Fixed - A chat tab you create now appears in the TomoMod chat instead of hiding behind it.",
     ["wn_113_bags"]       = "Fixed - Middle-click on an item in the bags pins or unpins it again.",
     ["wn_113_narrow"]     = "Fixed - Texts no longer overlap when the settings window is narrow.",
+    ["wn_113_waypoint"]   = "Changed - The waypoint takes the WoW Forever colours: gold ring, arrows and beam, golden distance text.",
 
     ["wn_112_healer"]     = "New - Group & Raid > Healer indicators: place each healing spell on the party or raid cell by dragging it on a live preview.",
     ["wn_112_arrows"]     = "New - Nameplates: target arrows in five styles, with size, gap, colour and placement.",
@@ -19,12 +21,14 @@ TomoMod_RegisterLocale("enUS", {
 
 TomoMod_RegisterLocale("frFR", {
     ["wn_113_actionbars"] = "Nouveau - Barres d'action : six skins pour les barres Blizzard (Forever, Pixel, Bordure épaisse, Ombre, Verre, Rond), à choisir sur des vignettes en direct. Apparence seule : pas de taint, la position reste dans le Mode Édition.",
+    ["wn_113_barfade"]    = "Nouveau - Barres d'action : chaque barre peut n'apparaître qu'au survol et / ou en combat ou avec une cible.",
     ["wn_113_layout"]     = "Nouveau - TomoLayout sélectionne tous les éléments déplaçables : chat, sacs, auras, fenêtre de butin et autres ancres, infobulle, HUD de campement, barres de sorts...",
     ["wn_113_magnet"]     = "Nouveau - Aimant sur la grille en mode déplacer : un élément lâché se colle sur la ligne la plus proche. Maintiens Maj pour le placer librement.",
     ["wn_113_tracker"]    = "Nouveau - Suivi des objectifs : le bouton - / + de son en-tête replie tout le suivi.",
     ["wn_113_chat"]       = "Corrigé - Un onglet de chat que tu crées apparaît dans le chat TomoMod au lieu de passer derrière.",
     ["wn_113_bags"]       = "Corrigé - Le clic milieu sur un objet des sacs l'épingle ou le désépingle à nouveau.",
     ["wn_113_narrow"]     = "Corrigé - Les textes ne se chevauchent plus quand la fenêtre des réglages est étroite.",
+    ["wn_113_waypoint"]   = "Modifié - Le point de route prend les couleurs de WoW Forever : anneau, flèches et faisceau dorés, distance en jaune or.",
 
     ["wn_112_healer"]     = "Nouveau - Groupe & Raid > Indicateurs de soins : place chaque sort de soin sur la case du groupe ou du raid en le glissant sur un aperçu.",
     ["wn_112_arrows"]     = "Nouveau - Plaques de nom : flèches de la cible en cinq styles, avec taille, écart, couleur et placement.",
@@ -36,12 +40,14 @@ TomoMod_RegisterLocale("frFR", {
 
 TomoMod_RegisterLocale("deDE", {
     ["wn_113_actionbars"] = "Neu - Aktionsleisten: sechs Skins für die Blizzard-Leisten (Forever, Pixel, Dicker Rand, Schatten, Glas, Rund), live per Kachel auswählbar. Nur das Aussehen: kein Taint, die Position bleibt im Bearbeitungsmodus.",
+    ["wn_113_barfade"]    = "Neu - Aktionsleisten: jede Leiste kann nur beim Überfahren und / oder im Kampf oder mit einem Ziel erscheinen.",
     ["wn_113_layout"]     = "Neu - TomoLayout wählt jedes verschiebbare Element aus: Chat, Taschen, Auren, Beutefenster und andere Anker, Tooltip, Lager-HUD, Zauberreihen...",
     ["wn_113_magnet"]     = "Neu - Rastermagnet im Verschiebemodus: ein losgelassenes Element rastet an der nächsten Rasterlinie ein. Halte Umschalt, um es frei zu platzieren.",
     ["wn_113_tracker"]    = "Neu - Questverfolgung: die Schaltfläche - / + in der Kopfzeile klappt die ganze Verfolgung ein.",
     ["wn_113_chat"]       = "Behoben - Ein von dir erstellter Chat-Reiter erscheint im TomoMod-Chat, statt dahinter zu verschwinden.",
     ["wn_113_bags"]       = "Behoben - Mittelklick auf einen Gegenstand in den Taschen heftet ihn wieder an oder löst ihn.",
     ["wn_113_narrow"]     = "Behoben - Texte überlappen sich nicht mehr, wenn das Einstellungsfenster schmal ist.",
+    ["wn_113_waypoint"]   = "Geändert - Der Wegpunkt trägt die Farben von WoW Forever: goldener Ring, Pfeile und Lichtstrahl, goldgelbe Entfernung.",
 
     ["wn_112_healer"]     = "Neu - Gruppe & Schlachtzug > Heilerindikatoren: platziere jeden Heilzauber auf der Gruppen- oder Schlachtzugszelle, indem du ihn in einer Live-Vorschau ziehst.",
     ["wn_112_arrows"]     = "Neu - Namensplaketten: Zielpfeile in fünf Stilen, mit Größe, Abstand, Farbe und Platzierung.",
@@ -53,12 +59,14 @@ TomoMod_RegisterLocale("deDE", {
 
 TomoMod_RegisterLocale("esES", {
     ["wn_113_actionbars"] = "Nuevo - Barras de acción: seis apariencias para las barras de Blizzard (Forever, Píxel, Borde grueso, Sombra, Cristal, Redondo), elegidas en miniaturas en directo. Solo el aspecto: sin taint, la posición sigue en el modo de edición.",
+    ["wn_113_barfade"]    = "Nuevo - Barras de acción: cada barra puede mostrarse solo al pasar el ratón y / o en combate o con un objetivo.",
     ["wn_113_layout"]     = "Nuevo - TomoLayout selecciona todos los elementos movibles: chat, bolsas, auras, ventana de botín y otros anclajes, descripción emergente, HUD de campamento, barras de hechizos...",
     ["wn_113_magnet"]     = "Nuevo - Imán de cuadrícula en el modo mover: un elemento soltado se ajusta a la línea más cercana. Mantén Mayús para colocarlo libremente.",
     ["wn_113_tracker"]    = "Nuevo - Seguimiento de misiones: el botón - / + de su cabecera contrae todo el seguimiento.",
     ["wn_113_chat"]       = "Corregido - Una pestaña de chat que creas aparece en el chat de TomoMod en lugar de quedar detrás.",
     ["wn_113_bags"]       = "Corregido - El clic central en un objeto de las bolsas vuelve a fijarlo o soltarlo.",
     ["wn_113_narrow"]     = "Corregido - Los textos ya no se solapan cuando la ventana de ajustes es estrecha.",
+    ["wn_113_waypoint"]   = "Cambiado - El punto de ruta adopta los colores de WoW Forever: anillo, flechas y haz dorados, distancia en amarillo oro.",
 
     ["wn_112_healer"]     = "Nuevo - Grupo y banda > Indicadores de sanación: coloca cada hechizo de sanación en la celda de grupo o de banda arrastrándolo en una vista previa.",
     ["wn_112_arrows"]     = "Nuevo - Placas de nombre: flechas del objetivo en cinco estilos, con tamaño, separación, color y posición.",
@@ -70,12 +78,14 @@ TomoMod_RegisterLocale("esES", {
 
 TomoMod_RegisterLocale("itIT", {
     ["wn_113_actionbars"] = "Novità - Barre delle azioni: sei aspetti per le barre Blizzard (Forever, Pixel, Bordo spesso, Ombra, Vetro, Rotondo), da scegliere su anteprime dal vivo. Solo l'aspetto: niente taint, la posizione resta nella modalità modifica.",
+    ["wn_113_barfade"]    = "Novità - Barre delle azioni: ogni barra può comparire solo al passaggio del mouse e / o in combattimento o con un bersaglio.",
     ["wn_113_layout"]     = "Novità - TomoLayout seleziona ogni elemento spostabile: chat, borse, aure, finestra del bottino e altri ancoraggi, tooltip, HUD dell'accampamento, barre degli incantesimi...",
     ["wn_113_magnet"]     = "Novità - Magnete della griglia in modalità spostamento: un elemento rilasciato si aggancia alla linea più vicina. Tieni premuto Maiusc per posizionarlo liberamente.",
     ["wn_113_tracker"]    = "Novità - Monitoraggio missioni: il pulsante - / + nell'intestazione comprime tutto il monitoraggio.",
     ["wn_113_chat"]       = "Corretto - Una scheda di chat che crei compare nella chat di TomoMod invece di finire dietro.",
     ["wn_113_bags"]       = "Corretto - Il clic centrale su un oggetto nelle borse lo fissa o lo sblocca di nuovo.",
     ["wn_113_narrow"]     = "Corretto - I testi non si sovrappongono più quando la finestra delle impostazioni è stretta.",
+    ["wn_113_waypoint"]   = "Modificato - Il punto di riferimento prende i colori di WoW Forever: anello, frecce e fascio dorati, distanza in giallo oro.",
 
     ["wn_112_healer"]     = "Novità - Gruppo e incursione > Indicatori di cura: posiziona ogni incantesimo di cura sulla cella del gruppo o dell'incursione trascinandolo su un'anteprima.",
     ["wn_112_arrows"]     = "Novità - Targhette: frecce del bersaglio in cinque stili, con dimensione, distanza, colore e posizione.",
@@ -87,12 +97,14 @@ TomoMod_RegisterLocale("itIT", {
 
 TomoMod_RegisterLocale("ptBR", {
     ["wn_113_actionbars"] = "Novo - Barras de ação: seis aparências para as barras da Blizzard (Forever, Pixel, Borda grossa, Sombra, Vidro, Redondo), escolhidas em miniaturas ao vivo. Só a aparência: sem taint, a posição continua no Modo de Edição.",
+    ["wn_113_barfade"]    = "Novo - Barras de ação: cada barra pode aparecer só ao passar o mouse e / ou em combate ou com um alvo.",
     ["wn_113_layout"]     = "Novo - O TomoLayout seleciona todo elemento móvel: bate-papo, bolsas, auras, janela de saque e outras âncoras, dica de interface, HUD de acampamento, barras de feitiços...",
     ["wn_113_magnet"]     = "Novo - Ímã da grade no modo mover: um elemento solto se encaixa na linha mais próxima. Segure Shift para posicioná-lo livremente.",
     ["wn_113_tracker"]    = "Novo - Rastreador de missões: o botão - / + no cabeçalho recolhe todo o rastreador.",
     ["wn_113_chat"]       = "Corrigido - Uma aba de bate-papo que você cria aparece no bate-papo do TomoMod em vez de ficar atrás dele.",
     ["wn_113_bags"]       = "Corrigido - O clique do meio em um item das bolsas volta a fixá-lo ou desafixá-lo.",
     ["wn_113_narrow"]     = "Corrigido - Os textos não se sobrepõem mais quando a janela de configurações está estreita.",
+    ["wn_113_waypoint"]   = "Alterado - O ponto de referência ganha as cores de WoW Forever: anel, setas e feixe dourados, distância em amarelo-ouro.",
 
     ["wn_112_healer"]     = "Novo - Grupo e raide > Indicadores de cura: posicione cada feitiço de cura na célula de grupo ou de raide arrastando-o numa prévia.",
     ["wn_112_arrows"]     = "Novo - Placas de nome: setas do alvo em cinco estilos, com tamanho, distância, cor e posição.",

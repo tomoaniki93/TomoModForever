@@ -71,6 +71,20 @@ K.RegisterApplier("abs", function()
     Restyle()
 end, false)
 
+K.RegisterApplier("absfade", function()
+    local A = ABS()
+    if A and A.ApplyFade then A.ApplyFade() end
+end, false)
+
+local BAR_NAMES = {
+    bar1 = { "Barre 1 (principale)", "Bar 1 (main)" },
+    bar2 = { "Barre 2", "Bar 2" }, bar3 = { "Barre 3", "Bar 3" }, bar4 = { "Barre 4", "Bar 4" },
+    bar5 = { "Barre 5", "Bar 5" }, bar6 = { "Barre 6", "Bar 6" }, bar7 = { "Barre 7", "Bar 7" },
+    bar8 = { "Barre 8", "Bar 8" },
+    pet    = { "Barre du familier", "Pet bar" },
+    stance = { "Barre de posture", "Stance bar" },
+}
+
 -- Tiles: one per skin, each showing a real skinned sample. Click = apply.
 local function BuildTiles(parent, y)
     local A = ABS()
@@ -162,6 +176,19 @@ K.RegisterPage({
             c:Custom(BuildTiles)
             c:Label(T("Aperçu", "Preview"))
             c:Custom(BuildRow)
+            c:Done()
+
+            c = page:Card(T("Quand afficher les barres", "When the bars show"))
+            c:Info(T("Rien de coché : la barre est toujours visible. Au survol : elle apparaît sous la souris. Combat / cible : en combat ou avec une cible. Les deux : l'un ou l'autre suffit. Les raccourcis marchent toujours, même barre cachée.",
+                     "Nothing ticked: the bar is always visible. Mouseover: it shows under the mouse. Combat / target: in combat or with a target. Both: either one is enough. Keybinds always work, even on a hidden bar."))
+            for _, key in ipairs(A.BAR_KEYS or {}) do
+                local nm = BAR_NAMES[key] or { key, key }
+                c:Label(T(nm[1], nm[2]))
+                c:Pair(function(l) l:Toggle(T("Au survol", "Mouseover"), "barSkin.bars." .. key .. ".mouseover", "absfade") end,
+                       function(r) r:Toggle(T("Combat / cible", "Combat / target"), "barSkin.bars." .. key .. ".combat", "absfade") end)
+            end
+            c:Pair(function(l) l:Slider(T("Opacité cachée", "Hidden opacity"), "barSkin.fadeAlpha", 0, 0.8, 0.05, "absfade", "%.2f") end,
+                   function(r) r:Slider(T("Durée du fondu", "Fade time"), "barSkin.fadeTime", 0.05, 1, 0.05, "absfade", "%.2f") end)
             c:Done()
 
             c = page:Card(T("Bordure", "Border"))

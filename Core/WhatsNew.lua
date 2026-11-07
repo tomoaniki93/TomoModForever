@@ -66,12 +66,14 @@ CHANGELOG = {
         version = "1.1.3",
         highlights = {
             L["wn_113_actionbars"],
+            L["wn_113_barfade"],
             L["wn_113_layout"],
             L["wn_113_magnet"],
             L["wn_113_tracker"],
             L["wn_113_chat"],
             L["wn_113_bags"],
             L["wn_113_narrow"],
+            L["wn_113_waypoint"],
         },
     },
     {

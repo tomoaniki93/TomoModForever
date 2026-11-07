@@ -604,7 +604,7 @@ local function BuildWaypointTab(parent)
 
     -- Beacon size
     local _, ny = W.CreateSlider(c, L["opt_way_size"],
-        TomoModForeverDB.waypoint and TomoModForeverDB.waypoint.beaconSize or 32, 16, 64, 1, y, function(v)
+        TomoModForeverDB.waypoint and TomoModForeverDB.waypoint.beaconSize or 16, 8, 64, 1, y, function(v)
         if not TomoModForeverDB.waypoint then TomoModForeverDB.waypoint = {} end
         TomoModForeverDB.waypoint.beaconSize = v
         WY_Apply()
@@ -629,7 +629,7 @@ local function BuildWaypointTab(parent)
     -- Color picker
     if not TomoModForeverDB.waypoint then TomoModForeverDB.waypoint = {} end
     if not TomoModForeverDB.waypoint.color then
-        TomoModForeverDB.waypoint.color = { r = 0.180, g = 0.847, b = 0.518 }
+        TomoModForeverDB.waypoint.color = { r = 0.788, g = 0.635, b = 0.322 }
     end
     local _, ny = W.CreateColorPicker(c, L["opt_way_color"], TomoModForeverDB.waypoint.color, y, function(r, g, b)
         if not TomoModForeverDB.waypoint then TomoModForeverDB.waypoint = {} end
@@ -638,6 +638,16 @@ local function BuildWaypointTab(parent)
         TomoModForeverDB.waypoint.color.g = g
         TomoModForeverDB.waypoint.color.b = b
         WY_Apply()
+    end)
+    y = ny
+
+    -- Back to the WoW Forever palette (antique gold).
+    local GT2 = TomoMod_GUIT or function(fr, en) return en end
+    local _, ny = W.CreateButton(c, GT2("Couleurs Forever", "Forever colours"), 180, y, function()
+        TomoModForeverDB.waypoint.color = { r = 0.788, g = 0.635, b = 0.322 }
+        WY_Apply()
+        local C = TomoMod_Config
+        if C and C.RebuildCurrentPage then C.RebuildCurrentPage() end
     end)
     y = ny
 

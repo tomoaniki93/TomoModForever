@@ -423,7 +423,10 @@ function Renderer:CreateWindow(cf)
             if copy and copy.ShowURLPopup then copy:ShowURLPopup(link:sub(7)) end
             return
         end
-        if SetItemRef then SetItemRef(link, text, button, smf) end
+        -- Hand Blizzard the real chat window this view mirrors: link handlers
+        -- (whisper a name, link an item into chat...) open its edit box,
+        -- and our display frame has none.
+        if SetItemRef then SetItemRef(link, text, button, cf) end
     end)
     smf:SetScript("OnMouseWheel", function(_, delta)
         if not Chat.IsEnabled() then return end

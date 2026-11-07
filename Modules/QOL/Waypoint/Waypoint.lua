@@ -12,18 +12,19 @@ local L               = TomoMod_L
 local ADDON_FONT      = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
 local ADDON_FONT_BOLD = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-SemiBold.ttf"
 local TEX_RING        = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\Ring"
-local TEX_ARROW       = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\arrow"
-local TEX_NAV_ARROW   = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\arrow-azure-white.tga"
+local TEX_ARROW       = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\arrow-neutral"
+local TEX_NAV_ARROW   = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\arrow-forever.tga"
 local TEX_BEAM_ATLAS  = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\Waypoint"
 local TEX_BEAM_MASK   = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Waypoint\\Mask-Beam"
 local TEX_SOLID       = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\solid"
 
--- ── Palette (matches TomoMod cyan électrique) ───────────────────────────────────
-local TR, TG, TB = 0.330, 0.870, 0.980   -- accentcyan électrique (default, overridden by DB)
-local WR, WG, WB = 0.92,  0.94,  0.92   -- near-white text
+-- ── Palette: WoW Forever ───────────────────────────────────────────────
+local TR, TG, TB = 0.788, 0.635, 0.322   -- antique gold #C9A252 (default, overridden by DB)
+local WR, WG, WB = 0.949, 0.922, 0.859   -- off-white #F2EBDB (destination name)
+local YR, YG, YB = 1.000, 0.820, 0.000   -- golden yellow #FFD100 (distance)
 
 -- ── Layout ───────────────────────────────────────────────────────────
-local BEACON_SIZE    = 32     -- icon diameter (px, default; DB overrides)
+local BEACON_SIZE    = 16     -- icon diameter (px, default; DB overrides)
 local BEAM_W         = 8      -- beam strip width
 local BEAM_H         = 500    -- beam strip height
 local ARROW_SIZE     = 38     -- navigator arrow
@@ -55,17 +56,12 @@ Beacon:SetSize(BEACON_SIZE, BEACON_SIZE)
 Beacon:SetFrameLevel(3)
 Beacon:Hide()
 
--- Inner icon circle (solid teal disc)
+-- Ring (tinted by the waypoint colour, antique gold by default)
 local BeaconIcon = Beacon:CreateTexture(nil, "ARTWORK")
 BeaconIcon:SetAllPoints()
 BeaconIcon:SetTexture(TEX_RING)
 BeaconIcon:SetVertexColor(TR, TG, TB, 0.90)
 
--- Teal dot at the very centre
-local BeaconDot = Beacon:CreateTexture(nil, "OVERLAY")
-BeaconDot:SetSize(4, 4)
-BeaconDot:SetPoint("CENTER")
-BeaconDot:SetColorTexture(TR, TG, TB, 0.90)
 
 -- Beam: vertical pillar of light extending upward from icon (atlas from Waypoint.blp)
 local BeamFrame = CreateFrame("Frame", nil, Root)
@@ -121,7 +117,7 @@ DistText:SetSize(160, 14)
 DistText:Hide()
 local DistFS = DistText:CreateFontString(nil, "OVERLAY")
 DistFS:SetFont(ADDON_FONT, 10, "OUTLINE")
-DistFS:SetTextColor(TR, TG, TB, 1)
+DistFS:SetTextColor(YR, YG, YB, 1)
 DistFS:SetShadowColor(0, 0, 0, 0.8)
 DistFS:SetShadowOffset(1, -1)
 DistFS:SetAllPoints()
@@ -133,16 +129,16 @@ Navigator:SetSize(ARROW_SIZE, ARROW_SIZE)
 Navigator:SetFrameLevel(3)
 Navigator:Hide()
 
--- Dedicated azure-centre / white-outline navigator artwork. It stays separate
--- from TEX_ARROW because the beacon's configurable colour still uses the
--- original neutralised texture.
+-- Dedicated gold / off-white navigator artwork (Forever palette). It stays
+-- separate from TEX_ARROW, which is a neutral texture tinted by the
+-- configurable beacon colour.
 local NavArrow = Navigator:CreateTexture(nil, "ARTWORK")
 NavArrow:SetAllPoints()
 NavArrow:SetTexture(TEX_NAV_ARROW)
 
 local NavDistFS = Navigator:CreateFontString(nil, "OVERLAY")
 NavDistFS:SetFont(ADDON_FONT, 9, "OUTLINE")
-NavDistFS:SetTextColor(WR, WG, WB, 0.9)
+NavDistFS:SetTextColor(YR, YG, YB, 0.95)
 NavDistFS:SetShadowColor(0, 0, 0, 0.8)
 NavDistFS:SetShadowOffset(1, -1)
 NavDistFS:SetPoint("TOP", Navigator, "BOTTOM", 0, -2)
@@ -264,16 +260,22 @@ end
 
 -- ══ Visual updates ═══════════════════════════════════════════════════
 
+local function BeaconSize()
+    local db = TomoModForeverDB and TomoModForeverDB.waypoint
+    return (db and tonumber(db.beaconSize)) or BEACON_SIZE
+end
+
 local function AnchorBeacon()
     if not navFrame then return end
+    local size = BeaconSize()
     Beacon:ClearAllPoints()
     Beacon:SetPoint("CENTER", navFrame, "CENTER")
     -- Beam frame extends upward from icon
     BeamFrame:ClearAllPoints()
-    BeamFrame:SetPoint("BOTTOM", navFrame, "CENTER", 0, BEACON_SIZE * 0.5)
+    BeamFrame:SetPoint("BOTTOM", navFrame, "CENTER", 0, size * 0.5)
     -- Name + dist below beacon
     NameText:ClearAllPoints()
-    NameText:SetPoint("TOP", navFrame, "CENTER", 0, -(BEACON_SIZE * 0.5 + 4))
+    NameText:SetPoint("TOP", navFrame, "CENTER", 0, -(size * 0.5 + 4))
     DistText:ClearAllPoints()
     DistText:SetPoint("TOP", NameText, "BOTTOM", 0, -1)
 end
@@ -665,11 +667,10 @@ function WP.ApplySettings()
     local b = (db and db.color and db.color.b) or TB
 
     BeaconIcon:SetVertexColor(r, g, b, 0.90)
-    BeaconDot:SetColorTexture(r, g, b, 0.90)
     NavArrow:SetVertexColor(1, 1, 1, 1)
     Beam:SetVertexColor(r, g, b, 0.50)
     BeamFX:SetVertexColor(r, g, b, 0.30)
-    DistFS:SetTextColor(r, g, b, 1)
+    DistFS:SetTextColor(YR, YG, YB, 1)
 
     -- Shape: ring or arrow
     local shape = (db and db.shape) or "ring"
@@ -684,6 +685,7 @@ function WP.ApplySettings()
     -- Size
     local sz = (db and db.beaconSize) or BEACON_SIZE
     Beacon:SetSize(sz, sz)
+    if navFrame and isActive then AnchorBeacon() end
 end
 
 -- ══ Initialize ═══════════════════════════════════════════════════════
