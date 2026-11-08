@@ -112,6 +112,7 @@ TomoMod_RegisterLocale("enUS", {
     ["mod_flightTimer"] = "Flight timer",
     ["mod_bagAlert"] = "Bag space",
     ["mod_trainerReminder"] = "Class trainer reminder",
+    ["mod_dungeonCodex"] = "Dungeon codex",
     ["mod_preyTracker"]      = "Prey Tracker",
     ["mod_housing"]          = "Housing",
 
@@ -335,6 +336,7 @@ TomoMod_RegisterLocale("frFR", {
     ["mod_flightTimer"] = "Temps de vol",
     ["mod_bagAlert"] = "Place dans les sacs",
     ["mod_trainerReminder"] = "Rappel du maître de classe",
+    ["mod_dungeonCodex"] = "Codex des donjons",
     ["mod_preyTracker"]      = "Suivi des proies",
     ["mod_housing"]          = "Logement",
 
@@ -558,6 +560,7 @@ TomoMod_RegisterLocale("deDE", {
     ["mod_flightTimer"] = "Flugzeit",
     ["mod_bagAlert"] = "Taschenplatz",
     ["mod_trainerReminder"] = "Klassenlehrer-Erinnerung",
+    ["mod_dungeonCodex"] = "Dungeon-Kodex",
     ["mod_preyTracker"]      = "Beutetracker",
     ["mod_housing"]          = "Behausung",
 
@@ -781,6 +784,7 @@ TomoMod_RegisterLocale("esES", {
     ["mod_flightTimer"] = "Tiempo de vuelo",
     ["mod_bagAlert"] = "Espacio en bolsas",
     ["mod_trainerReminder"] = "Aviso de instructor de clase",
+    ["mod_dungeonCodex"] = "Códice de mazmorras",
     ["mod_preyTracker"]      = "Seguimiento de presas",
     ["mod_housing"]          = "Vivienda",
 
@@ -1004,6 +1008,7 @@ TomoMod_RegisterLocale("itIT", {
     ["mod_flightTimer"] = "Tempo di volo",
     ["mod_bagAlert"] = "Spazio nelle borse",
     ["mod_trainerReminder"] = "Promemoria istruttore di classe",
+    ["mod_dungeonCodex"] = "Codice dei dungeon",
     ["mod_preyTracker"]      = "Tracciamento prede",
     ["mod_housing"]          = "Alloggio",
 
@@ -1227,6 +1232,7 @@ TomoMod_RegisterLocale("ptBR", {
     ["mod_flightTimer"] = "Tempo de voo",
     ["mod_bagAlert"] = "Espaço nas bolsas",
     ["mod_trainerReminder"] = "Lembrete do instrutor de classe",
+    ["mod_dungeonCodex"] = "Códice de masmorras",
     ["mod_preyTracker"]      = "Rastreador de presas",
     ["mod_housing"]          = "Moradia",
 

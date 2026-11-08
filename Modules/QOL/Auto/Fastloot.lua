@@ -42,7 +42,7 @@ local function CollectLoot()
     end
 end
 
-local frame = CreateFrame("Frame", "TomoMod_FastLoot")
+local frame = CreateFrame("Frame", "TomoMod_FastLootFrame")   -- not the module's own global name
 frame:RegisterEvent("PLAYER_LOGIN")
 
 frame:SetScript("OnEvent", function(self, event)

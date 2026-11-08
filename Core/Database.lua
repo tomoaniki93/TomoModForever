@@ -687,6 +687,16 @@ TomoMod_Defaults = {
         position = { point = "RIGHT", relativePoint = "RIGHT", x = -40, y = 120 },
     },
 
+    -- Dungeon codex (DungeonCodex.lua + DungeonCodexData.lua).
+    dungeonCodex = {
+        enabled = true,
+        mode = "mine",            -- mine | all
+        levelUpHint = true,       -- chat line when a dungeon comes within reach
+        scale = 1.0,
+        overrides = {},           -- [key] = { map, x, y } set with /codex set
+        position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 40 },
+    },
+
     -- Camera and screen effects, set through CVars (CVarOptimizer.lua).
     cameraFx = {
         maxZoom = false,          -- cameraDistanceMaxZoomFactor at its cap
@@ -1089,6 +1099,7 @@ TomoMod_Defaults = {
             showPowerText = false,
             showAbsorb = false,
             showThreat = false,
+            showHappiness = true,
             position = { point = "TOPRIGHT", relativePoint = "TOPLEFT", x = -8, y = 0 },
             anchorTo = "player",
         },

@@ -16,6 +16,26 @@
 - **Changed** - The trainer window filters are switched on for the read and put back as they were. Profession and pet trainers are ignored. The list follows each purchase, "Train all" included.
 - **New** - Also at login when spells are waiting (option). Hides when you talk to the trainer, after a delay (0 = until the visit) or on right click. Waits for the end of combat. Movable from the move mode.
 
+#### Dungeon Codex
+
+- **New** - Adventure > Dungeon codex (`/codex`): the 35 dungeons of WoW Forever (28 instances, wings listed apart), levels 13 to 60, with the live Forever level ranges and the 9 new Forever dungeons marked.
+- **New** - "My level" shows the dungeons for your level and those within two levels; "All" lists every one. Each entry gives the level range, zone, a warning when it lies in the other faction's land, the route for your faction step by step, and buttons to set a waypoint on the entrance or open the zone map.
+- **New** - Entrances come from Forever guides when published, else from their Classic position (marked approximate). Krol'dok Stronghold, Blackmaw Hold and Shaper's Terrace are not placed yet.
+- **New** - Calibration: `/codex set <key>` saves the entrance where you stand (profile override) and prints the line for the data file; `/codex here`, `/codex missing`, `/codex keys`, `/codex reset <key>`.
+- **Changed** - Zones use the Classic map IDs; when one does not match on the client, the zone is looked up by name in the client's map tree.
+- **New** - Optional chat line on level up when a dungeon comes within reach.
+
+#### Pet Happiness
+
+- **New** - Unit frames > Pet: a happiness icon for hunter pets beside the pet health bar, with Blizzard's happy / content / unhappy faces and a border in the matching colour. Blizzard's own face disappears with the default pet frame, so TomoMod now carries its own.
+- **Changed** - On Forever `GetPetHappiness` does not exist and happiness is a secret pet power (`Enum.PowerType.Happiness`): the face is picked C-side through colour curves on `UnitPowerPercent`, so the value never reaches Lua. Classic thresholds (thirds of the gauge). Where `GetPetHappiness` is readable, it is used directly.
+- **New** - The tooltip shows the pet's diet. The icon can be moved in move mode (shown as "happy" while unlocked) and turned off from the Pet page. `/tm pethappy` prints what the client exposes, to diagnose an empty icon.
+
+#### Fixes
+
+- **Fixed** - Group manager skin: clicking the side tab no longer raises ADDON_ACTION_BLOCKED in combat. The tab is now visual only and Blizzard's own toggle takes the click (secure path), its hit area widened to cover the tab.
+- **Fixed** - Reputation bar and fast loot: their frame shared the global name of their module, so once the frame existed the options toggle (and, for the reputation bar, locking in move mode) stopped working. Each frame now has its own name.
+
 ## ####################################
 
 ## CHANGELOG 1.2.0

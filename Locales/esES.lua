@@ -175,6 +175,7 @@ TomoMod_RegisterLocale("esES", {
     ["elem_raid_icon"]                  = "Marca de banda",
     ["elem_leader_icon"]                = "Icono de líder",
     ["elem_threat_text"]                = "Texto de amenaza",
+    ["elem_pet_happiness"]             = "Felicidad de la mascota",
     ["opt_element_anchor"]              = "Anclaje",
     ["btn_reset_elements"]              = "Restablecer posición de elementos",
     ["anchor_host_frame"]               = "Marco",

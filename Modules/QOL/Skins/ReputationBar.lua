@@ -249,7 +249,7 @@ local function CreateReputationBar()
     local h  = db.height or 22
 
     -- Frame principal = StatusBar
-    repBar = CreateFrame("StatusBar", "TomoMod_ReputationBar", UIParent)
+    repBar = CreateFrame("StatusBar", "TomoMod_ReputationBarFrame", UIParent)   -- not the module's own global name
     repBar:SetSize(w, h)
     repBar:SetStatusBarTexture("Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoaniki")
     repBar:SetStatusBarColor(0.13, 0.73, 0.20, 0.85)

@@ -107,17 +107,20 @@ local function IsClassTrainer()
     return GetNumTrainerServices ~= nil
 end
 
-local function ScanTrainer()
-    if scanning or not IsClassTrainer() then return end
-    scanning = true
+-- The filter calls take a real boolean on this client: passing 1 / 0
+-- throws "Missing on/off parameter".
+local function SetFilter(f, on)
+    SetTrainerServiceTypeFilter(f, on and true or false)
+end
 
+local function ReadServices()
     -- Show every kind of service for the read, then put the filters back.
     local saved = {}
     if GetTrainerServiceTypeFilter and SetTrainerServiceTypeFilter then
         for _, f in ipairs(FILTERS) do
             local on = GetTrainerServiceTypeFilter(f)
             saved[f] = on and true or false
-            if not on then SetTrainerServiceTypeFilter(f, 1) end
+            if not on then SetFilter(f, true) end
         end
     end
 
@@ -140,7 +143,7 @@ local function ScanTrainer()
 
     if GetTrainerServiceTypeFilter and SetTrainerServiceTypeFilter then
         for _, f in ipairs(FILTERS) do
-            if saved[f] == false then SetTrainerServiceTypeFilter(f, 0) end
+            if saved[f] == false then SetFilter(f, false) end
         end
     end
 
@@ -150,8 +153,17 @@ local function ScanTrainer()
         c.spells = spells
         c.scanned = time()
     end
+end
+
+local function ScanTrainer()
+    if scanning or not IsClassTrainer() then return end
+    scanning = true
+    -- Whatever happens in the read, the flag must come back down, or no
+    -- later visit would ever be read again this session.
+    local ok, err = pcall(ReadServices)
     scanning = false
     quietUntil = GetTime() + 0.5
+    if not ok then geterrorhandler()(err) end
 end
 
 -- ---------------------------------------------------------------------
@@ -216,7 +228,7 @@ end
 
 local function CreatePanel()
     if panel then return panel end
-    panel = CreateFrame("Button", "TomoMod_TrainerReminder", UIParent)
+    panel = CreateFrame("Button", "TomoMod_TrainerReminderFrame", UIParent)   -- not the module's own global name
     panel:SetWidth(WIDTH)
     panel:SetFrameStrata("MEDIUM")
     panel:SetClampedToScreen(true)

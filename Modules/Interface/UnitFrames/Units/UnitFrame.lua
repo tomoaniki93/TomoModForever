@@ -389,6 +389,204 @@ local function UpdateLeaderIcon(frame)
 end
 
 -- =====================================
+-- HUMEUR DU FAMILIER (chasseur, WoW: Forever)
+-- =====================================
+-- Trois chemins, du plus précis au plus robuste :
+--  1. GetPetHappiness() lisible -> état 1/2/3 en Lua (un seul visage).
+--  2. État secret ou absent -> la puissance « Happiness » passe par
+--     UnitPowerPercent(pet, Happiness, false, courbe) : une courbe de couleur
+--     par visage rend alpha 1 dans sa tranche et 0 ailleurs, évaluée côté C ;
+--     la valeur secrète ne touche jamais le Lua. Tranches Classic : 0-1/3
+--     malheureux, 1/3-2/3 content, 2/3-1 heureux.
+--  3. Rien de lisible -> icône cachée. `/tm pethappy` dit lequel s'applique.
+local HAPPINESS_COLORS = {
+    [1] = { 0.85, 0.20, 0.15 },
+    [2] = { 1.00, 0.82, 0.00 },
+    [3] = { 0.30, 0.80, 0.25 },
+}
+local lastHappiness, lastDamagePct
+
+local function HappinessPowerType()
+    return Enum and Enum.PowerType and Enum.PowerType.Happiness
+end
+
+local function ReadHappiness()
+    if type(GetPetHappiness) ~= "function" then return nil end
+    local ok, happiness, damagePct = pcall(GetPetHappiness)
+    if not ok or happiness == nil then return nil end
+    if IsSecret(happiness) or type(happiness) ~= "number" or not HAPPINESS_COLORS[happiness] then
+        return nil
+    end
+    if IsSecret(damagePct) or type(damagePct) ~= "number" then damagePct = nil end
+    lastHappiness, lastDamagePct = happiness, damagePct
+    return happiness, damagePct
+end
+
+-- Courbes : visage i visible dans sa tranche, bordure colorée par tranche.
+local faceCurves, borderCurve
+local function BuildHappinessCurves()
+    if faceCurves ~= nil then return faceCurves end
+    if not (C_CurveUtil and C_CurveUtil.CreateColorCurve and CreateColor) then
+        faceCurves = false
+        return false
+    end
+    local EPS = 0.0001
+    local edges = { { 0, 1/3 }, { 1/3, 2/3 }, { 2/3, 1 } }
+    faceCurves = {}
+    for i = 1, 3 do
+        local lo, hi = edges[i][1], edges[i][2]
+        local c = C_CurveUtil.CreateColorCurve()
+        local on, off = CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 0)
+        if lo > 0 then
+            c:AddPoint(0, off)
+            c:AddPoint(lo - EPS, off)
+        end
+        c:AddPoint(lo, on)
+        c:AddPoint(hi < 1 and (hi - EPS) or 1, on)
+        if hi < 1 then
+            c:AddPoint(hi, off)
+            c:AddPoint(1, off)
+        end
+        faceCurves[i] = c
+    end
+    borderCurve = C_CurveUtil.CreateColorCurve()
+    for i = 1, 3 do
+        local lo, hi = edges[i][1], edges[i][2]
+        local col = CreateColor(HAPPINESS_COLORS[i][1], HAPPINESS_COLORS[i][2], HAPPINESS_COLORS[i][3], 1)
+        borderCurve:AddPoint(lo, col)
+        borderCurve:AddPoint(hi < 1 and (hi - EPS) or 1, col)
+    end
+    return faceCurves
+end
+
+local function ApplyHappinessCurves(hap, unit)
+    local pt = HappinessPowerType()
+    if not pt or type(UnitPowerPercent) ~= "function" then return false end
+    local curves = BuildHappinessCurves()
+    if not curves then return false end
+    for i = 1, 3 do
+        local ok, col = pcall(UnitPowerPercent, unit, pt, false, curves[i])
+        if not ok or not col or not col.GetRGBA then return false end
+        hap.faces[i]:SetVertexColor(col:GetRGBA())
+        hap.faces[i]:Show()
+    end
+    local ok, col = pcall(UnitPowerPercent, unit, pt, false, borderCurve)
+    if ok and col and col.GetRGBA then hap:SetBackdropBorderColor(col:GetRGBA()) end
+    return true
+end
+
+local function ShowFace(hap, state)
+    for i = 1, 3 do
+        hap.faces[i]:SetVertexColor(1, 1, 1, 1)
+        hap.faces[i]:SetShown(i == state)
+    end
+    local c = HAPPINESS_COLORS[state]
+    hap:SetBackdropBorderColor(c[1], c[2], c[3], 1)
+end
+
+local function UpdateHappiness(frame)
+    local hap = frame and frame.health and frame.health.happiness
+    if not hap then return end
+
+    local settings = TomoModForeverDB.unitFrames[frame.unit]
+    if not settings or settings.showHappiness == false then
+        hap:Hide()
+        return
+    end
+    -- Mode déplacer : aperçu « heureux », même sans familier.
+    if hap._unlocked then
+        ShowFace(hap, 3)
+        hap.mode = "preview"
+        hap:Show()
+        return
+    end
+    if not UnitExists(frame.unit) then
+        hap:Hide()
+        return
+    end
+
+    local happiness = ReadHappiness()
+    if happiness then
+        ShowFace(hap, happiness)
+        hap.mode = "state"
+        hap:Show()
+    elseif select(2, UnitClass("player")) == "HUNTER" and ApplyHappinessCurves(hap, frame.unit) then
+        hap.mode = "curve"
+        hap:Show()
+    else
+        hap.mode = nil
+        hap:Hide()
+    end
+end
+
+local function SetHappinessUnlocked(frame, unlocked)
+    local hap = frame and frame.health and frame.health.happiness
+    if not hap then return end
+    hap._unlocked = unlocked or nil
+    UpdateHappiness(frame)
+end
+
+local function HappinessTooltip(hap)
+    GameTooltip:SetOwner(hap, "ANCHOR_RIGHT")
+    if hap.mode == "preview" then
+        GameTooltip:SetText(TomoMod_L["elem_pet_happiness"], 1, 0.82, 0)
+        GameTooltip:Show()
+        return
+    end
+    local happiness, damagePct = lastHappiness, lastDamagePct
+    if hap.mode == "state" and happiness then
+        local c = HAPPINESS_COLORS[happiness]
+        GameTooltip:SetText(_G["PET_HAPPINESS" .. happiness] or ("Happiness " .. happiness), c[1], c[2], c[3])
+        if damagePct then
+            GameTooltip:AddLine(format(PET_DAMAGE_PERCENTAGE or "Pet is doing %d%% damage", damagePct), 1, 1, 1)
+        end
+    else
+        GameTooltip:SetText(TomoMod_L["elem_pet_happiness"], 1, 0.82, 0)
+    end
+    if type(GetPetFoodTypes) == "function" then
+        local ok, foods = pcall(function() return { GetPetFoodTypes() } end)
+        if ok and #foods > 0 and not IsSecret(foods[1]) then
+            GameTooltip:AddLine(format(PET_DIET_TEMPLATE or "Diet: %s", table.concat(foods, ", ")), 0.95, 0.92, 0.86, true)
+        end
+    end
+    GameTooltip:Show()
+end
+
+-- `/tm pethappy` : ce que le client expose réellement, pour savoir quel
+-- chemin s'applique quand l'icône reste vide.
+function UF.DebugHappiness()
+    local P = "|cffffd100TMF pet|r "
+    local function describe(v)
+        if IsSecret(v) then return "|cffff8040<secret>|r" end
+        return tostring(v) .. " (" .. type(v) .. ")"
+    end
+    print(P .. "UnitExists(pet): " .. tostring(UnitExists("pet")))
+    print(P .. "GetPetHappiness: " .. type(GetPetHappiness))
+    if type(GetPetHappiness) == "function" then
+        local ok, h, d, l = pcall(GetPetHappiness)
+        print(P .. "  -> ok=" .. tostring(ok) .. " h=" .. describe(h) .. " dmg=" .. describe(d) .. " rate=" .. describe(l))
+    end
+    local pt = HappinessPowerType()
+    print(P .. "Enum.PowerType.Happiness: " .. tostring(pt))
+    if pt then
+        local ok, v = pcall(UnitPower, "pet", pt)
+        local ok2, m = pcall(UnitPowerMax, "pet", pt)
+        print(P .. "  UnitPower=" .. (ok and describe(v) or "err") .. " max=" .. (ok2 and describe(m) or "err"))
+    end
+    print(P .. "UnitPowerPercent: " .. type(UnitPowerPercent) .. "  C_CurveUtil: " .. type(C_CurveUtil))
+    local f = frames.pet
+    local hap = f and f.health and f.health.happiness
+    local s = TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.pet
+    print(P .. "cadre pet: " .. tostring(f ~= nil) .. "  icône: " .. tostring(hap ~= nil)
+        .. "  showHappiness: " .. tostring(s and s.showHappiness))
+    if hap then
+        UpdateHappiness(f)
+        print(P .. "mode: " .. tostring(hap.mode) .. "  visible: " .. tostring(hap:IsShown())
+            .. "  disques: " .. tostring(hap.usingDiscs or false))
+    end
+end
+
+-- =====================================
 -- CHAÎNE DE MISE À JOUR DES DONNÉES (API publique)
 -- =====================================
 -- Exportée pour que l'aperçu du panneau de configuration puisse alimenter ses
@@ -413,6 +611,7 @@ function UF.UpdateUnitData(frame)
     UpdateThreatText(frame)
     UpdateRaidIcon(frame)
     UpdateLeaderIcon(frame)
+    UpdateHappiness(frame)
 end
 
 -- Chaîne lourde : parcours des auras. À piloter par événement (UNIT_AURA),
@@ -612,7 +811,13 @@ local function StyleTomoMod(self, unit)
         UpdateLevel(oufFrame)
         UpdateRaidIcon(oufFrame)
         UpdateLeaderIcon(oufFrame)
+        UpdateHappiness(oufFrame)
         E.UpdateInfoBar(oufFrame)
+    end
+
+    if self.health.happiness then
+        self.health.happiness:SetScript("OnEnter", HappinessTooltip)
+        self.health.happiness:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
 
     if self.power then
@@ -726,6 +931,33 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
     end
 end)
 
+-- ── Humeur du familier ───────────────────────────────────────────
+-- Cadre à part : la chaîne Health ne tourne pas quand seule l'humeur bouge.
+-- UNIT_HAPPINESS n'existe pas sur tous les clients (pcall). La fin du combat
+-- relit l'état, qui a pu être secret pendant le combat ; UNIT_AURA couvre
+-- la fin de « Nourrir le familier ».
+local happinessEvents = CreateFrame("Frame")
+happinessEvents:RegisterEvent("UNIT_PET")
+happinessEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+happinessEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
+pcall(happinessEvents.RegisterEvent, happinessEvents, "PET_UI_UPDATE")
+pcall(happinessEvents.RegisterUnitEvent, happinessEvents, "UNIT_HAPPINESS", "pet")
+happinessEvents:RegisterUnitEvent("UNIT_POWER_UPDATE", "pet")
+happinessEvents:RegisterUnitEvent("UNIT_AURA", "pet")
+happinessEvents:SetScript("OnEvent", function(_, event, unit)
+    if event == "UNIT_PET" then
+        if unit ~= "player" then return end
+        lastHappiness, lastDamagePct = nil, nil  -- autre familier
+    end
+    local root = TomoModForeverDB and TomoModForeverDB.unitFrames
+    if not root or not root.enabled or not frames.pet then return end
+    if event == "PLAYER_ENTERING_WORLD" or event == "UNIT_PET" then
+        C_Timer.After(0, function() UpdateHappiness(frames.pet) end)
+    else
+        UpdateHappiness(frames.pet)
+    end
+end)
+
 -- ── Événements par unit (menace, absorb, auras) ─────────────────
 -- Enregistrés après que les frames soient créées dans Initialize.
 local unitSupplementaryFrames = {}
@@ -832,6 +1064,7 @@ function UF.ToggleLock()
                 frame.enemyBuffContainer:EnableMouse(true)
                 frame.enemyBuffContainer:Show()
             end
+            SetHappinessUnlocked(frame, true)
         else
             -- Verrouillé: réactiver RegisterUnitWatch
             if frame.SetLocked then frame:SetLocked(true) end
@@ -845,6 +1078,7 @@ function UF.ToggleLock()
             if frame.enemyBuffContainer then
                 frame.enemyBuffContainer:EnableMouse(false)
             end
+            SetHappinessUnlocked(frame, false)
 
             -- Ré-ancrer les frames anchorTo (ToT, Pet) à leur parent avec le bon offset
             local unitSettings = TomoModForeverDB.unitFrames[unit]

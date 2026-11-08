@@ -330,6 +330,69 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     leaderIcon:Hide()
     health.leaderIcon = leaderIcon
 
+    -- Pet happiness (Forever hunters). oUF:DisableBlizzard("pet") turns off
+    -- PetFrame, and with it Blizzard's own happiness face, so the pet frame
+    -- carries its own. Three stacked faces (unhappy / content / happy): the
+    -- readable path shows one, the secret path drives each face's alpha
+    -- C-side through a curve (see UpdateHappiness in UnitFrame.lua).
+    -- Position from the AstralForge registry ("happiness"); draggable in
+    -- move mode, the drag writes the element record like the aura boxes.
+    if unit == "pet" then
+        local U = TomoMod_Utils or {}
+        local bronze = U.BRONZE or { 0.545, 0.420, 0.247 }
+        local hap = CreateFrame("Frame", nil, health, "BackdropTemplate")
+        hap:SetSize(20, 20)
+        hap:SetPoint("RIGHT", health, "LEFT", -3, 0)
+        hap:SetFrameLevel(health:GetFrameLevel() + 5)
+        hap:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        })
+        hap:SetBackdropColor(0.05, 0.04, 0.03, 0.85)
+        hap:SetBackdropBorderColor(bronze[1], bronze[2], bronze[3], 1)
+
+        -- Blizzard's sheet: happy | content | unhappy, left to right.
+        local COORDS = {
+            [1] = { 0.375,  0.5625, 0, 0.359375 },
+            [2] = { 0.1875, 0.375,  0, 0.359375 },
+            [3] = { 0,      0.1875, 0, 0.359375 },
+        }
+        -- Plain discs if the sheet is missing from this client.
+        local DISC = { [1] = { 0.85, 0.20, 0.15 }, [2] = { 1, 0.82, 0 }, [3] = { 0.30, 0.80, 0.25 } }
+        hap.faces = {}
+        for i = 1, 3 do
+            local face = hap:CreateTexture(nil, "ARTWORK")
+            face:SetPoint("TOPLEFT", 1, -1)
+            face:SetPoint("BOTTOMRIGHT", -1, 1)
+            face:SetTexture("Interface\\PetPaperDollFrame\\UI-PetHappiness")
+            if face:GetTexture() then
+                face:SetTexCoord(COORDS[i][1], COORDS[i][2], COORDS[i][3], COORDS[i][4])
+            else
+                face:SetColorTexture(DISC[i][1], DISC[i][2], DISC[i][3], 1)
+                hap.usingDiscs = true
+            end
+            face:Hide()
+            hap.faces[i] = face
+        end
+
+        hap:EnableMouse(true)
+        hap:SetMovable(true)
+        hap:SetClampedToScreen(true)
+        hap:RegisterForDrag("LeftButton")
+        hap:SetScript("OnDragStart", function(self)
+            if self._unlocked and not InCombatLockdown() then self:StartMoving() end
+        end)
+        hap:SetScript("OnDragStop", function(self)
+            self:StopMovingOrSizing()
+            if self._unlocked and UF_Elements.SaveContainerDrag then
+                UF_Elements.SaveContainerDrag(self, parent, "happiness", settings)
+            end
+        end)
+        hap:Hide()
+        health.happiness = hap
+    end
+
     -- Damage trail (1.1.0): a red bar under the health fill that catches up
     -- a moment later, so a hit leaves a visible "chunk" that drains away.
     -- It sits one level below the health bar and carries the background

@@ -173,6 +173,7 @@ TomoMod_RegisterLocale("enUS", {
     ["elem_raid_icon"]                  = "Raid marker",
     ["elem_leader_icon"]                = "Leader icon",
     ["elem_threat_text"]                = "Threat text",
+    ["elem_pet_happiness"]             = "Pet happiness",
     ["opt_element_anchor"]              = "Anchor",
     ["btn_reset_elements"]              = "Reset element positions",
     ["anchor_host_frame"]               = "Frame",

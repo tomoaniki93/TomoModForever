@@ -246,13 +246,25 @@ local function SkinCollapseTab(fwd)
 
     local TAB_W, TAB_H = 26, 72
 
-    local tab = CreateFrame("Button", nil, fwd)
+    -- Visual only. The tab used to be a Button whose OnClick called
+    -- CompactRaidFrameManager_Toggle() from addon code: the toggle then ran
+    -- tainted and its CompactRaidFrameManager:SetPoint() was blocked in
+    -- combat (ADDON_ACTION_BLOCKED). The tab now takes no mouse; Blizzard's
+    -- own forward toggle receives the click (secure path), with its hit
+    -- rect widened to cover the tab.
+    local tab = CreateFrame("Frame", nil, fwd)
     tab:SetSize(TAB_W, TAB_H)
     tab:SetPoint("LEFT", fwd, "LEFT", -2, 0) -- flush to the screen edge, stretching right
     tab:SetFrameLevel((fwd:GetFrameLevel() or 1) + 1)
-    tab:SetScript("OnClick", function()
-        if CompactRaidFrameManager_Toggle then CompactRaidFrameManager_Toggle() end
-    end)
+    tab:EnableMouse(false)
+    if not InCombatLockdown() then
+        local fw, fh = fwd:GetSize()
+        if fw and fh and fw > 0 and fh > 0 then
+            pcall(fwd.SetHitRectInsets, fwd, -2,
+                math.min(0, fw - (TAB_W - 2)), math.min(0, fh / 2 - TAB_H / 2),
+                math.min(0, fh / 2 - TAB_H / 2))
+        end
+    end
 
     -- Body: dark, subtle top->bottom gradient.
     local body = tab:CreateTexture(nil, "BACKGROUND", nil, -2)
@@ -300,12 +312,12 @@ local function SkinCollapseTab(fwd)
     pcall(arrow.SetVertexColor, arrow, BRAND[1], BRAND[2], BRAND[3])
     trackOverlay(arrow, false)
 
-    tab:HookScript("OnEnter", function()
+    fwd:HookScript("OnEnter", function()
         if not GMS._active then return end
         hov:Show()
         pcall(arrow.SetVertexColor, arrow, BRAND_HOVER[1], BRAND_HOVER[2], BRAND_HOVER[3])
     end)
-    tab:HookScript("OnLeave", function()
+    fwd:HookScript("OnLeave", function()
         if not GMS._active then return end
         hov:Hide()
         pcall(arrow.SetVertexColor, arrow, BRAND[1], BRAND[2], BRAND[3])

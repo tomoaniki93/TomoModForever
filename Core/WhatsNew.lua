@@ -67,6 +67,9 @@ CHANGELOG = {
         highlights = {
             L["wn_121_bags"],
             L["wn_121_trainer"],
+            L["wn_121_codex"],
+            L["wn_121_pet"],
+            L["wn_121_fixes"],
         },
     },
     {

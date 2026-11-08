@@ -176,6 +176,7 @@ TomoMod_RegisterLocale("deDE", {
     ["elem_raid_icon"]                  = "Schlachtzugsmarkierung",
     ["elem_leader_icon"]                = "Anführersymbol",
     ["elem_threat_text"]                = "Bedrohungstext",
+    ["elem_pet_happiness"]             = "Zufriedenheit des Begleiters",
     ["opt_element_anchor"]              = "Verankerung",
     ["btn_reset_elements"]              = "Elementpositionen zurücksetzen",
     ["anchor_host_frame"]               = "Rahmen",

@@ -182,6 +182,10 @@ local function BuildUnitPage(page, u)
         c:Pair(function(l) if s.showLeaderIcon ~= nil then l:Toggle(T("Icône de chef", "Leader icon"), p .. "showLeaderIcon", ap) end end,
                function(r) if s.showRaidIcon ~= nil then r:Toggle(T("Marque de raid", "Raid marker"), p .. "showRaidIcon", ap) end end)
     end
+    if s.showHappiness ~= nil then
+        c:Toggle(T("Humeur du familier (chasseur)", "Pet happiness (hunter)"), p .. "showHappiness", ap,
+            T("Heureux, content ou malheureux. Survole l'icône pour voir son régime.", "Happy, content or unhappy. Hover the icon to see its diet."))
+    end
     if s.showQuestIcon ~= nil then
         c:Toggle(T("Icône de quête", "Quest icon"), p .. "showQuestIcon", ap)
     end

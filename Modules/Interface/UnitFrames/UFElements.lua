@@ -128,6 +128,18 @@ R.Define(DOMAIN, {
     resolve    = function(frame) return frame and frame.health and frame.health.leaderIcon end,
 })
 
+-- Pet frame only: resolve returns nil on every other unit, which R.Apply
+-- skips. Default = to the left of the health bar, beside the player frame.
+R.Define(DOMAIN, {
+    id         = "happiness",
+    kind       = "frame",
+    labelKey   = "elem_pet_happiness",
+    order      = 62,
+    anchorMode = "fixed",
+    default    = { point = "RIGHT", relTo = "health", relPoint = "LEFT", x = -3, y = 0 },
+    resolve    = function(frame) return frame and frame.health and frame.health.happiness end,
+})
+
 -- Historically anchored from settings.auras.position, which the drag wrote
 -- with a CENTER/CENTER delta -- exactly the shape of an element record.
 R.Define(DOMAIN, {

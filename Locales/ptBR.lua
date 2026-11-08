@@ -176,6 +176,7 @@ TomoMod_RegisterLocale("ptBR", {
     ["elem_raid_icon"]                  = "Marca de raide",
     ["elem_leader_icon"]                = "Ícone de líder",
     ["elem_threat_text"]                = "Texto de ameaça",
+    ["elem_pet_happiness"]             = "Felicidade do ajudante",
     ["opt_element_anchor"]              = "Ancoragem",
     ["btn_reset_elements"]              = "Redefinir posição dos elementos",
     ["anchor_host_frame"]               = "Quadro",

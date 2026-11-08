@@ -327,14 +327,14 @@ K.RegisterPage({
     section = SECTION,
     label = T("Place dans les sacs", "Bag space"),
     kw = "sac sacs bag bags place space plein full inventaire inventory vendre sell gris grey alerte alert",
-    locate = "TomoMod_BagAlert",
+    locate = "TomoMod_BagAlertFrame",
     onHide = function() if TomoMod_BagAlert and TomoMod_BagAlert.IsPreview and TomoMod_BagAlert.IsPreview() then TomoMod_BagAlert.Preview(false) end end,
     build = function(parent)
         return K.Page(parent, function(page)
             page:Hero(T("Place dans les sacs", "Bag space"),
                 T("Une bannière animée te prévient quand tes sacs sont presque pleins : à la connexion pour vendre avant de partir, et en cours de jeu quand le butin franchit le seuil.",
                   "An animated banner warns you when your bags are nearly full: at login so you sell before heading out, and while playing when loot crosses the threshold."),
-                "TomoMod_BagAlert", T("Place dans les sacs", "Bag space"))
+                "TomoMod_BagAlertFrame", T("Place dans les sacs", "Bag space"))
 
             local c = page:Card(T("Activation", "On / off"))
             ModuleToggle(c, "bagAlert", T("Afficher l'alerte de place dans les sacs", "Show the bag space alert"))
@@ -378,7 +378,7 @@ K.RegisterPage({
     section = SECTION,
     label = T("Rappel du maître", "Trainer reminder"),
     kw = "maitre classe class trainer sort sorts spell spells apprendre learn niveau level rang rank rappel reminder prix cost",
-    locate = "TomoMod_TrainerReminder",
+    locate = "TomoMod_TrainerReminderFrame",
     noCache = true,   -- the known-spells count changes after each visit
     onHide = function() if TomoMod_TrainerReminder and TomoMod_TrainerReminder.IsPreview and TomoMod_TrainerReminder.IsPreview() then TomoMod_TrainerReminder.Preview(false) end end,
     build = function(parent)
@@ -386,7 +386,7 @@ K.RegisterPage({
             page:Hero(T("Rappel du maître de classe", "Class trainer reminder"),
                 T("Tous les deux niveaux, un petit panneau te rappelle d'aller voir ton maître de classe, avec l'icône, le nom, le rang et le prix de chaque sort à apprendre.",
                   "Every second level a small panel reminds you to visit your class trainer, with the icon, name, rank and price of each spell to learn."),
-                "TomoMod_TrainerReminder", T("Maître de classe", "Class trainer"))
+                "TomoMod_TrainerReminderFrame", T("Maître de classe", "Class trainer"))
 
             local c = page:Card(T("Activation", "On / off"))
             ModuleToggle(c, "trainerReminder", T("Afficher le rappel du maître de classe", "Show the class trainer reminder"))
@@ -420,6 +420,51 @@ K.RegisterPage({
             end
             c:Info(T("La liste est lue à chaque visite (sorts futurs compris) et gardée pour ce personnage. Le panneau disparaît dès que tu parles au maître. Clic droit : fermer. Pour le placer : bouton « Déplacer ».",
                      "The list is read at each visit (future spells included) and kept for this character. The panel hides as soon as you talk to the trainer. Right click: close. To place it: \"Move\" button."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- Dungeon codex
+-- ---------------------------------------------------------------------
+local function DCApply() Call("TomoMod_DungeonCodex", "ApplySettings") end
+
+K.RegisterPage({
+    key = "dungeoncodex",
+    section = SECTION,
+    label = T("Codex des donjons", "Dungeon codex"),
+    kw = "donjon donjons dungeon dungeons instance codex itineraire route waypoint entree entrance niveau level carte map",
+    noCache = true,   -- the custom positions count changes with /codex set
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Codex des donjons", "Dungeon codex"),
+                T("Les 35 donjons de WoW Forever, du niveau 13 au 60 : ceux de ton niveau, l'itinéraire pour ta faction étape par étape, et un waypoint sur l'entrée.",
+                  "The 35 dungeons of WoW Forever, levels 13 to 60: the ones for your level, the route for your faction step by step, and a waypoint on the entrance."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "dungeonCodex", T("Activer le codex des donjons", "Enable the dungeon codex"))
+            c:Button(T("Ouvrir le codex", "Open the codex"), function()
+                local M = TomoMod_DungeonCodex
+                if M and M.Toggle then M.Toggle(true) end
+            end, 200, T("Aussi avec /codex.", "Also with /codex."))
+            c:Done()
+
+            c = page:Card(T("Réglages", "Settings"))
+            c:Toggle(T("Prévenir dans le chat quand un donjon devient accessible", "Chat line when a dungeon comes within reach"), "dungeonCodex.levelUpHint", DCApply,
+                T("Deux niveaux avant le minimum du donjon.", "Two levels before the dungeon's minimum."))
+            c:Slider(T("Taille de la fenêtre", "Window size"), "dungeonCodex.scale", 0.7, 1.6, 0.05, DCApply, "%.2f")
+            c:Done()
+
+            c = page:Card(T("Positions des entrées", "Entrance positions"))
+            local db = TomoModForeverDB and TomoModForeverDB.dungeonCodex
+            local n = 0
+            if db and db.overrides then for _ in pairs(db.overrides) do n = n + 1 end end
+            c:Info(T("Les entrées des donjons classiques sont placées à leur position Classic (approximative) ; celles des nouveaux donjons viennent des guides Forever quand elles sont connues. Trois ne sont pas encore placées : Krol'dok, Repaire des Noiregueules, Terrasse du Façonneur.",
+                     "Classic dungeon entrances use their Classic position (approximate); the new ones come from Forever guides when known. Three are not placed yet: Krol'dok, Blackmaw Hold, Shaper's Terrace."))
+            c:Info(T("Pour corriger ou ajouter une entrée : place-toi dessus et tape /codex set <clé> (liste des clés : /codex keys). /codex here donne ta position, /codex missing les entrées manquantes.",
+                     "To fix or add an entrance: stand on it and type /codex set <key> (keys: /codex keys). /codex here gives your position, /codex missing the missing ones."))
+            c:Info(string.format(T("%d position(s) enregistrée(s) par toi.", "%d position(s) recorded by you."), n))
             c:Done()
         end)
     end,

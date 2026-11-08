@@ -176,6 +176,7 @@ TomoMod_RegisterLocale("itIT", {
     ["elem_raid_icon"]                  = "Simbolo incursione",
     ["elem_leader_icon"]                = "Icona capogruppo",
     ["elem_threat_text"]                = "Testo minaccia",
+    ["elem_pet_happiness"]             = "Felicità del famiglio",
     ["opt_element_anchor"]              = "Ancoraggio",
     ["btn_reset_elements"]              = "Reimposta posizione elementi",
     ["anchor_host_frame"]               = "Riquadro",

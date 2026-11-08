@@ -516,6 +516,13 @@ R.Define{
 }
 
 R.Define{
+    key = "dungeonCodex", label = "mod_dungeonCodex", group = "qol",
+    enabledPath = "dungeonCodex.enabled",
+    global = "TomoMod_DungeonCodex", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
     key = "flightTimer", label = "mod_flightTimer", group = "qol",
     enabledPath = "flightTimer.enabled",
     anchors = { { id = "flightTimer", path = "flightTimer.position", shape = "point_relativePoint", label = "mod_flightTimer" } },

@@ -69,7 +69,12 @@ SlashCmdList["TOMOMOD"] = function(msg)
     local rawMsg = (msg or ""):match("^%s*(.-)%s*$")
     msg = string.lower(rawMsg)
 
-    if msg == "install" or msg == "installer" then
+    if msg == "pethappy" then
+        if TomoMod_UnitFrames and TomoMod_UnitFrames.DebugHappiness then
+            TomoMod_UnitFrames.DebugHappiness()
+        end
+        return
+    elseif msg == "install" or msg == "installer" then
         if TomoMod_OpenInstaller then
             TomoMod_OpenInstaller(true)
         elseif TomoMod_Installer then
@@ -609,6 +614,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("FlightTimer",        TomoMod_FlightTimer)
         safeInit("BagAlert",           TomoMod_BagAlert)
         safeInit("TrainerReminder",    TomoMod_TrainerReminder)
+        safeInit("DungeonCodex",       TomoMod_DungeonCodex)
         safeInit("Mail",               TomoMod_Mail)
         safeInit("CVarOptimizer",      TomoMod_CVarOptimizer)
         safeInit("RareAlert",          TomoMod_RareAlert)

@@ -165,7 +165,7 @@ end
 
 local function CreateBanner()
     if banner then return banner end
-    banner = CreateFrame("Button", "TomoMod_BagAlert", UIParent)
+    banner = CreateFrame("Button", "TomoMod_BagAlertFrame", UIParent)   -- not the module's own global name
     banner:SetSize(300, 62)
     banner:SetFrameStrata("HIGH")
     banner:SetClampedToScreen(true)

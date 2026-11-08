@@ -180,6 +180,7 @@ TomoMod_RegisterLocale("frFR", {
     ["elem_raid_icon"]                  = "Marque de raid",
     ["elem_leader_icon"]                = "Icône de chef",
     ["elem_threat_text"]                = "Texte de menace",
+    ["elem_pet_happiness"]             = "Humeur du familier",
     ["opt_element_anchor"]              = "Ancrage",
     ["btn_reset_elements"]              = "Réinitialiser la position des éléments",
     ["anchor_host_frame"]               = "Cadre",
