@@ -60,6 +60,8 @@
     <Include file="Forever\MissingBuffs.lua" />
     <Include file="Forever\AdventureTweaks.lua" />
     <Include file="Forever\FlightTimer.lua" />
+    <Include file="Forever\BagAlert.lua" />
+    <Include file="Forever\TrainerReminder.lua" />
 
     <!-- Modules: Mail (TomoMail port) -->
     <Include file="Mail\Mail.xml" />

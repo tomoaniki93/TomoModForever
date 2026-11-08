@@ -660,6 +660,33 @@ TomoMod_Defaults = {
         trainAll = true,          -- "Train all" button at class trainers
     },
 
+    -- Bag space banner (BagAlert.lua): at login and when loot crosses
+    -- the threshold. Only general-purpose bags are counted.
+    bagAlert = {
+        enabled = true,
+        threshold = 90,           -- % of slots used
+        onLogin = true,           -- check once after logging in
+        onFill = true,            -- alert when looting crosses the threshold
+        fullAlert = true,         -- ...and again when the last slot goes
+        showGreys = true,         -- count of grey items and their value
+        sound = true,
+        duration = 7,             -- seconds on screen (paused on mouseover)
+        scale = 1.0,
+        position = { point = "TOP", relativePoint = "TOP", x = 0, y = -230 },
+    },
+
+    -- Class trainer reminder (TrainerReminder.lua). The spell list read at
+    -- the trainer lives per character in TomoModForeverCharDB.trainer.
+    trainerReminder = {
+        enabled = true,
+        onLogin = true,           -- also at login when spells are waiting
+        genericReminder = true,   -- even levels, before the first visit
+        sound = true,
+        duration = 20,            -- seconds; 0 = until you visit the trainer
+        scale = 1.0,
+        position = { point = "RIGHT", relativePoint = "RIGHT", x = -40, y = 120 },
+    },
+
     -- Camera and screen effects, set through CVars (CVarOptimizer.lua).
     cameraFx = {
         maxZoom = false,          -- cameraDistanceMaxZoomFactor at its cap

@@ -318,6 +318,114 @@ K.RegisterPage({
 })
 
 -- ---------------------------------------------------------------------
+-- Bag space banner
+-- ---------------------------------------------------------------------
+local function BAApply() Call("TomoMod_BagAlert", "ApplySettings") end
+
+K.RegisterPage({
+    key = "bagalert",
+    section = SECTION,
+    label = T("Place dans les sacs", "Bag space"),
+    kw = "sac sacs bag bags place space plein full inventaire inventory vendre sell gris grey alerte alert",
+    locate = "TomoMod_BagAlert",
+    onHide = function() if TomoMod_BagAlert and TomoMod_BagAlert.IsPreview and TomoMod_BagAlert.IsPreview() then TomoMod_BagAlert.Preview(false) end end,
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Place dans les sacs", "Bag space"),
+                T("Une bannière animée te prévient quand tes sacs sont presque pleins : à la connexion pour vendre avant de partir, et en cours de jeu quand le butin franchit le seuil.",
+                  "An animated banner warns you when your bags are nearly full: at login so you sell before heading out, and while playing when loot crosses the threshold."),
+                "TomoMod_BagAlert", T("Place dans les sacs", "Bag space"))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "bagAlert", T("Afficher l'alerte de place dans les sacs", "Show the bag space alert"))
+            c:Button(T("Tester l'affichage", "Test the display"), function()
+                local B = TomoMod_BagAlert
+                if B and B.Preview then B.Preview(not B.IsPreview()) end
+            end, 200, T("Joue l'animation avec tes sacs actuels (ou un exemple s'ils sont presque vides). Recliquer pour cacher.",
+                        "Plays the animation with your current bags (or a sample if they are nearly empty). Click again to hide."))
+            c:Done()
+
+            c = page:Card(T("Quand prévenir ?", "When to warn?"))
+            c:Slider(T("Seuil de remplissage", "Fill threshold"), "bagAlert.threshold", 50, 100, 5, BAApply, "%.0f %%")
+            c:Toggle(T("À la connexion", "At login"), "bagAlert.onLogin", BAApply,
+                T("Quelques secondes après l'écran de chargement, si le seuil est dépassé. Pas après un /reload.",
+                  "A few seconds after the loading screen, if past the threshold. Not after a /reload."))
+            c:Toggle(T("En cours de jeu, quand le butin franchit le seuil", "While playing, when loot crosses the threshold"), "bagAlert.onFill", BAApply,
+                T("Une seule fois : l'alerte se réarme quand tu repasses sous le seuil. En combat, elle attend la fin du combat.",
+                  "Only once: it re-arms when you drop back below the threshold. In combat it waits for the fight to end."))
+            c:Toggle(T("Prévenir encore quand la dernière place est prise", "Warn again when the last slot is taken"), "bagAlert.fullAlert", BAApply)
+            c:Done()
+
+            c = page:Card(T("Affichage", "Display"))
+            c:Slider(T("Taille", "Size"), "bagAlert.scale", 0.6, 2, 0.05, BAApply, "%.2f")
+            c:Slider(T("Durée à l'écran (s)", "Time on screen (s)"), "bagAlert.duration", 3, 20, 1, BAApply)
+            c:Toggle(T("Compter les objets gris et leur valeur", "Count grey items and their value"), "bagAlert.showGreys", BAApply)
+            c:Toggle(T("Son à l'apparition", "Sound when shown"), "bagAlert.sound", BAApply)
+            c:Info(T("Seuls les sacs normaux comptent (pas les carquois, gibernes ni sacs d'âmes). Clic sur la bannière : ouvrir les sacs ; clic droit : fermer. Pour la placer : bouton « Déplacer » en haut de la fenêtre.",
+                     "Only regular bags count (no quivers, ammo pouches or soul bags). Click the banner: open bags; right click: close. To place it: \"Move\" button at the top of the window."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- Class trainer reminder
+-- ---------------------------------------------------------------------
+local function TRApply() Call("TomoMod_TrainerReminder", "ApplySettings") end
+
+K.RegisterPage({
+    key = "trainerreminder",
+    section = SECTION,
+    label = T("Rappel du maître", "Trainer reminder"),
+    kw = "maitre classe class trainer sort sorts spell spells apprendre learn niveau level rang rank rappel reminder prix cost",
+    locate = "TomoMod_TrainerReminder",
+    noCache = true,   -- the known-spells count changes after each visit
+    onHide = function() if TomoMod_TrainerReminder and TomoMod_TrainerReminder.IsPreview and TomoMod_TrainerReminder.IsPreview() then TomoMod_TrainerReminder.Preview(false) end end,
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Rappel du maître de classe", "Class trainer reminder"),
+                T("Tous les deux niveaux, un petit panneau te rappelle d'aller voir ton maître de classe, avec l'icône, le nom, le rang et le prix de chaque sort à apprendre.",
+                  "Every second level a small panel reminds you to visit your class trainer, with the icon, name, rank and price of each spell to learn."),
+                "TomoMod_TrainerReminder", T("Maître de classe", "Class trainer"))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "trainerReminder", T("Afficher le rappel du maître de classe", "Show the class trainer reminder"))
+            c:Button(T("Tester l'affichage", "Test the display"), function()
+                local M = TomoMod_TrainerReminder
+                if M and M.Preview then M.Preview(not M.IsPreview()) end
+            end, 200, T("Montre tes sorts en attente (ou un exemple). Recliquer pour cacher.",
+                        "Shows your waiting spells (or a sample). Click again to hide."))
+            c:Done()
+
+            c = page:Card(T("Quand le montrer ?", "When to show it?"))
+            c:Toggle(T("À la connexion, s'il y a des sorts à apprendre", "At login, when spells are waiting"), "trainerReminder.onLogin", TRApply)
+            c:Toggle(T("Aux niveaux pairs, avant la première visite au maître", "On even levels, before the first trainer visit"), "trainerReminder.genericReminder", TRApply,
+                T("Tant que la liste du maître n'est pas connue, le panneau dit seulement que de nouveaux sorts t'attendent sans doute.",
+                  "Until the trainer's list is known the panel only says new spells are probably waiting."))
+            c:Slider(T("Durée à l'écran (s, 0 = jusqu'à la visite)", "Time on screen (s, 0 = until the visit)"), "trainerReminder.duration", 0, 60, 5, TRApply)
+            c:Toggle(T("Son à l'apparition", "Sound when shown"), "trainerReminder.sound", TRApply)
+            c:Done()
+
+            c = page:Card(T("Affichage", "Display"))
+            c:Slider(T("Taille", "Size"), "trainerReminder.scale", 0.6, 2, 0.05, TRApply, "%.2f")
+            local M = TomoMod_TrainerReminder
+            local known = TomoModForeverCharDB and TomoModForeverCharDB.trainer and TomoModForeverCharDB.trainer.spells
+            if known and TomoModForeverCharDB.trainer.scanned then
+                local waiting = M and M.Pending and #M.Pending() or 0
+                c:Info(string.format(T("Liste du maître connue : %d sort(s) à venir, dont %d à apprendre dès maintenant.",
+                                       "Trainer list known: %d upcoming spell(s), %d you can learn right now."), #known, waiting))
+            else
+                c:Info(T("Liste du maître pas encore connue : parle une fois à ton maître de classe pour qu'elle soit lue.",
+                         "Trainer list not known yet: talk to your class trainer once so it can be read."))
+            end
+            c:Info(T("La liste est lue à chaque visite (sorts futurs compris) et gardée pour ce personnage. Le panneau disparaît dès que tu parles au maître. Clic droit : fermer. Pour le placer : bouton « Déplacer ».",
+                     "The list is read at each visit (future spells included) and kept for this character. The panel hides as soon as you talk to the trainer. Right click: close. To place it: \"Move\" button."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
 -- Mail (TomoMail port, 1.2.0)
 -- ---------------------------------------------------------------------
 -- Display options live per character in TomoModForeverMailDB; the page

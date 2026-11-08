@@ -1,5 +1,23 @@
 ## ####################################
 
+## CHANGELOG 1.2.1
+
+#### Bag Space
+
+- **New** - Adventure > Bag space: an animated banner in the Forever palette warns you when your bags are nearly full. It pops in, the bar and the percentage count up, and past the threshold the bag icon shakes and the border pulses (orange, red when full). Fades out after a few seconds; the timer waits while the mouse is over it.
+- **New** - Shown at login (a few seconds after the loading screen, not after a /reload) when past the threshold, so you sell before heading out; and while playing, once when loot crosses the threshold and once more when the last slot goes. Re-arms when you free space. An alert raised in combat waits for the end of the fight.
+- **New** - Free slots out of total, number of grey items and their vendor value. Only regular bags count: quivers, ammo pouches and soul bags cannot take your loot.
+- **New** - Threshold (50 to 100 %, 90 by default), time on screen, size, sound, grey items on / off. Left click opens the bags, right click closes the banner. Movable from the move mode.
+
+#### Class Trainer Reminder
+
+- **New** - Adventure > Trainer reminder: on level up a small, discreet panel lists the spells waiting at your class trainer, with icon, name, rank and price, and the total (in red when you cannot afford it). Up to 8 rows, then "+ N more".
+- **New** - The list is read at each visit to your class trainer, future spells included with their required level, and kept per character (TomoModForeverCharDB). After one visit every level up shows what just became available. Before the first visit, even levels show a short generic reminder (option).
+- **Changed** - The trainer window filters are switched on for the read and put back as they were. Profession and pet trainers are ignored. The list follows each purchase, "Train all" included.
+- **New** - Also at login when spells are waiting (option). Hides when you talk to the trainer, after a delay (0 = until the visit) or on right click. Waits for the end of combat. Movable from the move mode.
+
+## ####################################
+
 ## CHANGELOG 1.2.0
 
 #### Mail (TomoMail)

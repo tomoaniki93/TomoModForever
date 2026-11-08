@@ -110,6 +110,8 @@ TomoMod_RegisterLocale("enUS", {
     ["mod_cameraFx_noDrunkHaze"] = "No drunken haze",
     ["mod_cameraFx_noDeathFx"] = "No death screen effects",
     ["mod_flightTimer"] = "Flight timer",
+    ["mod_bagAlert"] = "Bag space",
+    ["mod_trainerReminder"] = "Class trainer reminder",
     ["mod_preyTracker"]      = "Prey Tracker",
     ["mod_housing"]          = "Housing",
 
@@ -331,6 +333,8 @@ TomoMod_RegisterLocale("frFR", {
     ["mod_cameraFx_noDrunkHaze"] = "Sans flou d'ivresse",
     ["mod_cameraFx_noDeathFx"] = "Sans effets d'écran à la mort",
     ["mod_flightTimer"] = "Temps de vol",
+    ["mod_bagAlert"] = "Place dans les sacs",
+    ["mod_trainerReminder"] = "Rappel du maître de classe",
     ["mod_preyTracker"]      = "Suivi des proies",
     ["mod_housing"]          = "Logement",
 
@@ -552,6 +556,8 @@ TomoMod_RegisterLocale("deDE", {
     ["mod_cameraFx_noDrunkHaze"] = "Kein Rauschschleier",
     ["mod_cameraFx_noDeathFx"] = "Keine Todes-Bildschirmeffekte",
     ["mod_flightTimer"] = "Flugzeit",
+    ["mod_bagAlert"] = "Taschenplatz",
+    ["mod_trainerReminder"] = "Klassenlehrer-Erinnerung",
     ["mod_preyTracker"]      = "Beutetracker",
     ["mod_housing"]          = "Behausung",
 
@@ -773,6 +779,8 @@ TomoMod_RegisterLocale("esES", {
     ["mod_cameraFx_noDrunkHaze"] = "Sin neblina de ebriedad",
     ["mod_cameraFx_noDeathFx"] = "Sin efectos de muerte",
     ["mod_flightTimer"] = "Tiempo de vuelo",
+    ["mod_bagAlert"] = "Espacio en bolsas",
+    ["mod_trainerReminder"] = "Aviso de instructor de clase",
     ["mod_preyTracker"]      = "Seguimiento de presas",
     ["mod_housing"]          = "Vivienda",
 
@@ -994,6 +1002,8 @@ TomoMod_RegisterLocale("itIT", {
     ["mod_cameraFx_noDrunkHaze"] = "Niente foschia da ebbrezza",
     ["mod_cameraFx_noDeathFx"] = "Niente effetti di morte",
     ["mod_flightTimer"] = "Tempo di volo",
+    ["mod_bagAlert"] = "Spazio nelle borse",
+    ["mod_trainerReminder"] = "Promemoria istruttore di classe",
     ["mod_preyTracker"]      = "Tracciamento prede",
     ["mod_housing"]          = "Alloggio",
 
@@ -1215,6 +1225,8 @@ TomoMod_RegisterLocale("ptBR", {
     ["mod_cameraFx_noDrunkHaze"] = "Sem névoa de embriaguez",
     ["mod_cameraFx_noDeathFx"] = "Sem efeitos de morte",
     ["mod_flightTimer"] = "Tempo de voo",
+    ["mod_bagAlert"] = "Espaço nas bolsas",
+    ["mod_trainerReminder"] = "Lembrete do instrutor de classe",
     ["mod_preyTracker"]      = "Rastreador de presas",
     ["mod_housing"]          = "Moradia",
 
