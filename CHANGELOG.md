@@ -1,5 +1,18 @@
 ## ####################################
 
+## CHANGELOG 1.2.3
+
+#### Flight Timer
+
+- **New** - Every Forever flight route is built in (`FlightData.lua`: 295 routes, 75 flight points), generated from the game's TaxiPath, TaxiPathNode and TaxiNodes tables of build 1.60.1.70862 by `Tools/gen_flight.py`. Each route's length is the curve a flight path mount follows through the path's waypoints.
+- **New** - The bar counts down from the very first flight of a route, and the flight master's map shows each destination's duration before you leave, routes with stops included.
+- **New** - Durations are the length divided by the flight speed. The speed starts at 30.4 yd/s (Classic flight times measured by the community) and fits itself to your own flights: the median of your last 9 normal landings on known routes. Frequent Flier is still converted. A cut flight (landed far too early) teaches nothing.
+- **Changed** - Order of the sources: a time learned on the exact route first, then the built-in length, then an estimate from learned pieces ("≈"), then measuring.
+- **New** - Flight points are matched through the taxi map API, or by their position when it does not say.
+- **New** - `/tm flight` (or `/tm vol`) prints the data build, the speed in use and how it was fitted, and with a flight master's map open, which destinations have a built-in time.
+
+## ####################################
+
 ## CHANGELOG 1.2.2
 
 #### Class Trainer Reminder

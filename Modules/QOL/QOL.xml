@@ -59,6 +59,7 @@
     <Include file="Forever\EdgeXP.lua" />
     <Include file="Forever\MissingBuffs.lua" />
     <Include file="Forever\AdventureTweaks.lua" />
+    <Include file="Forever\FlightData.lua" />
     <Include file="Forever\FlightTimer.lua" />
     <Include file="Forever\BagAlert.lua" />
     <Include file="Forever\MapRevealData.lua" />

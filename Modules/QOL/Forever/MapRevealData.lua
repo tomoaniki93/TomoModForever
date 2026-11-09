@@ -2,7 +2,8 @@
 -- Modules/QOL/Forever/MapRevealData.lua -- unexplored map areas, WoW: Forever
 --
 -- Generated from the game's WorldMapOverlay and WorldMapOverlayTile tables
--- (Forever build; exports from github.com/wind-addons/WindToolsScripts).
+-- (Forever build; exports from github.com/wind-addons/WindToolsScripts),
+-- by Tools/gen_mapreveal.py.
 --   [uiMapArtID] = { { offsetX, offsetY, width, height, { fileID, ... } }, ... }
 -- File IDs run row by row, left to right, in 256 px tiles.
 -- =====================================================================

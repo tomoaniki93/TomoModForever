@@ -2,10 +2,19 @@
 -- Modules/QOL/Forever/FlightTimer.lua -- flight path timer (WoW: Forever)
 --
 -- Taking a flight shows a bar with the destination and the time left.
--- Times are LEARNED: the first time a route is flown the bar counts up
--- ("measuring"), and on landing the duration is saved. Next time the bar
--- counts down. A route never flown whole but made of known pieces gets an
--- estimate (marked "≈") from the sum of those pieces.
+--
+-- Where the time comes from, best first:
+--   1. the time LEARNED on this exact route (saved on landing);
+--   2. the route's length from FlightData.lua (the game's own taxi paths,
+--      every Forever route) divided by the flight speed: known from the
+--      first flight, and shown on the flight master's map;
+--   3. an estimate (marked "≈") from learned pieces of the route;
+--   4. nothing: the bar counts up ("measuring") and the time is learned.
+--
+-- The flight speed starts at 30.4 yd/s (Classic flight times measured by
+-- the community) and is then fitted to your own flights: each normal
+-- landing on a route of known length adds a sample, the median of the
+-- last ones is used.
 --
 -- Storage. TomoModForeverFlightDB is its own SavedVariable, account-wide
 -- and outside profiles, so swapping or resetting a profile never loses
@@ -36,6 +45,10 @@ local TEXT   = { 0.949, 0.922, 0.859 }   -- #F2EBDB
 
 local FREQUENT_FLIER_SPELL = 1225490
 local FREQUENT_FLIER_SPEED = 1.2
+
+local DEFAULT_SPEED = 30.4  -- yards per second at normal speed
+local SPEED_SAMPLES = 9     -- landings kept to fit the speed
+local NODE_MATCH    = 60    -- yards; a flight point found by position
 
 local MIN_FLIGHT   = 5      -- seconds; shorter than this is not a real flight
 local RESUME_LIMIT = 1800   -- seconds; an "active" flight older than this is stale
@@ -106,12 +119,16 @@ local function CurrentNode()
     end
 end
 
--- Node keys of the whole route, start first, destination last.
+-- Node keys of the whole route, start first, destination last, and the
+-- taxi slots they come from.
 local function BuildRoute(current, dest)
-    local keys = {}
+    local keys, slots = {}, {}
     local function add(i)
         local k = i and NodeKey(i)
-        if k and keys[#keys] ~= k then keys[#keys + 1] = k end
+        if k and keys[#keys] ~= k then
+            keys[#keys + 1] = k
+            slots[#slots + 1] = i
+        end
     end
     add(current)
     local hops = GetNumRoutes and GetNumRoutes(dest) or 0
@@ -119,9 +136,99 @@ local function BuildRoute(current, dest)
         local ok, slot = pcall(TaxiGetNodeSlot, dest, h, true)
         if ok and slot then add(slot) end
     end
-    local destKey = NodeKey(dest)
-    if destKey and keys[#keys] ~= destKey then keys[#keys + 1] = destKey end
-    return keys
+    add(dest)
+    return keys, slots
+end
+
+-- ---------------------------------------------------------------------
+-- Built-in route lengths (FlightData.lua)
+-- ---------------------------------------------------------------------
+-- Taxi slot -> flight point ID. The taxi map API gives it directly; if it
+-- does not, the slot's map position is turned into a world position and
+-- matched to the nearest flight point of the data.
+local slotNodes
+
+local function VectorXY(v)
+    if type(v) ~= "table" then return nil end
+    if v.GetXY then return v:GetXY() end
+    return v.x, v.y
+end
+
+local function NodeByPosition(map, slot)
+    local data = TomoMod_FlightData
+    if not (data and C_Map and C_Map.GetWorldPosFromMapPos and CreateVector2D) then return nil end
+    local mx, my = TaxiNodePosition(slot)
+    if not mx then return nil end
+    local ok, continent, world = pcall(C_Map.GetWorldPosFromMapPos, map, CreateVector2D(mx, my))
+    if not ok then return nil end
+    local wx, wy = VectorXY(world)
+    if not wx then return nil end
+    local best, bestD
+    for id, n in pairs(data.nodes) do
+        if not continent or n[1] == continent then
+            -- Axis order differs between APIs: try both, keep the nearest.
+            local d = math.min(math.abs(n[2] - wx) + math.abs(n[3] - wy), math.abs(n[2] - wy) + math.abs(n[3] - wx))
+            if not bestD or d < bestD then best, bestD = id, d end
+        end
+    end
+    if bestD and bestD <= NODE_MATCH then return best end
+end
+
+local function SlotNode(slot)
+    if not slot then return nil end
+    if not slotNodes then
+        slotNodes = {}
+        local map = TaxiMap()
+        if C_TaxiMap and C_TaxiMap.GetAllTaxiNodes then
+            local ok, list = pcall(C_TaxiMap.GetAllTaxiNodes, map)
+            if ok and type(list) == "table" then
+                for _, n in ipairs(list) do
+                    if n.slotIndex and n.nodeID then slotNodes[n.slotIndex] = n.nodeID end
+                end
+            end
+        end
+        slotNodes._map = map
+    end
+    local id = slotNodes[slot]
+    if id == nil then
+        id = NodeByPosition(slotNodes._map, slot) or false
+        slotNodes[slot] = id
+    end
+    return id or nil
+end
+
+-- Yards flown along the route, or nil when a hop is not in the data.
+local function DataLength(slots)
+    local data = TomoMod_FlightData
+    if not data or #slots < 2 then return nil end
+    local total = 0
+    for i = 1, #slots - 1 do
+        local a, b = SlotNode(slots[i]), SlotNode(slots[i + 1])
+        local hop = a and b and data.routes[a * 10000 + b]
+        if not hop then return nil end
+        total = total + hop
+    end
+    return total
+end
+
+local function FlightSpeed()
+    return FDB().speed or DEFAULT_SPEED
+end
+
+-- One normal landing on a route of known length: fit the speed.
+local function LearnSpeed(length, seconds)
+    if not (length and seconds and seconds >= MIN_FLIGHT) then return end
+    local speed = length / seconds
+    if speed < 15 or speed > 60 then return end   -- not a plain flight
+    local f = FDB()
+    f.speedSamples = f.speedSamples or {}
+    table.insert(f.speedSamples, speed)
+    while #f.speedSamples > SPEED_SAMPLES do table.remove(f.speedSamples, 1) end
+    local sorted = {}
+    for i, v in ipairs(f.speedSamples) do sorted[i] = v end
+    table.sort(sorted)
+    local n = #sorted
+    f.speed = (n % 2 == 1) and sorted[(n + 1) / 2] or (sorted[n / 2] + sorted[n / 2 + 1]) / 2
 end
 
 local function RouteKey(map, keys, a, b)
@@ -130,12 +237,16 @@ end
 
 -- Saved time (normal speed) for the route, exact or estimated from known
 -- pieces. Returns seconds, isExact. nil when nothing is known.
-local function LookUp(map, keys)
+-- slots (optional): the taxi slots of the route, for the built-in lengths.
+-- Returns seconds, isExact, length (yards, when the data knows the route).
+local function LookUp(map, keys, slots)
     local routes = FDB().routes
     local n = #keys
     if n < 2 then return nil end
+    local length = slots and DataLength(slots)
     local exact = routes[RouteKey(map, keys)]
-    if exact then return exact, true end
+    if exact then return exact, true, length end
+    if length then return length / FlightSpeed(), true, length end
     if n < 3 then return nil end
     -- Shortest cover of the route by known pieces, node 1 to node n.
     local best = { [1] = 0 }
@@ -170,7 +281,9 @@ function FT.CountRoutes()
 end
 
 function FT.ForgetAll()
-    FDB().routes = {}
+    local f = FDB()
+    f.routes = {}
+    f.speed, f.speedSamples = nil, nil
 end
 
 -- ---------------------------------------------------------------------
@@ -317,6 +430,7 @@ local function Land()
         local known = f.total and f.total * (f.factor or 1)
         if not (known and f.exact and measured < known * 0.6) then
             Learn(f.key, measured)
+            LearnSpeed(f.length, measured)
         end
     end
     StopFlight()
@@ -350,10 +464,11 @@ local function OnTakeTaxi(node)
     local current = CurrentNode()
     if not current or current == node then return end
     local map = TaxiMap()
-    local keys = BuildRoute(current, node)
+    slotNodes = nil   -- a new taxi map was opened
+    local keys, slots = BuildRoute(current, node)
     if #keys < 2 then return end
     local factor = SpeedFactor()
-    local saved, exact = LookUp(map, keys)
+    local saved, exact, length = LookUp(map, keys, slots)
     flight = {
         key = RouteKey(map, keys),
         dest = NodeName(node),
@@ -361,10 +476,11 @@ local function OnTakeTaxi(node)
         total = saved and saved / factor or nil,
         exact = exact,
         factor = factor,
+        length = length,
     }
     FDB().active = {
         key = flight.key, dest = flight.dest, start = time(),
-        total = flight.total, exact = exact, factor = factor,
+        total = flight.total, exact = exact, factor = factor, length = length,
     }
     -- The taxi takes a moment to start; give up if it never does.
     local tries = 0
@@ -406,8 +522,8 @@ local function OnNodeEnter(button)
     local current = CurrentNode()
     if not (id and current) or id == current then return end
     if TaxiNodeGetType(id) ~= "REACHABLE" then return end
-    local keys = BuildRoute(current, id)
-    local saved, exact = LookUp(TaxiMap(), keys)
+    local keys, slots = BuildRoute(current, id)
+    local saved, exact = LookUp(TaxiMap(), keys, slots)
     if saved then
         local t = FormatTime(saved / SpeedFactor())
         GameTooltip:AddLine((exact and T("Durée : ", "Duration: ") or T("Durée estimée : ≈ ", "Estimated duration: ≈ ")) .. t,
@@ -457,6 +573,32 @@ function FT.Preview(on)
 end
 function FT.IsPreview() return preview end
 
+-- /tm flight : speed in use, and with a flight master's map open, how many
+-- destinations get a time from the built-in data.
+function FT.Debug()
+    local function P(...) print("|cffc9a252[TMF vol]|r", ...) end
+    local f = FDB()
+    local data = TomoMod_FlightData
+    P("data:", data and (data.build .. ", " .. (function() local n = 0 for _ in pairs(data.routes) do n = n + 1 end return n end)() .. " routes") or "missing")
+    P(string.format("speed: %.2f yd/s (%s, %d landing(s))", FlightSpeed(), f.speed and "fitted" or "default",
+        f.speedSamples and #f.speedSamples or 0), "frequent flier:", tostring(SpeedFactor() > 1))
+    P("routes learned:", FT.CountRoutes())
+    local count = NumTaxiNodes and NumTaxiNodes() or 0
+    if count == 0 then P("open a flight master's map for the route check") return end
+    slotNodes = nil
+    local current = CurrentNode()
+    P("map", TaxiMap(), "here:", current and NodeName(current) or "?", "node", current and tostring(SlotNode(current)) or "?")
+    local ok, miss = 0, {}
+    for i = 1, count do
+        if i ~= current and TaxiNodeGetType(i) == "REACHABLE" then
+            local _, slots = BuildRoute(current, i)
+            if DataLength(slots) then ok = ok + 1 else miss[#miss + 1] = NodeName(i) .. " (" .. tostring(SlotNode(i)) .. ")" end
+        end
+    end
+    P("destinations with a built-in time:", ok, "without:", #miss)
+    for _, m in ipairs(miss) do P("  -", m) end
+end
+
 function FT.SetEnabled(v)
     local db = DB()
     if not db then return end
@@ -482,6 +624,7 @@ function FT.Resume()
     flight = {
         key = a.key, dest = a.dest, startGT = GetTime() - age,
         total = a.total, exact = a.exact, factor = a.factor or 1, dirty = a.dirty, early = a.early,
+        length = a.length,
     }
     ShowFlight()
 end
@@ -492,6 +635,9 @@ function FT.Initialize()
     FDB()
 
     SafeHook(_G, "TakeTaxiNode", OnTakeTaxi)
+    local f0 = CreateFrame("Frame")
+    f0:RegisterEvent("TAXIMAP_OPENED")
+    f0:SetScript("OnEvent", function() slotNodes = nil end)
     SafeHook(_G, "TaxiNodeOnButtonEnter", OnNodeEnter)
     SafeHook(_G, "TaxiRequestEarlyLanding", MarkEarly)
     SafeHook(_G, "AcceptBattlefieldPort", MarkDirty)
