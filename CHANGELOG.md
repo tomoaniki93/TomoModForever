@@ -22,7 +22,8 @@
 #### Camp HUD
 
 - **New** - Camp spell IDs built in (gathered from Wowhead): the "campfire nearby" aura, the two "welcoming campfire" auras (the minute by the fire), the shared camp cooldown, the three campfires and the eleven camp objects with their bonuses and tier 2 / 3 variants.
-- **New** - The HUD also shows while the game's own "campfire nearby" aura is on you. A fire you light or point at keeps the HUD within its own radius (10 yd for a basic fire, 30 for companion and specialist fires).
+- **New** - The HUD also shows while the game's own "campfire nearby" aura is on you. A fire you light keeps the HUD within its own radius (12 yd at least, 30 for companion and specialist fires); a fire you point at, within 20 yd of where you pointed from (40 for the bigger fires), so you can walk up to it.
+- **New** - `/tm camp` prints what the camp HUD sees: camp radius and distance, camp auras on you, last fire pointed at, interacted with or lit.
 - **New** - Camp bonuses are recognised by ID and listed first (in gold in the tooltip), even when you already had them on arrival; other buffs gained at the fire still follow. The camp auras themselves are no longer counted as bonuses.
 - **New** - Outside the fire's minute, the HUD says when camp bonuses are ready again.
 - **New** - Pointing at a camp object adds its bonus to the tooltip (name and the game's own description, in every language), with "Bonus active" or the camp cooldown left.
@@ -31,6 +32,7 @@
 #### Chat
 
 - **Fixed** - Whisper tabs (and any temporary chat window) never showed in the TomoMod tab row: their name was read from the saved chat windows, which only know the ten permanent ones. Blizzard's own tab then stayed visible behind the panel. Tab names now come from the native tab, so every docked window gets its TomoMod tab.
+- **Fixed** - Windows docked after login (a new window, a whisper tab) were left out of the TomoMod chat and stayed behind it: Blizzard marks a docked window with `isDocked = 1`, and the chat tested `isDocked == true`.
 - **Fixed** - The open tab follows Blizzard's selection wherever it comes from (a click, closing the open tab, a whisper tab Blizzard selects), so TomoMod always shows the window you type into.
 - **Changed** - An incoming whisper's new tab gets its tab and unread dot without pulling you off the tab you are reading, as in Blizzard's chat.
 - **Changed** - Tabs follow the order of Blizzard's dock instead of the window number.

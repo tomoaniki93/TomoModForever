@@ -147,6 +147,13 @@ function Chat.IsEnabled()
     return Chat.GetDB().enabled ~= false
 end
 
+-- Docked in Blizzard's general dock. FCF_DockFrame writes isDocked = 1
+-- (some code paths true), FCF_UnDockFrame nil.
+function Chat.IsDocked(cf)
+    local docked = cf and cf.isDocked
+    return docked ~= nil and docked ~= false and docked ~= 0
+end
+
 -- Every Blizzard chat window: the permanent ones (ChatFrame1-10) and the
 -- temporary ones (whisper tabs), which Blizzard numbers from 11 up as they are
 -- created and lists in CHAT_FRAMES. A fixed 1-20 loop missed a temporary

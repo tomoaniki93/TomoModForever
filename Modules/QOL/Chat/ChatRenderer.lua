@@ -203,7 +203,7 @@ function Renderer:ShouldManage(cf)
     -- ChatFrame2 receives the final filtered lines first, then our AddMessage
     -- post-hook mirrors those lines into the V4 surface.
     if cf == _G.ChatFrame1 or cf == _G.ChatFrame2 then return true end
-    return cf.isDocked == true
+    return Chat.IsDocked(cf)
 end
 
 local function CaptureRegionAlpha(native, region)

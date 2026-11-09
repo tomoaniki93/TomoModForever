@@ -69,7 +69,10 @@ SlashCmdList["TOMOMOD"] = function(msg)
     local rawMsg = (msg or ""):match("^%s*(.-)%s*$")
     msg = string.lower(rawMsg)
 
-    if msg == "pethappy" then
+    if msg == "camp" then
+        if TomoMod_Campfire and TomoMod_Campfire.Debug then TomoMod_Campfire.Debug() end
+        return
+    elseif msg == "pethappy" then
         if TomoMod_UnitFrames and TomoMod_UnitFrames.DebugHappiness then
             TomoMod_UnitFrames.DebugHappiness()
         end

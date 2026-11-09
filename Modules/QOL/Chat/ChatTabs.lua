@@ -123,7 +123,10 @@ local function ShouldMirrorTab(cf)
     if cf._tomoCommunity then return true end
     -- Combat Log is special: players can undock/move ChatFrame2 independently,
     -- but V4 still treats it as a first-class tab beside General.
-    return cf == _G.ChatFrame1 or cf == _G.ChatFrame2 or cf.isDocked == true
+    -- Blizzard's FCF_DockFrame sets isDocked = 1 (a number, nil once
+    -- undocked): testing "== true" left every window docked after login
+    -- (new tabs, whisper tabs) out of the TomoMod row.
+    return cf == _G.ChatFrame1 or cf == _G.ChatFrame2 or Chat.IsDocked(cf)
 end
 
 local function NativeSelectedFrame()

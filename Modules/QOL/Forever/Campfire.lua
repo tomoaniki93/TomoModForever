@@ -57,8 +57,8 @@ local NEARBY_AURA   = 1283391
 local WELCOME_AURAS = { [1229739] = true, [1289723] = true }
 -- "Camp": shared cooldown of the camp bonuses.
 local COOLDOWN_AURA = 1308027
--- Basic / companion / specialist campfire, and how far around it (yards)
--- the HUD stays when the fire was lit or pointed at.
+-- Basic / companion / specialist campfire, and the yards around it where
+-- the game counts you at the fire.
 local CAMPFIRE_SPELLS = { [1307227] = 10, [1307252] = 30, [1307237] = 30 }
 
 -- Camp objects: the spell that places the object (its name is the object's
@@ -481,6 +481,12 @@ local function StartWatch()
     end)
 end
 
+-- Last signals seen, for /tm camp.
+CF.signals = {}
+local function Signal(kind, detail)
+    CF.signals[kind] = { detail = detail, at = GetTime() }
+end
+
 local function MarkCamp(radius)
     local db = DB()
     if not (db and db.enabled) then return end
@@ -630,6 +636,42 @@ function CF.Preview(on)
 end
 function CF.IsPreview() return state.preview end
 
+-- /tm camp : what the module sees right now.
+function CF.Debug()
+    local function P(...) print("|cffc9a252[TMF camp]|r", ...) end
+    local db = DB()
+    P("enabled:", tostring(db and db.enabled), "near:", tostring(state.near), "aura up:", tostring(auraUp))
+    if camp then
+        if camp.noPos then
+            P("camp: no position (instance), expires in", string.format("%.0f s", camp.expires - GetTime()))
+        else
+            local d = Distance()
+            P("camp: radius", camp.radius, "distance", d and string.format("%.1f", d) or "?", "in camp:", tostring(InCamp()))
+        end
+    else
+        P("camp: none")
+    end
+    local y, x = PlayerPos()
+    P("positions readable:", tostring(y ~= nil))
+    local any = false
+    for _, a in ipairs(PlayerBuffs()) do
+        local id = a.spellId
+        local tag = (id == NEARBY_AURA and "nearby") or (id and WELCOME_AURAS[id] and "welcome")
+            or (id == COOLDOWN_AURA and "cooldown") or (id and FEATURE_BY_BUFF[id] and "bonus")
+            or (IsCampfireName(a.name) and "name") or nil
+        if tag then
+            any = true
+            P("aura", tag, id, a.name)
+        end
+    end
+    if not any then P("no camp aura on you") end
+    local now = GetTime()
+    for _, kind in ipairs({ "hover", "soft", "cast" }) do
+        local sig = CF.signals[kind]
+        P("last " .. kind .. ":", sig and string.format("%s (%.0f s ago)", tostring(sig.detail), now - sig.at) or "-")
+    end
+end
+
 function CF.SetEnabled(v)
     local db = DB()
     if not db then return end
@@ -665,15 +707,20 @@ function CF.Initialize()
         elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
             -- Lighting a fire yourself.
             if spellID and not Secret(spellID) then
+                -- You stand at the fire you light: its own radius, never
+                -- less than a fire you sat at.
                 if CAMPFIRE_SPELLS[spellID] then
-                    MarkCamp(CAMPFIRE_SPELLS[spellID])
+                    Signal("cast", spellID)
+                    MarkCamp(math.max(RADIUS_SIT, CAMPFIRE_SPELLS[spellID]))
                 elseif IsCampfireName(SpellName(spellID)) then
+                    Signal("cast", spellID)
                     MarkCamp(RADIUS_SIT)
                 end
             end
         elseif event == "PLAYER_SOFT_INTERACT_CHANGED" then
             -- A fire close enough to interact with.
             local ok, name = pcall(UnitName, "softinteract")
+            if ok and type(name) == "string" and not Secret(name) then Signal("soft", name) end
             if ok and IsCampfireName(name) then MarkCamp(RADIUS_SIT) end
         elseif event == "PLAYER_ENTERING_WORLD" then
             camp, auraUp = nil, false
@@ -707,12 +754,13 @@ function CF.Initialize()
             local line = _G.GameTooltipTextLeft1
             local ok, text = pcall(line and line.GetText or function() end, line)
             if not ok or type(text) ~= "string" or Secret(text) then return end
-            -- A known fire: its own radius. Any other "campfire": the default.
+            -- The camp is marked where you stand, not where the fire is: you
+            -- may point at it from a distance and then walk to it. So the
+            -- radius is the hover distance plus the fire's own radius.
             local radius = FireRadiusFor(text)
-            if radius then
-                MarkCamp(radius)
-            elseif IsCampfireName(text) then
-                MarkCamp(RADIUS_HOVER)
+            if radius or IsCampfireName(text) then
+                Signal("hover", text)
+                MarkCamp(math.max(RADIUS_HOVER, (radius or 0) + 10))
             end
             -- A camp object: what it gives, and whether you can take it.
             local feature = FeatureForObject(text)
