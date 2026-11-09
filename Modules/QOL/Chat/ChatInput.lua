@@ -93,10 +93,13 @@ function Input:Refresh()
     layout.inputHost:SetShown(true)
 end
 
+-- A window created after login (a whisper tab) brings its own edit box.
+function Input:EnsureFrame(cf)
+    if cf and not cf._tomoCommunity then self:EnsureBox(EditBoxFor(cf)) end
+end
+
 function Input:Initialize()
-    for i = 1, 20 do
-        self:EnsureBox(_G["ChatFrame" .. i .. "EditBox"])
-    end
+    Chat.EachChatFrame(function(cf) self:EnsureBox(EditBoxFor(cf)) end)
     self:Refresh()
 end
 

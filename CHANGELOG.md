@@ -1,5 +1,21 @@
 ## ####################################
 
+## CHANGELOG 1.2.2
+
+#### Chat
+
+- **Fixed** - Whisper tabs (and any temporary chat window) never showed in the TomoMod tab row: their name was read from the saved chat windows, which only know the ten permanent ones. Blizzard's own tab then stayed visible behind the panel. Tab names now come from the native tab, so every docked window gets its TomoMod tab.
+- **Fixed** - The open tab follows Blizzard's selection wherever it comes from (a click, closing the open tab, a whisper tab Blizzard selects), so TomoMod always shows the window you type into.
+- **Changed** - An incoming whisper's new tab gets its tab and unread dot without pulling you off the tab you are reading, as in Blizzard's chat.
+- **Changed** - Tabs follow the order of Blizzard's dock instead of the window number.
+- **Fixed** - Closing a tab could bring back the Blizzard tab art of another tab behind the TomoMod row.
+- **Fixed** - Chat windows created after login (numbered past 20, or after the first scan) were not mirrored, and their input box kept Blizzard's art.
+- **New** - A "+" button after the last tab opens a menu of ready-made tabs: Guild (guild, officer, achievements), Group (party, raid, raid warning, instance), Whispers (whispers and Battle.net whispers), Trade (while you are in the channel) and Loot (loot, money, currency), plus a field to name any other tab. A preset whose tab is already open is not listed; when Blizzard's ten windows are all used, the menu says so. The new tab is created by Blizzard's own function and selected.
+- **New** - When the tabs no longer fit even at their narrowest, the last ones go into a list behind a "more" button at the end of the row (the open tab always stays visible); the button shows a dot when a hidden tab has unread messages. Before, extra tabs ran past the edge of the panel.
+- **Changed** - The "+", the "more" button and the unread dots are drawn with textures instead of characters, so a font without these symbols cannot turn them into boxes.
+
+## ####################################
+
 ## CHANGELOG 1.2.1
 
 #### Bag Space

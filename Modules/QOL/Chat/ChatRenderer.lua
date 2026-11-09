@@ -686,9 +686,7 @@ function Renderer:RebuildAll()
     for cf in pairs(self.windows) do
         if not cf._tomoCommunity then self:Backfill(cf) end
     end
-    for i = 1, 20 do
-        self:BackfillCommunity(_G["ChatFrame" .. i])
-    end
+    Chat.EachChatFrame(function(cf) self:BackfillCommunity(cf) end)
     for _, record in ipairs(self.communityEventHistory) do
         self:DeliverCommunityEvent(record)
     end

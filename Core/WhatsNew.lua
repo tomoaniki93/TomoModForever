@@ -63,6 +63,13 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.2",
+        highlights = {
+            L["wn_122_tabs"],
+            L["wn_122_overflow"],
+        },
+    },
+    {
         version = "1.2.1",
         highlights = {
             L["wn_121_bags"],

@@ -147,6 +147,24 @@ function Chat.IsEnabled()
     return Chat.GetDB().enabled ~= false
 end
 
+-- Every Blizzard chat window: the permanent ones (ChatFrame1-10) and the
+-- temporary ones (whisper tabs), which Blizzard numbers from 11 up as they are
+-- created and lists in CHAT_FRAMES. A fixed 1-20 loop missed a temporary
+-- window past 20 and anything created after the loop ran.
+function Chat.EachChatFrame(callback)
+    local seen = {}
+    for i = 1, 20 do
+        local cf = _G["ChatFrame" .. i]
+        if cf and not seen[cf] then seen[cf] = true; callback(cf) end
+    end
+    if type(CHAT_FRAMES) == "table" then
+        for _, name in ipairs(CHAT_FRAMES) do
+            local cf = type(name) == "string" and _G[name]
+            if cf and not seen[cf] then seen[cf] = true; callback(cf) end
+        end
+    end
+end
+
 function Chat.RegisterModule(name, module)
     if not name or not module then return end
     Chat.Modules[name] = module
