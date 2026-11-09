@@ -67,6 +67,10 @@ CHANGELOG = {
         highlights = {
             L["wn_122_tabs"],
             L["wn_122_overflow"],
+            L["wn_122_trainer"],
+            L["wn_122_camp"],
+            L["wn_122_map"],
+            L["wn_122_graphics"],
         },
     },
     {

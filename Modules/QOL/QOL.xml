@@ -61,6 +61,9 @@
     <Include file="Forever\AdventureTweaks.lua" />
     <Include file="Forever\FlightTimer.lua" />
     <Include file="Forever\BagAlert.lua" />
+    <Include file="Forever\MapRevealData.lua" />
+    <Include file="Forever\MapReveal.lua" />
+    <Include file="Forever\TrainerData.lua" />
     <Include file="Forever\TrainerReminder.lua" />
     <Include file="Forever\DungeonCodexData.lua" />
     <Include file="Forever\DungeonCodex.lua" />

@@ -13,8 +13,14 @@
 -- records where the player stands (UnitPosition); the HUD then stays while
 -- the player is within a few yards of that spot and leaves as soon as they
 -- walk away, even if the timed aura is still running. Fires are recognised
--- by the localized word "campfire", so every client language works, and the
--- camp bonuses are simply the buffs gained while at the fire.
+-- by their spell IDs (below), with the localized word "campfire" as a
+-- fallback for any fire the list does not know.
+--
+-- Camp bonuses are recognised by ID too: each camp object (mana well,
+-- sharpening stone, lute...) and the buff it gives. They are listed even
+-- if they were already on you when you arrived, other buffs gained at the
+-- fire are still added after them. Pointing at a camp object adds its
+-- bonus to the tooltip, with "active" or the camp's shared cooldown.
 -- =====================================================================
 
 TomoMod_Campfire = TomoMod_Campfire or {}
@@ -41,6 +47,37 @@ local KEYWORDS = {
     "feu de camp", "campfire", "lagerfeuer", "fogata", "hoguera",
     "falò", "fuoco da campo", "fogueira",
 }
+
+-- ---------------------------------------------------------------------
+-- WoW: Forever camp data (spell IDs gathered from Wowhead).
+-- ---------------------------------------------------------------------
+-- "Campfire nearby" (100 yd): the game's own near-camp state, not always set.
+local NEARBY_AURA   = 1283391
+-- "Welcoming campfire" (two variants): the timed minute by the fire.
+local WELCOME_AURAS = { [1229739] = true, [1289723] = true }
+-- "Camp": shared cooldown of the camp bonuses.
+local COOLDOWN_AURA = 1308027
+-- Basic / companion / specialist campfire, and how far around it (yards)
+-- the HUD stays when the fire was lit or pointed at.
+local CAMPFIRE_SPELLS = { [1307227] = 10, [1307252] = 30, [1307237] = 30 }
+
+-- Camp objects: the spell that places the object (its name is the object's
+-- name), the buff it gives, and the tier 2 / 3 objects (same buff).
+local FEATURES = {
+    { place = 1307259, buff = 1230587, alt = { 1263005, 1263078 } },  -- Mana well (Alchemy)
+    { place = 1307392, buff = 1230172, alt = { 1263041, 1263073 } },  -- Sharpening stone (Blacksmithing)
+    { place = 1307234, buff = 1230653, alt = { 1263056, 1263082 } },  -- Enchanted lute (Enchanting)
+    { place = 1307244, buff = 1230124, alt = { 1262996, 1263001 } },  -- First aid kit (First Aid)
+    { place = 1307245, buff = 1230098, alt = { 1262990, 1262998 } },  -- Fish bowl (Fishing)
+    { place = 1307251, buff = 1229513, alt = { 1262980, 1263070 } },  -- Incense candle (Herbalism)
+    { place = 1307230, buff = 1229487, alt = { 1263031, 1263079 } },  -- Camp tent (Leatherworking)
+    { place = 1307254, buff = 1230164, alt = { 1262975, 1263071 } },  -- Lodestone (Mining)
+    { place = 1307229, buff = 1229519, alt = { 1262985, 1262982 } },  -- Camp chair (Skinning)
+    { place = 1307239, buff = 1229718, alt = { 1263032, 1263080 } },  -- Faction banner, Alliance (Tailoring)
+    { place = 1307240, buff = 1229718, alt = { 1263032, 1263080 } },  -- Faction banner, Horde (Tailoring)
+}
+local FEATURE_BY_BUFF = {}
+for _, f in ipairs(FEATURES) do FEATURE_BY_BUFF[f.buff] = f end
 
 local MAX_BONUS = 8
 local LINGER = 2          -- seconds the HUD stays after leaving the fire
@@ -72,6 +109,50 @@ local function IsCampfireName(name)
         if l:find(k, 1, true) then return true end
     end
     return false
+end
+
+local function SpellName(id)
+    if C_Spell and C_Spell.GetSpellName then
+        local ok, name = pcall(C_Spell.GetSpellName, id)
+        if ok and type(name) == "string" and not Secret(name) then return name end
+    elseif GetSpellInfo then
+        local name = GetSpellInfo(id)
+        if type(name) == "string" then return name end
+    end
+end
+
+local function SpellDescription(id)
+    if C_Spell and C_Spell.GetSpellDescription then
+        local ok, text = pcall(C_Spell.GetSpellDescription, id)
+        if ok and type(text) == "string" and not Secret(text) and text ~= "" then return text end
+    end
+end
+
+-- Names come from the client's spell data, which may not be loaded at
+-- login: the maps fill in as names become known.
+local fireByName, objectByName = {}, {}
+local function FireRadiusFor(name)
+    if not name then return nil end
+    if fireByName[name] then return fireByName[name] end
+    for id, radius in pairs(CAMPFIRE_SPELLS) do
+        local n = SpellName(id)
+        if n then fireByName[n] = radius end
+    end
+    return fireByName[name]
+end
+
+local function FeatureForObject(name)
+    if not name then return nil end
+    if objectByName[name] then return objectByName[name] end
+    for _, f in ipairs(FEATURES) do
+        local n = SpellName(f.place)
+        if n then objectByName[n] = f end
+        for _, alt in ipairs(f.alt) do
+            n = SpellName(alt)
+            if n then objectByName[n] = f end
+        end
+    end
+    return objectByName[name]
 end
 
 -- Every readable helpful aura on the player.
@@ -252,7 +333,13 @@ local function CreateHUD()
         if #state.bonuses > 0 then
             GameTooltip:AddLine(" ")
             GameTooltip:AddLine(T("Bonus obtenus au camp :", "Bonuses gained at camp:"), 0.79, 0.64, 0.32)
-            for _, b in ipairs(state.bonuses) do GameTooltip:AddLine("- " .. (b.name or "?"), 1, 1, 1) end
+            for _, b in ipairs(state.bonuses) do
+                if b.camp then
+                    GameTooltip:AddLine("- " .. (b.name or "?"), 1, 0.82, 0)
+                else
+                    GameTooltip:AddLine("- " .. (b.name or "?"), 1, 1, 1)
+                end
+            end
         end
         GameTooltip:Show()
     end)
@@ -279,6 +366,16 @@ local function CreateHUD()
             self.timer:SetText(left > 0 and FormatTime(left) or "")
         else
             self.timer:SetText("")
+            -- Outside the fire's minute, say when camp bonuses come back.
+            local cdLeft = state.cooldownEnd and state.cooldownEnd - now
+            if cdLeft and cdLeft > 0 then
+                self.sub:SetText(T("Bonus : recharge ", "Bonuses: ready in ") .. FormatTime(cdLeft))
+                self.cooldownShown = true
+            elseif self.cooldownShown then
+                self.cooldownShown = nil
+                local d = DB()
+                self.sub:SetText(d and d.clickToSit ~= false and T("Clic : s'asseoir", "Click: sit down") or "")
+            end
         end
         for _, b in ipairs(self.icons) do
             if b:IsShown() then
@@ -318,6 +415,7 @@ local function Render()
         hud.cd:Clear()
         hud.sub:SetText(db and db.clickToSit ~= false and T("Clic : s'asseoir", "Click: sit down") or "")
     end
+    hud.cooldownShown = nil
     if db and db.showBonuses ~= false then LayoutBonuses() else
         for _, b in ipairs(hud.icons) do b:Hide() end
     end
@@ -408,9 +506,16 @@ Scan = function()
     local db = DB()
     if not (db and db.enabled) or state.preview then return end
     local buffs = PlayerBuffs()
-    local hasAura, timed = false, nil
+    local hasAura, timed, nearbyAura = false, nil, false
+    state.cooldownEnd = nil
     for _, a in ipairs(buffs) do
-        if IsCampfireName(a.name) then
+        local id = a.spellId
+        if id == NEARBY_AURA then nearbyAura = true end
+        if id == COOLDOWN_AURA then
+            local exp = Num(a.expirationTime)
+            state.cooldownEnd = (exp and exp > 0) and exp or nil
+        end
+        if (id and WELCOME_AURAS[id]) or (id ~= NEARBY_AURA and id ~= COOLDOWN_AURA and IsCampfireName(a.name)) then
             hasAura = true
             local dur, exp = Num(a.duration), Num(a.expirationTime)
             if dur and exp and dur > 0 and exp > 0 then
@@ -431,7 +536,8 @@ Scan = function()
 
     -- Near = inside the camp radius. Without any known spot (positions
     -- hidden and no other signal), the aura is all there is to go on.
-    local near = InCamp() or (hasAura and camp == nil)
+    -- The game's own "campfire nearby" aura counts as being at the camp.
+    local near = InCamp() or (hasAura and camp == nil) or nearbyAura
 
     if near and not state.near then
         -- Arriving: everything already on the player is not a camp bonus.
@@ -448,9 +554,20 @@ Scan = function()
         state.leftAt = nil
         local seen = {}
         local list = {}
+        -- Known camp bonuses first, even if they were already on you.
         for _, a in ipairs(buffs) do
             local id = a.spellId
-            if id and not state.baseline[id] and not IsCampfireName(a.name) and not seen[id] then
+            if id and FEATURE_BY_BUFF[id] and not seen[id] then
+                seen[id] = true
+                list[#list + 1] = { id = id, name = a.name, icon = a.icon, camp = true,
+                                    exp = Num(a.expirationTime), instance = a.auraInstanceID }
+            end
+        end
+        -- Then anything else gained at the fire.
+        for _, a in ipairs(buffs) do
+            local id = a.spellId
+            if id and not seen[id] and not state.baseline[id] and not WELCOME_AURAS[id]
+                and id ~= NEARBY_AURA and id ~= COOLDOWN_AURA and not IsCampfireName(a.name) then
                 seen[id] = true
                 list[#list + 1] = { id = id, name = a.name, icon = a.icon,
                                     exp = Num(a.expirationTime), instance = a.auraInstanceID }
@@ -547,9 +664,12 @@ function CF.Initialize()
             if d.hideInCombat and hud and not state.preview then hud:Hide() end
         elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
             -- Lighting a fire yourself.
-            if spellID and not Secret(spellID) and C_Spell and C_Spell.GetSpellName then
-                local ok, name = pcall(C_Spell.GetSpellName, spellID)
-                if ok and IsCampfireName(name) then MarkCamp(RADIUS_SIT) end
+            if spellID and not Secret(spellID) then
+                if CAMPFIRE_SPELLS[spellID] then
+                    MarkCamp(CAMPFIRE_SPELLS[spellID])
+                elseif IsCampfireName(SpellName(spellID)) then
+                    MarkCamp(RADIUS_SIT)
+                end
             end
         elseif event == "PLAYER_SOFT_INTERACT_CHANGED" then
             -- A fire close enough to interact with.
@@ -586,8 +706,36 @@ function CF.Initialize()
             end
             local line = _G.GameTooltipTextLeft1
             local ok, text = pcall(line and line.GetText or function() end, line)
-            if ok and IsCampfireName(text) then MarkCamp(RADIUS_HOVER) end
+            if not ok or type(text) ~= "string" or Secret(text) then return end
+            -- A known fire: its own radius. Any other "campfire": the default.
+            local radius = FireRadiusFor(text)
+            if radius then
+                MarkCamp(radius)
+            elseif IsCampfireName(text) then
+                MarkCamp(RADIUS_HOVER)
+            end
+            -- A camp object: what it gives, and whether you can take it.
+            local feature = FeatureForObject(text)
+            if feature and not tip._tomoCampLine then
+                tip._tomoCampLine = true
+                local buffName = SpellName(feature.buff)
+                local desc = SpellDescription(feature.buff) or SpellDescription(feature.place)
+                if buffName then tip:AddLine(buffName, 1, 0.82, 0) end
+                if desc then tip:AddLine(desc, 0.95, 0.92, 0.86, true) end
+                local active, cdEnd = false, nil
+                for _, a in ipairs(PlayerBuffs()) do
+                    if a.spellId == feature.buff then active = true end
+                    if a.spellId == COOLDOWN_AURA then cdEnd = Num(a.expirationTime) end
+                end
+                if active then
+                    tip:AddLine(T("Bonus actif", "Bonus active"), 0.4, 1, 0.4)
+                elseif cdEnd and cdEnd > GetTime() then
+                    tip:AddLine(T("Recharge du camp : ", "Camp cooldown: ") .. FormatTime(cdEnd - GetTime()), 1, 0.4, 0.3)
+                end
+                tip:Show()
+            end
         end)
+        GameTooltip:HookScript("OnHide", function(tip) tip._tomoCampLine = nil end)
     end
 
     if TomoMod_Movers and TomoMod_Movers.RegisterEntry then

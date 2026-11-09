@@ -212,17 +212,18 @@ K.RegisterPage({
 -- ---------------------------------------------------------------------
 local function ATApply() Call("TomoMod_AdventureTweaks", "Apply") end
 local function FXApply() Call("TomoMod_CVarOptimizer", "ApplyComfort") end
+local function MapApply() Call("TomoMod_MapReveal", "ApplySettings") end
 
 K.RegisterPage({
     key = "adventuretweaks",
     section = SECTION,
     label = T("Confort d'aventure", "Adventure comforts"),
-    kw = "resurrection rez res erreur error rouge red message entraineur trainer apprendre train camera zoom ivresse drunk mort death effet effect ecran screen cvar",
+    kw = "resurrection rez res erreur error rouge red message entraineur trainer apprendre train camera zoom ivresse drunk mort death effet effect ecran screen cvar carte map reveler reveal brouillard fog inexplore unexplored decouvrir",
     build = function(parent)
         return K.Page(parent, function(page)
             page:Hero(T("Confort d'aventure", "Adventure comforts"),
-                T("Petits réglages du quotidien : résurrections acceptées seules, erreurs rouges masquées, bouton « Tout apprendre » chez les maîtres, caméra plus éloignée.",
-                  "Everyday tweaks: resurrections accepted for you, red errors hidden, a \"Train all\" button at trainers, a farther camera."))
+                T("Petits réglages du quotidien : résurrections acceptées seules, erreurs rouges masquées, bouton « Tout apprendre » chez les maîtres, caméra plus éloignée, carte entièrement visible.",
+                  "Everyday tweaks: resurrections accepted for you, red errors hidden, a \"Train all\" button at trainers, a farther camera, a fully visible map."))
 
             local c = page:Card(T("Résurrection", "Resurrection"))
             c:Toggle(T("Accepter les résurrections automatiquement", "Accept resurrections automatically"), "adventureTweaks.autoRes", ATApply)
@@ -257,6 +258,79 @@ K.RegisterPage({
                 T("Coupe aussi le léger halo lumineux plein écran.", "Also turns off the soft full-screen glow."))
             c:Toggle(T("Désactiver l'écran gris à la mort", "Disable the grey death screen"), "cameraFx.noDeathFx", FXApply)
             c:Info(T("Décocher remet la valeur que tu avais avant.", "Unticking puts back the value you had before."))
+            c:Done()
+
+            c = page:Card(T("Carte du monde", "World map"))
+            c:Toggle(T("Afficher les zones inexplorées", "Show unexplored areas"), "mapReveal.enabled", MapApply,
+                T("La carte montre aussi les zones que tu n'as pas encore découvertes : tu vois où aller avant d'y être passé. La découverte des zones (et son XP) ne change pas.",
+                  "The map also shows the areas you have not discovered yet: you see where to go before you have been there. Discovering areas (and its XP) does not change."))
+            c:Toggle(T("Teinter les zones inexplorées", "Tint unexplored areas"), "mapReveal.tint", MapApply,
+                T("Les distingue des zones déjà découvertes.", "Tells them apart from the areas already discovered."))
+            c:Color(T("Couleur de la teinte", "Tint colour"), "mapReveal.tintColor", MapApply)
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- Prettier graphics (1.2.2): optional CVars, all off by default
+-- ---------------------------------------------------------------------
+local GRAPHICS_KEYS = { "groundDensity", "groundFade", "groundDist", "sharpen",
+    "objFade", "objCull", "terrainLod", "reflection", "weather" }
+
+local function GraphicsAll(on)
+    local db = TomoModForeverDB and TomoModForeverDB.graphicsFx
+    if not db then return end
+    for _, k in ipairs(GRAPHICS_KEYS) do db[k] = on and true or false end
+    FXApply()
+    K.RefreshPage()
+end
+
+K.RegisterPage({
+    key = "graphics",
+    section = SECTION,
+    label = T("Graphismes", "Graphics"),
+    kw = "graphisme graphics cvar joli pretty herbe grass vegetation vegetal densite density distance netteté sharpen objet object relief terrain reflet reflection eau water meteo weather pluie rain neige snow",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Graphismes", "Graphics"),
+                T("Des réglages cachés du jeu pour un rendu plus joli : végétation plus dense et visible plus loin, image plus nette, décor détaillé jusqu'à l'horizon. Rien n'est activé de base : chaque option coûte des FPS, à toi de choisir.",
+                  "Hidden game settings for a prettier picture: denser vegetation seen from farther away, a sharper image, scenery detailed up to the horizon. Nothing is on by default: each option costs frames, your choice."))
+
+            local c = page:Card(T("Végétation", "Vegetation"))
+            c:Toggle(T("Herbe et plantes plus denses", "Denser grass and plants"), "graphicsFx.groundDensity", FXApply,
+                T("groundEffectDensity : 256 (48 par défaut).", "groundEffectDensity: 256 (48 by default)."))
+            c:Toggle(T("Végétation qui disparaît plus loin", "Vegetation fades out farther away"), "graphicsFx.groundFade", FXApply,
+                T("groundEffectFade : 370 (70 par défaut).", "groundEffectFade: 370 (70 by default)."))
+            c:Toggle(T("Végétation affichée plus loin", "Vegetation drawn farther away"), "graphicsFx.groundDist", FXApply,
+                T("groundEffectDist : 500 (320 par défaut).", "groundEffectDist: 500 (320 by default)."))
+            c:Done()
+
+            c = page:Card(T("Décor et horizon", "Scenery and horizon"))
+            c:Toggle(T("Objets visibles de plus loin", "Objects visible from farther away"), "graphicsFx.objFade", FXApply,
+                T("lodObjectFadeScale : 200.", "lodObjectFadeScale: 200."))
+            c:Toggle(T("Petits objets gardés à distance", "Small objects kept at a distance"), "graphicsFx.objCull", FXApply,
+                T("lodObjectCullSize : 8. Plus la valeur est basse, plus les petits objets restent affichés de loin.",
+                  "lodObjectCullSize: 8. The lower the value, the longer small objects stay visible at a distance."))
+            c:Toggle(T("Relief détaillé jusqu'à l'horizon", "Terrain detailed up to the horizon"), "graphicsFx.terrainLod", FXApply,
+                T("terrainLodDist : 1000.", "terrainLodDist: 1000."))
+            c:Done()
+
+            c = page:Card(T("Image, eau et météo", "Picture, water and weather"))
+            c:Toggle(T("Image toujours nette", "Always sharpen the picture"), "graphicsFx.sharpen", FXApply,
+                T("ResampleAlwaysSharpen : 1. Utile surtout avec une échelle de rendu sous 100 %.",
+                  "ResampleAlwaysSharpen: 1. Mostly useful with a render scale under 100%."))
+            c:Toggle(T("Reflets de l'eau détaillés", "Detailed water reflections"), "graphicsFx.reflection", FXApply,
+                T("reflectionMode : 3 (1 par défaut).", "reflectionMode: 3 (1 by default)."))
+            c:Toggle(T("Météo plus dense (pluie, neige)", "Denser weather (rain, snow)"), "graphicsFx.weather", FXApply,
+                T("weatherDensity : 3 (1 par défaut).", "weatherDensity: 3 (1 by default)."))
+            c:Done()
+
+            c = page:Card(T("Tout d'un coup", "All at once"))
+            c:Pair(function(l) l:Button(T("Tout activer", "Turn all on"), function() GraphicsAll(true) end, 150) end,
+                   function(r) r:Button(T("Tout désactiver", "Turn all off"), function() GraphicsAll(false) end, 150) end)
+            c:Info(T("Décocher remet la valeur que tu avais avant. Si tu changes ensuite ces réglages dans les options graphiques du jeu, TomoMod réapplique les siens à la connexion tant qu'ils sont cochés. Un réglage absent de ton client est ignoré.",
+                     "Unticking puts back the value you had before. If you later change these in the game's graphics options, TomoMod applies its own again at login while they are ticked. A setting your client does not have is ignored."))
             c:Done()
         end)
     end,

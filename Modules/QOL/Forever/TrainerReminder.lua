@@ -6,13 +6,20 @@
 -- what is waiting at your class trainer: icon, name, rank, price, and the
 -- total next to what you carry.
 --
--- Where the list comes from. The game only tells what a trainer teaches
--- while its window is open, so each visit to your class trainer is read
--- whole, the spells you cannot learn yet included, with their required
--- level. That list is kept per character (TomoModForeverCharDB.trainer).
--- After that, every level up shows the spells that just became
--- available, without going anywhere. Before the first visit, the panel
--- can only say that an even level usually brings new spells.
+-- Where the list comes from. TrainerData.lua lists what every Forever
+-- class trainer teaches, level by level, so the panel knows the spells
+-- from level 1, before any visit: each one is checked against your
+-- spellbook, so a spell you already have (or a higher rank of it) is not
+-- listed, and a spell you missed at an earlier level stays listed.
+-- A spell line that starts with a talent, a racial or a quest (its first
+-- trained rank costs a fraction of the level's price, or starts above
+-- rank 1) is only listed once you know the spell.
+--
+-- Each visit to your class trainer is also read whole (the game only tells
+-- what a trainer teaches while its window is open) and kept per character
+-- (TomoModForeverCharDB.trainer). It brings the real prices (reputation
+-- discounts) and the spells the built-in list cannot place: talent ranks
+-- with no spell ID, racial spells of your own race.
 --
 -- The trainer window filters ("available / unavailable / used") are
 -- turned on for the read and put back as they were. Profession and pet
@@ -76,17 +83,149 @@ local function PlayerLevel(override)
     return override or (UnitLevel and UnitLevel("player")) or 1
 end
 
--- Spells you can learn now (required level reached), cheapest first.
-local function Pending(level)
+-- ---------------------------------------------------------------------
+-- Built-in list (TrainerData.lua) checked against the spellbook
+-- ---------------------------------------------------------------------
+-- Entries of the data with no spell ID that are plain skills or single
+-- spells: their ID is known here, so they are checked like the others.
+-- The other name-only entries (talent ranks) come from the trainer read.
+local NAMED_IDS = {
+    ["Parade"]            = 3127,   -- Parry
+    ["Ambidextrie"]       = 674,    -- Dual Wield
+    ["Armure en plaques"] = 750,    -- Plate Mail
+    ["Mailles"]           = 8737,   -- Mail
+    ["Crochetage"]        = 1809,   -- Pick Lock
+    ["Evocation"]         = 12051,
+    ["Innervation"]       = 29166,  -- Innervate
+    ["Augure de clarté"]  = 16864,  -- Omen of Clarity
+}
+
+local function SpellNameIcon(id)
+    if C_Spell and C_Spell.GetSpellInfo then
+        local info = C_Spell.GetSpellInfo(id)
+        if info then return info.name, info.iconID end
+    elseif GetSpellInfo then
+        local name, _, icon = GetSpellInfo(id)
+        return name, icon
+    end
+end
+
+local function Knows(id)
+    if IsPlayerSpell and IsPlayerSpell(id) then return true end
+    return IsSpellKnown and IsSpellKnown(id) or false
+end
+
+-- A name lookup only answers for a spell in your spellbook: knowing any
+-- rank of the line is enough.
+local function KnowsSpellNamed(name)
+    if not name then return false end
+    if C_Spell and C_Spell.GetSpellInfo then
+        return C_Spell.GetSpellInfo(name) ~= nil
+    end
+    return GetSpellInfo and GetSpellInfo(name) ~= nil or false
+end
+
+local function RankLabel(r)
+    if r and r > 0 then return string.format(T("Rang %d", "Rank %d"), r) end
+end
+
+-- Lowest trained rank and highest known rank of each spell line, and the
+-- normal price of each level (its dearest entry). Built once per call.
+local function ClassLines(data)
+    local lowest, known, levelPrice = {}, {}, {}
+    for level, entries in pairs(data) do
+        local top = 0
+        for _, e in ipairs(entries) do
+            top = math.max(top, e.cost or 0)
+            if e.id and e.f then
+                local r = e.r or 0
+                if not lowest[e.f] or r < lowest[e.f] then lowest[e.f] = r end
+                if Knows(e.id) and r > (known[e.f] or -1) then known[e.f] = r end
+            end
+        end
+        levelPrice[level] = top
+    end
+    return lowest, known, levelPrice
+end
+
+local function BuiltIn(level)
+    local _, class = UnitClass("player")
+    local data = TomoMod_TrainerData and TomoMod_TrainerData[class]
     local out = {}
+    if not data then return out end
+    local lowest, known, levelPrice = ClassLines(data)
+    for need = 1, level do
+        for _, e in ipairs(data[need] or {}) do
+            local id = e.id or (e.name and NAMED_IDS[e.name])
+            local r = e.r or 0
+            -- Known, or a higher rank of the line is known (clients that
+            -- drop lower ranks from the spellbook).
+            local skip = not id or Knows(id) or (e.f and known[e.f] and known[e.f] >= r)
+            if not skip then
+                local name, icon = SpellNameIcon(id)
+                name = name or e.name
+                -- A line opened by a talent, a race or a quest: only once
+                -- you have the spell.
+                local cheap = (e.cost or 0) * 5 < (levelPrice[need] or 0)
+                local opened = e.f and lowest[e.f] and lowest[e.f] >= 2
+                if (cheap or opened) and not KnowsSpellNamed(name) then skip = true end
+                if not skip then
+                    out[#out + 1] = {
+                        name  = name or string.format(T("Sort %d", "Spell %d"), id),
+                        rank  = RankLabel(r),
+                        r     = r,
+                        icon  = icon or e.icon,
+                        cost  = e.cost or 0,
+                        level = need,
+                    }
+                end
+            end
+        end
+    end
+    return out
+end
+
+local function RankNumber(rank)
+    if type(rank) == "number" then return rank end
+    return tonumber(type(rank) == "string" and rank:match("%d+")) or 0
+end
+
+local function Key(name, rank)
+    return (name or "?") .. "#" .. RankNumber(rank)
+end
+
+-- Spells you can learn now (required level reached), newest level first,
+-- then cheapest. The built-in list, with the trainer's real prices when it
+-- was read, plus what only the trainer knew.
+local function Pending(level)
+    local out, seen = BuiltIn(level), {}
+    local read = {}
+    for _, s in ipairs(Cache().spells) do read[Key(s.name, s.rank)] = s end
+    for _, s in ipairs(out) do
+        local key = Key(s.name, s.r)
+        seen[key] = true
+        local fromTrainer = read[key]
+        if fromTrainer then
+            s.cost = fromTrainer.cost or s.cost
+            s.icon = s.icon or fromTrainer.icon
+            s.rank = fromTrainer.rank or s.rank
+        end
+    end
     for _, s in ipairs(Cache().spells) do
-        if (s.level or 1) <= level then out[#out + 1] = s end
+        if (s.level or 1) <= level and not seen[Key(s.name, s.rank)] then
+            out[#out + 1] = s
+        end
     end
     table.sort(out, function(a, b)
         if (a.level or 0) ~= (b.level or 0) then return (a.level or 0) > (b.level or 0) end
         return (a.cost or 0) < (b.cost or 0)
     end)
     return out
+end
+
+local function HasBuiltIn()
+    local _, class = UnitClass("player")
+    return TomoMod_TrainerData and TomoMod_TrainerData[class] ~= nil
 end
 TR.Pending = function() return Pending(PlayerLevel()) end
 
@@ -322,8 +461,11 @@ local function CreatePanel()
         GameTooltip:AddLine(T("Maître de classe", "Class trainer"), YELLOW[1], YELLOW[2], YELLOW[3])
         local c = Cache()
         if c.scanned then
-            GameTooltip:AddLine(string.format(T("Liste lue chez ton maître le %s.", "List read at your trainer on %s."),
+            GameTooltip:AddLine(string.format(T("Prix lus chez ton maître le %s.", "Prices read at your trainer on %s."),
                 date("%d/%m %H:%M", c.scanned)), TEXT[1], TEXT[2], TEXT[3], true)
+        elseif HasBuiltIn() then
+            GameTooltip:AddLine(T("Prix de base : une visite à ton maître donne les prix réels (remises de réputation).",
+                "Base prices: a visit to your trainer gives the real prices (reputation discounts)."), TEXT[1], TEXT[2], TEXT[3], true)
         end
         GameTooltip:AddLine(T("Clic droit : fermer", "Right click: close"), DIM[1], DIM[2], DIM[3])
         GameTooltip:Show()
@@ -443,7 +585,7 @@ local function Remind(level, fromLogin)
     local list = Pending(level)
     if #list > 0 then
         Show(level, list)
-    elseif not fromLogin and db.genericReminder and not Cache().scanned and level % 2 == 0 then
+    elseif not fromLogin and db.genericReminder and not Cache().scanned and not HasBuiltIn() and level % 2 == 0 then
         Show(level, list)
     end
 end

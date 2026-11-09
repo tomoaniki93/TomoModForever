@@ -697,6 +697,28 @@ TomoMod_Defaults = {
         position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 40 },
     },
 
+    -- World map: unexplored areas drawn too (MapReveal.lua + MapRevealData.lua).
+    mapReveal = {
+        enabled = false,
+        tint = true,              -- tint the unexplored areas
+        tintColor = { r = 0.45, g = 0.70, b = 1.00 },
+    },
+
+    -- Prettier graphics, set through CVars (CVarOptimizer.lua). All off by
+    -- default: they cost frames. Unticking puts back the player's value.
+    graphicsFx = {
+        groundDensity = false,    -- groundEffectDensity 256
+        groundFade = false,       -- groundEffectFade 370
+        groundDist = false,       -- groundEffectDist 500
+        sharpen = false,          -- ResampleAlwaysSharpen 1
+        objFade = false,          -- lodObjectFadeScale 200
+        objCull = false,          -- lodObjectCullSize 8
+        terrainLod = false,       -- terrainLodDist 1000
+        reflection = false,       -- reflectionMode 3
+        weather = false,          -- weatherDensity 3
+        orig = {},                -- values found before the first change
+    },
+
     -- Camera and screen effects, set through CVars (CVarOptimizer.lua).
     cameraFx = {
         maxZoom = false,          -- cameraDistanceMaxZoomFactor at its cap

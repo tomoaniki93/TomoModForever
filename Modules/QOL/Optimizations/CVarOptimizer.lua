@@ -302,6 +302,26 @@ OPT.COMFORT = {
     { key = "noDeathFx",   cvar = "ffxNether", on = "0" },
 }
 
+-- Graphismes plus jolis (1.2.2), même principe, réglages dans
+-- TomoModForeverDB.graphicsFx. Tous désactivés par défaut : ils coûtent des
+-- FPS. Une CVar absente du client est ignorée.
+OPT.GRAPHICS = {
+    { key = "groundDensity", cvar = "groundEffectDensity",   on = "256"  },
+    { key = "groundFade",    cvar = "groundEffectFade",      on = "370"  },
+    { key = "groundDist",    cvar = "groundEffectDist",      on = "500"  },
+    { key = "sharpen",       cvar = "ResampleAlwaysSharpen", on = "1"    },
+    { key = "objFade",       cvar = "lodObjectFadeScale",    on = "200"  },
+    { key = "objCull",       cvar = "lodObjectCullSize",     on = "8"    },
+    { key = "terrainLod",    cvar = "terrainLodDist",        on = "1000" },
+    { key = "reflection",    cvar = "reflectionMode",        on = "3"    },
+    { key = "weather",       cvar = "weatherDensity",        on = "3"    },
+}
+
+local GROUPS = {
+    { db = "cameraFx",   list = OPT.COMFORT  },
+    { db = "graphicsFx", list = OPT.GRAPHICS },
+}
+
 local comfortPending = false
 
 -- "2.6" et "2.5999999046326" sont la même valeur pour le client.
@@ -311,14 +331,9 @@ local function Same(a, b)
     return tostring(a) == tostring(b)
 end
 
-function OPT.ApplyComfort()
-    local db = TomoModForeverDB and TomoModForeverDB.cameraFx
-    if not db then return end
-    -- Certaines CVars caméra sont refusées en combat : on rejoue après.
-    if InCombatLockdown() then comfortPending = true; return end
-    comfortPending = false
+local function ApplyGroup(db, list)
     db.orig = db.orig or {}
-    for _, e in ipairs(OPT.COMFORT) do
+    for _, e in ipairs(list) do
         local raw = OPT.GetRaw(e.cvar)
         if raw then
             if db[e.key] then
@@ -332,6 +347,22 @@ function OPT.ApplyComfort()
             end
         end
     end
+end
+
+function OPT.ApplyComfort()
+    if not TomoModForeverDB then return end
+    -- Certaines CVars caméra sont refusées en combat : on rejoue après.
+    if InCombatLockdown() then comfortPending = true; return end
+    comfortPending = false
+    for _, g in ipairs(GROUPS) do
+        local db = TomoModForeverDB[g.db]
+        if type(db) == "table" then ApplyGroup(db, g.list) end
+    end
+end
+
+-- La CVar existe-t-elle sur ce client ? (pour griser l'option sinon)
+function OPT.HasCVar(cvar)
+    return OPT.GetRaw(cvar) ~= nil
 end
 
 -- =====================================

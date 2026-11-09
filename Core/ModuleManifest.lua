@@ -489,6 +489,15 @@ R.Define{
 }
 
 R.Define{
+    key = "mapReveal", label = "mod_mapReveal", group = "qol",
+    toggles = {
+        { path = "mapReveal.enabled", label = "mod_mapReveal_enabled" },
+    },
+    global = "TomoMod_MapReveal", applyMode = "gate", apply = "ApplySettings",
+    combatSafe = true,
+}
+
+R.Define{
     key = "cameraFx", label = "mod_cameraFx", group = "qol",
     toggles = {
         { path = "cameraFx.maxZoom",     label = "mod_cameraFx_maxZoom"     },

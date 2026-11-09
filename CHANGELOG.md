@@ -2,6 +2,32 @@
 
 ## CHANGELOG 1.2.2
 
+#### Class Trainer Reminder
+
+- **New** - The spells of every Forever class trainer are built in (`TrainerData.lua`, 9 classes, levels 1-60). The panel now lists what you can learn from level 1, without a first visit, and checks each spell against your spellbook: a spell you already know, or a higher rank of it, is left out; a spell missed at an earlier level stays listed.
+- **New** - A spell line opened by a talent, a race or a quest (first trained rank above rank 1, or a price far below the level's) is only listed once you know the spell, so other races' spells and untaken talents do not show.
+- **Changed** - The list read at the trainer now refines the built-in one: real prices (reputation discounts) and the spells the built-in list cannot place (talent ranks with no spell ID, your race's spells). The "new spells are probably waiting" message only remains for a class without built-in data.
+
+#### Graphics
+
+- **New** - Adventure > Graphics page: nine optional CVars for a prettier picture, all off by default (each costs frames): `groundEffectDensity` 256, `groundEffectFade` 370, `groundEffectDist` 500, `ResampleAlwaysSharpen` 1, `lodObjectFadeScale` 200, `lodObjectCullSize` 8, `terrainLodDist` 1000, `reflectionMode` 3, `weatherDensity` 3. "Turn all on / off" buttons.
+- **New** - Same mechanism as the camera options: the value found before the first change is kept and put back when unticked (your own setting, not a fixed default), ticked settings are applied again at each login, changes wait for the end of combat, and a CVar the client does not have is ignored.
+
+#### World Map
+
+- **New** - Adventure comforts > World map: "Show unexplored areas" draws the areas you have not explored yet on the world map, so you can see where to go before you have been there. Discovering an area (and its XP) is unchanged.
+- **New** - "Tint unexplored areas" (on by default) and a tint colour tell them apart from the areas you already discovered.
+- **New** - The areas come from the game's own WorldMapOverlay / WorldMapOverlayTile tables for Forever (84 maps, 1073 areas, `MapRevealData.lua`) and are cut into tiles the way the game cuts them. Blizzard's exploration pin is only hooked: explored areas are still drawn by the game.
+
+#### Camp HUD
+
+- **New** - Camp spell IDs built in (gathered from Wowhead): the "campfire nearby" aura, the two "welcoming campfire" auras (the minute by the fire), the shared camp cooldown, the three campfires and the eleven camp objects with their bonuses and tier 2 / 3 variants.
+- **New** - The HUD also shows while the game's own "campfire nearby" aura is on you. A fire you light or point at keeps the HUD within its own radius (10 yd for a basic fire, 30 for companion and specialist fires).
+- **New** - Camp bonuses are recognised by ID and listed first (in gold in the tooltip), even when you already had them on arrival; other buffs gained at the fire still follow. The camp auras themselves are no longer counted as bonuses.
+- **New** - Outside the fire's minute, the HUD says when camp bonuses are ready again.
+- **New** - Pointing at a camp object adds its bonus to the tooltip (name and the game's own description, in every language), with "Bonus active" or the camp cooldown left.
+- **Changed** - The localized word "campfire" stays as a fallback for any fire the list does not know.
+
 #### Chat
 
 - **Fixed** - Whisper tabs (and any temporary chat window) never showed in the TomoMod tab row: their name was read from the saved chat windows, which only know the ten permanent ones. Blizzard's own tab then stayed visible behind the panel. Tab names now come from the native tab, so every docked window gets its TomoMod tab.
