@@ -2,6 +2,12 @@
 
 ## CHANGELOG 1.2.3
 
+#### Pet Happiness
+
+- **Fixed** - The happiness icon could change colour while Blizzard's pet sheet did not (player report). It only looked for the old global `GetPetHappiness`, which Forever does not have, so it always fell back to an estimate from the hidden happiness gauge. It now reads the game's own state from `C_PetInfo.GetPetHappiness` first, the value Blizzard's sheet shows; the gauge estimate remains a fallback for a client where the state is missing or secret.
+- **New** - With the game's state readable, the tooltip shows the pet's damage percentage again.
+- **Changed** - `/tm pethappy` reports both `C_PetInfo.GetPetHappiness` and `GetPetHappiness`.
+
 #### Flight Timer
 
 - **New** - Every Forever flight route is built in (`FlightData.lua`: 295 routes, 75 flight points), generated from the game's TaxiPath, TaxiPathNode and TaxiNodes tables of build 1.60.1.70862 by `Tools/gen_flight.py`. Each route's length is the curve a flight path mount follows through the path's waypoints.

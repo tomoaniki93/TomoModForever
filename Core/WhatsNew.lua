@@ -66,6 +66,7 @@ CHANGELOG = {
         version = "1.2.3",
         highlights = {
             L["wn_123_flight"],
+            L["wn_123_pet"],
         },
     },
     {

@@ -392,7 +392,11 @@ end
 -- HUMEUR DU FAMILIER (chasseur, WoW: Forever)
 -- =====================================
 -- Trois chemins, du plus précis au plus robuste :
---  1. GetPetHappiness() lisible -> état 1/2/3 en Lua (un seul visage).
+--  1. L'état 1/2/3 du jeu, lisible -> un seul visage, exactement celui de la
+--     fiche Blizzard. Sur Forever il est dans C_PetInfo.GetPetHappiness
+--     (l'ancienne globale GetPetHappiness n'existe plus) ; avant la 1.2.3,
+--     seule la globale était cherchée et la courbe ci-dessous servait
+--     toujours, d'où des changements de couleur que la fiche ne montrait pas.
 --  2. État secret ou absent -> la puissance « Happiness » passe par
 --     UnitPowerPercent(pet, Happiness, false, courbe) : une courbe de couleur
 --     par visage rend alpha 1 dans sa tranche et 0 ailleurs, évaluée côté C ;
@@ -410,9 +414,15 @@ local function HappinessPowerType()
     return Enum and Enum.PowerType and Enum.PowerType.Happiness
 end
 
+local function HappinessFunc()
+    if C_PetInfo and type(C_PetInfo.GetPetHappiness) == "function" then return C_PetInfo.GetPetHappiness end
+    if type(GetPetHappiness) == "function" then return GetPetHappiness end
+end
+
 local function ReadHappiness()
-    if type(GetPetHappiness) ~= "function" then return nil end
-    local ok, happiness, damagePct = pcall(GetPetHappiness)
+    local fn = HappinessFunc()
+    if not fn then return nil end
+    local ok, happiness, damagePct = pcall(fn)
     if not ok or happiness == nil then return nil end
     if IsSecret(happiness) or type(happiness) ~= "number" or not HAPPINESS_COLORS[happiness] then
         return nil
@@ -561,10 +571,16 @@ function UF.DebugHappiness()
         return tostring(v) .. " (" .. type(v) .. ")"
     end
     print(P .. "UnitExists(pet): " .. tostring(UnitExists("pet")))
-    print(P .. "GetPetHappiness: " .. type(GetPetHappiness))
-    if type(GetPetHappiness) == "function" then
-        local ok, h, d, l = pcall(GetPetHappiness)
-        print(P .. "  -> ok=" .. tostring(ok) .. " h=" .. describe(h) .. " dmg=" .. describe(d) .. " rate=" .. describe(l))
+    local sources = {
+        { "C_PetInfo.GetPetHappiness", C_PetInfo and C_PetInfo.GetPetHappiness },
+        { "GetPetHappiness", GetPetHappiness },
+    }
+    for _, src in ipairs(sources) do
+        print(P .. src[1] .. ": " .. type(src[2]))
+        if type(src[2]) == "function" then
+            local ok, h, d, l = pcall(src[2])
+            print(P .. "  -> ok=" .. tostring(ok) .. " h=" .. describe(h) .. " dmg=" .. describe(d) .. " rate=" .. describe(l))
+        end
     end
     local pt = HappinessPowerType()
     print(P .. "Enum.PowerType.Happiness: " .. tostring(pt))
