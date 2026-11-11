@@ -51,13 +51,14 @@ local DEFAULTS = {
             mute = true,
             deafen = true,
             copy = true,
+            codex = true,
             settings = true,
             scroll = true,
         },
         order = {
             "friends", "guild", "playerStatus",
             "voice", "mute", "deafen",
-            "copy",
+            "copy", "codex",
             "settings",
             "scroll",
         },
@@ -130,6 +131,14 @@ local function SanitizeSidebar(db)
                 table.remove(sidebar.order, i)
             end
         end
+        -- 1.2.5: the codex button goes after "copy" in saved orders.
+        local has, at = false, nil
+        for i, key in ipairs(sidebar.order) do
+            if key == "codex" then has = true end
+            if key == "copy" then at = i + 1 end
+            if not at and (key == "settings" or key == "scroll") then at = i end
+        end
+        if not has then table.insert(sidebar.order, at or (#sidebar.order + 1), "codex") end
     end
 end
 

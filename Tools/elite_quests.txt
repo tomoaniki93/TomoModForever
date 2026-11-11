@@ -1,0 +1,313 @@
+# [zoneKey|uiMapID or -|English name|French name] then ID|name|level|req|side(A/H/B)
+[alterac|1416|Alterac Mountains|Montagnes d'Alterac]
+504|Crushridge Warmongers|40|30|A
+[arathi|1417|Arathi Highlands|Hautes-terres d'Arathi]
+639|Sigil of Strom|37|32|H
+682|Stromgarde Badges|37|30|A
+695|An Apprentice's Enchantment|39|30|A
+696|Attack on the Tower|39|30|A
+92867|Ground to Keep|39|32|B
+697|Malin's Request|39|30|A
+694|Trelane's Defenses|39|30|A
+684|Wanted! Marez Cowl|39|30|A
+679|Call to Arms|40|30|H
+673|Foul Magics|40|35|H
+640|The Broken Sigil|40|32|H
+680|The Real Threat|40|30|H
+685|Wanted! Otto and Falconcrest|40|30|A
+643|Sigil of Arathor|41|32|H
+652|Breaking the Keystone|42|30|B
+644|Sigil of Trollbane|42|32|H
+645|Trol'kalar|42|32|H
+646|Trol'kalar|42|32|H
+656|Summoning the Princess|50|30|B
+[badlands|1418|Badlands|Terres ingrates]
+705|Pearl Diving|37|30|B
+762|An Ambassador of Evil|44|35|A
+2203|Badlands Reagent Run II|44|40|H
+735|The Star, the Hand and the Heart|44|30|A
+706|Fiery Blaze Enchantments|45|40|A
+793|Broken Alliances|50|40|H
+717|Tremors of the Earth|50|40|A
+[blackrock|-|Blackrock Mountain|Mont Rochenoire]
+8962|Components of Importance|60|58|B
+8963|Components of Importance|60|58|B
+8964|Components of Importance|60|58|B
+8965|Components of Importance|60|58|B
+8985|More Components of Importance|60|58|B
+8986|More Components of Importance|60|58|B
+8987|More Components of Importance|60|58|B
+8988|More Components of Importance|60|58|B
+[blasted|1419|Blasted Lands|Terres foudroyées]
+91548|Vek'zol|55|44|H
+2721|Kirith|58|45|B
+3627|Uniting the Shattered Amulet|60|45|B
+3628|You Are Rakh'likh, Demon|60|45|B
+[steppes|1428|Burning Steppes|Steppes ardentes]
+4023|A Taste of Flame|54|52|B
+4182|Dragonkin Menace|54|48|A
+[dunmorogh|1426|Dun Morogh|Dun Morogh]
+314|Protecting the Herd|12|6|A
+[duskwood|1431|Duskwood|Bois de la Pénombre]
+253|Bride of the Embalmer|30|20|A
+55|Morbent Fel|32|20|A
+228|Mor'Ladim|35|28|A
+1383|Nothing But The Truth|42|37|H
+[epl|1423|Eastern Plaguelands|Maleterres de l'Est]
+5153|A Strange Historian|56|50|B
+5168|Heroes of Darrowshire|56|50|B
+5247|Fragments of the Past|57|53|A
+5065|The Lost Tablets of Mosh'aru|58|40|B
+6041|When Smokey Sings, I Get Violent|58|54|B
+6135|Duskwing, Oh How I Hate Thee...|60|56|H
+5265|The Argent Hold|60|55|B
+5264|Lord Maxwell Tyrosus|60|55|B
+6136|The Corpulent One|60|56|H
+6145|The Crimson Courier|60|56|H
+6185|The Eastern Plagues|60|56|A
+6148|The Scarlet Oracle, Demetria|60|56|H
+5464|Menethil's Gift|60|57|B
+6146|Nathanos' Ruse|60|56|H
+6147|Return to Nathanos|60|56|H
+[elwynn|1429|Elwynn Forest|Forêt d'Elwynn]
+91752|The Big Picture|3|1|A
+91775|Book Return|6|1|A
+91777|Rare Books|7|1|A
+176|WANTED: "Hogger"|11|1|A
+[hillsbrad|1424|Hillsbrad Foothills|Contreforts de Hautebrande]
+541|Battle of Hillsbrad|30|19|H
+517|Elixir of Agony|30|24|H
+547|Humbert's Sword|30|26|H
+518|The Crown of Will|39|34|H
+519|The Crown of Will|41|34|H
+520|The Crown of Will|43|34|H
+[ironforge|1455|Ironforge|Forgefer]
+3201|At Last!|48|40|A
+2977|Return to Ironforge|50|45|A
+2946|Seeing What Happens|50|45|A
+[lochmodan|1432|Loch Modan|Loch Modan]
+278|A Dark Threat Looms|18|16|A
+255|Mercenaries|19|15|A
+271|Vyrin's Revenge|20|15|A
+531|Vyrin's Revenge|20|15|A
+256|WANTED: Chok'sul|22|17|A
+2501|Badlands Reagent Run II|44|40|A
+3182|Proof of Deed|48|40|A
+[redridge|1433|Redridge Mountains|Les Carmines]
+248|Looking Further|22|20|A
+115|Shadow Magic|23|18|A
+19|Tharil'zun|25|18|A
+95999|WANTED: Incinerator Gar'im|25|16|A
+169|WANTED: Gath'Ilzogg|26|15|A
+249|Morganth|27|20|A
+[searing|1427|Searing Gorge|Gorge des Vents brûlants]
+3181|The Horn of the Beast|48|40|A
+7701|WANTED: Overseer Maltorius|50|45|B
+3452|The Flame's Casing|50|40|B
+3372|Release Them|52|40|A
+3566|Rise, Obsidion!|52|40|A
+3463|Set Them Ablaze!|52|40|B
+[silverpine|1421|Silverpine Forest|Forêt des Pins-Argentés]
+450|A Recipe For Death|15|9|H
+99|Arugal's Folly|15|9|H
+452|Pyrewood Ambush|15|12|H
+1006|What Lies Beyond|18|10|H
+1005|What Lurks Beyond|20|10|H
+95885|The Offering of Blood|23|20|H
+442|Assault on Fenris Isle|24|10|H
+[stormwind|1453|Stormwind City|Hurlevent]
+540|Preserving Knowledge|38|20|A
+543|The Perenolde Tiara|40|30|A
+1448|In Search of The Temple|43|38|A
+6183|Honor the Dead|60|56|A
+6186|The Blightcaller Cometh|60|56|A
+6182|The First and the Last|60|56|A
+[stv|1434|Stranglethorn Vale|Vallée de Strangleronce]
+629|The Vile Reef|37|30|H
+628|Excelsior|38|31|B
+202|Colonel Kurzen|40|30|A
+193|Panther Mastery|40|28|B
+611|The Curse of the Tides|40|32|A
+208|Big Game Hunter|43|28|B
+197|Raptor Mastery|43|28|B
+613|Cracking Maury's Foot|44|30|B
+206|Mai'Zoth|46|30|A
+591|The Mind's Eye|46|30|H
+614|The Captain's Chest|47|35|A
+8551|The Captain's Chest|47|35|B
+618|Facing Negolash|50|35|B
+8554|Facing Negolash|50|35|B
+8552|The Monogrammed Sash|50|35|B
+630|Message in a Bottle|51|45|B
+[sos|1435|Swamp of Sorrows|Marais des Chagrins]
+1424|Pool of Tears|43|38|H
+[hinterlands|1425|The Hinterlands|Les Hinterlands]
+2935|Consult Master Gadrin|45|40|H
+2993|Return to the Hinterlands|47|40|A
+7816|Gammerita, Mon!|48|44|H
+7850|Dark Vessels|50|46|H
+7849|Separation Anxiety|50|46|H
+4787|The Ancient Egg|50|40|B
+7862|Job Opening: Guard Captain of Revantusk Village|51|46|H
+7845|Kidnapped Elder Torntusk!|51|46|H
+7846|Recover the Key!|51|46|H
+7847|Return to Primal Torntusk|51|46|H
+2994|Saving Sharpbeak|51|40|A
+7861|Wanted: Vile Priestess Hexx and Her Minions|51|46|H
+2937|Summoning Shadra|55|40|H
+[tirisfal|1420|Tirisfal Glades|Clairières de Tirisfal]
+99156|Rear Guard Patrol|13|6|H
+[undercity|1458|Undercity|Fossoyeuse]
+97985|Thundering Hearts|33|25|H
+736|The Star, the Hand and the Heart|44|30|H
+[wpl|1422|Western Plaguelands|Maleterres de l'Ouest]
+5098|All Along the Watchtowers|56|50|H
+6025|Unfinished Business|58|50|B
+105|Alas, Andorhal|60|50|H
+211|Alas, Andorhal|60|50|A
+5803|Araj's Scarab|60|55|A
+5804|Araj's Scarab|60|55|H
+5166|Breastplate of the Chromatic Flight|60|57|B
+5164|Catalogue of the Wayward|60|57|B
+6184|Flint Shadowmore|60|56|A
+5944|In Dreams|60|52|B
+5167|Legplates of the Chromatic Defier|60|57|B
+5862|Scarlet Subterfuge|60|52|B
+5465|Soulbound Keepsake|60|57|B
+5462|The Dying, Ras Frostwhisper|60|57|B
+5461|The Human, Ras Frostwhisper|60|57|B
+5342|The Last Barov|60|52|H
+5344|The Last Barov|60|52|A
+5162|Wrath of the Blue Flight|60|57|B
+[westfall|1436|Westfall|Marche de l'Ouest]
+155|The Defias Brotherhood|18|14|A
+[wetlands|1437|Wetlands|Les Paluns]
+98283|Carnage|30|22|B
+98291|Death to the Dragonmaw|30|22|A
+98293|Forced Disarmament|30|22|A
+303|The Dark Iron War|30|25|A
+631|The Thandol Span|31|28|A
+98216|Understanding Our Present|31|23|A
+88756|Bring Back a Bang|32|27|A
+474|Defeat Nek'rosh|32|23|A
+98310|Gleaning Our Future|32|24|A
+87491|Spark of Freedom|32|27|A
+88757|Accessories of the Lost|33|28|A
+87318|Hearts of the Lost|33|28|B
+88758|Sentiments of the Lost|33|28|A
+304|A Grim Task|34|26|A
+98297|Stopping the Cycle|34|24|A
+[ashenvale|1440|Ashenvale|Orneval]
+6641|Vorsha the Lasher|23|20|H
+6621|King of the Foulweald|26|21|H
+908|Amongst the Ruins|27|25|H
+909|Baron Aquanis|30|25|H
+[azshara|1447|Azshara|Azshara]
+3602|Azsharite|58|45|B
+3510|The Name of the Beast|58|45|B
+[darkshore|1439|Darkshore|Sombrivage]
+2078|Gyromast's Revenge|20|14|A
+731|The Absent Minded Prospector|20|15|A
+[desolace|1443|Desolace|Désolace]
+1488|The Corrupter|40|25|H
+1380|Khan Hratha|42|30|B
+1381|Khan Hratha|42|30|B
+96222|Khan Hratha|42|30|B
+[durotar|1411|Durotar|Durotar]
+99052|Threat from Below|12|10|H
+[dustwallow|1445|Dustwallow Marsh|Marécage d'Âprefange]
+1166|Overlord Mok'Morokk's Concern|43|38|H
+1173|Challenge Overlord Mok'Morokk|45|38|H
+1172|The Brood of Onyxia|45|38|H
+6570|Emberstrife|60|55|H
+8970|I See Alcaz Island In Your Future...|60|58|B
+[felwood|1448|Felwood|Gangrebois]
+5156|Verifying the Corruption|54|48|B
+8481|The Root of All Evil|60|45|B
+[feralas|1444|Feralas|Féralas]
+2944|The Super Snapper FX|48|42|A
+3062|Dark Heart|50|45|H
+3127|Mountain Giant Muisek|50|40|H
+[mulgore|1412|Mulgore|Mulgore]
+98427|Ceasing Operations|12|5|H
+96261|The Broodmother|31|23|H
+98477|Unstable Magic|60|48|H
+[silithus|1451|Silithus|Silithus]
+8283|Wanted - Deathclasp, Terror of the Sands|59|54|B
+8308|Brann Bronzebeard's Lost Letter|60|58|B
+8310|Breaking the Code|60|58|B
+8304|Dearest Natalia|60|58|B
+8309|Glyph Chasing|60|58|B
+8306|Into The Maw of Madness|60|58|B
+8315|The Calling|60|58|B
+8314|Unraveling the Mystery|60|58|B
+8361|Abyssal Contacts|60|60|B
+8362|Abyssal Crests|60|60|B
+8363|Abyssal Signets|60|60|B
+8331|Aurel Goldleaf|60|60|B
+8737|Azure Templar|60|60|B
+8349|Bor Wildmane|60|60|B
+8537|Crimson Templar|60|60|B
+8332|Dukes of the Council|60|60|B
+8536|Earthen Templar|60|60|B
+8507|Field Duty|60|60|A
+8731|Field Duty|60|60|H
+8739|Hive'Ashi Scout Report|60|60|B
+8738|Hive'Regal Scout Report|60|60|B
+8534|Hive'Zora Scout Report|60|60|B
+8535|Hoary Templar|60|60|B
+8341|Lords of the Council|60|60|B
+8348|Signet of the Dukes|60|60|B
+8770|Target: Hive'Ashi Defenders|60|60|B
+8771|Target: Hive'Ashi Sandstalkers|60|60|B
+8501|Target: Hive'Ashi Stingers|60|60|B
+8502|Target: Hive'Ashi Workers|60|60|B
+8774|Target: Hive'Regal Ambushers|60|60|B
+8777|Target: Hive'Regal Burrowers|60|60|B
+8776|Target: Hive'Regal Slavemakers|60|60|B
+8775|Target: Hive'Regal Spitfires|60|60|B
+8539|Target: Hive'Zora Hive Sisters|60|60|B
+8773|Target: Hive'Zora Reavers|60|60|B
+8687|Target: Hive'Zora Tunnelers|60|60|B
+8772|Target: Hive'Zora Waywatchers|60|60|B
+8538|The Four Dukes|60|60|B
+8302|The Hand of the Righteous|60|60|B
+8301|The Path of the Righteous|60|60|B
+8829|The Ultimate Deception|60|60|B
+8498|Twilight Battle Orders|60|60|B
+8740|Twilight Marauders|60|60|B
+[stonetalon|1442|Stonetalon Mountains|Les Serres-Rocheuses]
+6481|Earthen Arise|20|14|H
+6284|Arachnophobia|21|15|H
+6283|Bloodfury Bloodline|26|18|H
+1089|The Den|29|20|H
+[tanaris|1446|Tanaris|Tanaris]
+2954|The Stone Watcher|50|45|B
+8928|A Shifty Merchant|60|58|B
+8606|Decoy!|60|60|B
+[teldrassil|1438|Teldrassil|Teldrassil]
+2499|Oakenscowl|9|4|A
+98403|Twisted Hatred|12|4|A
+[barrens|1413|The Barrens|Les Tarides]
+4021|Counterattack!|20|11|H
+92706|WANTED: Bruuz|20|15|H
+97003|Chol'aruk the Ravener|21|15|H
+97005|Chol'aruk the Ravener|21|15|A
+97250|Wrongly Blamed, Justly Corrected|23|18|H
+3514|Horde Presence|29|15|H
+[thunderbluff|1456|Thunder Bluff|Les Pitons-du-Tonnerre]
+2967|Return to Thunder Bluff|50|45|H
+2966|Seeing What Happens|50|45|H
+[ungoro|1449|Un'Goro Crater|Cratère d'Un'Goro]
+3962|It's Dangerous to Go Alone|56|47|B
+[winterspring|1452|Winterspring|Berceau-de-l'Hiver]
+5054|Ursius of the Shardtooth|56|53|H
+5055|Brumeran of the Chillwind|58|53|H
+5121|High Chief Winterfall|59|52|B
+5124|Fiery Plate Gauntlets|60|55|B
+969|Luck Be With You|60|55|B
+5056|Shy-Rotam|60|53|H
+5068|Breastplate of Bloodthirst|60|57|B
+5063|Cap of the Scarlet Savant|60|57|B
+5067|Leggings of Arcana|60|57|B
+5981|Rampaging Giants|60|58|A

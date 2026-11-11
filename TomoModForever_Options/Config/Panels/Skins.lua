@@ -146,12 +146,18 @@ local function BuildChatFrameTab(parent)
         { "mute",         "chat_v4_btn_mute",     "deafen",   "chat_v4_btn_deafen"   },
         { "copy",         "chat_v4_btn_copy",     "loot",     "chat_v4_btn_loot"     },
         { "settings",     "chat_v4_btn_settings", "scroll",   "chat_v4_btn_scroll"   },
+        { "codex",        "chat_v4_btn_codex" },
     }
     for _, row in ipairs(BUTTON_ROWS) do
         local keyA, labelA, keyB, labelB = row[1], row[2], row[3], row[4]
-        local _, rowY = W.CreateCheckboxPair(c,
-            L[labelA], sb[keyA] ~= false, y, function(v) sb[keyA] = v; Apply() end,
-            L[labelB], sb[keyB] ~= false,    function(v) sb[keyB] = v; Apply() end)
+        local _, rowY
+        if keyB then
+            _, rowY = W.CreateCheckboxPair(c,
+                L[labelA], sb[keyA] ~= false, y, function(v) sb[keyA] = v; Apply() end,
+                L[labelB], sb[keyB] ~= false,    function(v) sb[keyB] = v; Apply() end)
+        else
+            _, rowY = W.CreateCheckbox(c, L[labelA], sb[keyA] ~= false, y, function(v) sb[keyA] = v; Apply() end)
+        end
         y = rowY
     end
 

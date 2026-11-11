@@ -267,6 +267,9 @@ K.RegisterPage({
             c:Toggle(T("Teinter les zones inexplorées", "Tint unexplored areas"), "mapReveal.tint", MapApply,
                 T("Les distingue des zones déjà découvertes.", "Tells them apart from the areas already discovered."))
             c:Color(T("Couleur de la teinte", "Tint colour"), "mapReveal.tintColor", MapApply)
+            c:Toggle(T("Niveaux des zones sur la carte", "Zone levels on the map"), "mapReveal.zoneLevels", MapApply,
+                T("Au survol, le nom de la zone affiche sa tranche de niveaux, colorée selon ton niveau (rouge : trop haut, orange : pour toi, vert : facile, gris : trop bas).",
+                  "On hover, the zone name shows its level range, coloured for your level (red: too high, orange: right for you, green: easy, grey: too low)."))
             c:Done()
         end)
     end,

@@ -15,6 +15,13 @@
 -- the pin is only hooked, never replaced.
 -- =====================================================================
 
+-- Zone levels (1.2.5): the name under the cursor on the world map gets the
+-- zone's level range, coloured like quests for your level (red above you,
+-- orange yours, green below, grey far below). The range comes from the game
+-- (C_Map.GetMapLevels); a Classic table below covers a client that gives
+-- none. Idea from OpenMap (MIT, OpenMap contributors).
+-- =====================================================================
+
 TomoMod_MapReveal = TomoMod_MapReveal or {}
 local MR = TomoMod_MapReveal
 
@@ -161,19 +168,116 @@ local function HookMap()
     return true
 end
 
+-- ---------------------------------------------------------------------
+-- Zone levels on the hover label
+-- ---------------------------------------------------------------------
+-- Classic ranges by uiMapID, used only when the game gives no range.
+local CLASSIC_LEVELS = {
+    [1429] = { 1, 10 },  [1426] = { 1, 10 },  [1420] = { 1, 10 },  [1411] = { 1, 10 },
+    [1412] = { 1, 10 },  [1438] = { 1, 10 },  [1436] = { 10, 20 }, [1432] = { 10, 20 },
+    [1421] = { 10, 20 }, [1439] = { 10, 20 }, [1413] = { 10, 25 }, [1433] = { 15, 25 },
+    [1442] = { 15, 27 }, [1431] = { 18, 30 }, [1440] = { 18, 30 }, [1437] = { 20, 30 },
+    [1424] = { 20, 30 }, [1441] = { 25, 35 }, [1416] = { 30, 40 }, [1417] = { 30, 40 },
+    [1443] = { 30, 40 }, [1434] = { 30, 45 }, [1418] = { 35, 45 }, [1435] = { 35, 45 },
+    [1445] = { 35, 45 }, [1425] = { 40, 50 }, [1444] = { 40, 50 }, [1446] = { 40, 50 },
+    [1427] = { 43, 50 }, [1419] = { 45, 55 }, [1447] = { 45, 55 }, [1448] = { 48, 55 },
+    [1449] = { 48, 55 }, [1428] = { 50, 58 }, [1422] = { 51, 58 }, [1423] = { 53, 60 },
+    [1430] = { 55, 60 }, [1451] = { 55, 60 }, [1452] = { 55, 60 },
+}
+
+local function Readable(v) return type(v) == "number" and not (issecretvalue and issecretvalue(v)) end
+
+local function ZoneLevels(mapID)
+    if C_Map and C_Map.GetMapLevels then
+        local ok, lo, hi = pcall(C_Map.GetMapLevels, mapID)
+        if ok and Readable(lo) and Readable(hi) and lo > 0 and hi >= lo then return lo, hi end
+    end
+    local t = CLASSIC_LEVELS[mapID]
+    if t then return t[1], t[2] end
+end
+
+-- Quest colours for the player's level.
+local function LevelColor(lo, hi)
+    local level = UnitLevel and UnitLevel("player") or 1
+    local c
+    if GetQuestDifficultyColor then
+        if level < lo then c = GetQuestDifficultyColor(lo)
+        elseif level > hi then c = GetQuestDifficultyColor(hi - 2)
+        else c = GetQuestDifficultyColor(level + 3) end
+    end
+    c = c or { r = 1, g = 0.5, b = 0.25 }
+    return string.format("|cff%02x%02x%02x", c.r * 255, c.g * 255, c.b * 255)
+end
+
+local function LevelSuffix(mapID)
+    local lo, hi = ZoneLevels(mapID)
+    if not lo then return nil end
+    return string.format(" %s(%s)|r", LevelColor(lo, hi), lo == hi and tostring(lo) or (lo .. "-" .. hi))
+end
+
+-- After Blizzard has written the label of the place under the cursor: on a
+-- continent, the zone hovered; on a zone map, that zone.
+local function DecorateLabel(label)
+    local db = DB()
+    if not (db and db.zoneLevels ~= false) then return end
+    local typeKey = MAP_AREA_LABEL_TYPE and MAP_AREA_LABEL_TYPE.AREA_NAME
+    local infos = label.labelInfoByType
+    local info = typeKey and infos and infos[typeKey]
+    local name = info and info.label
+    if type(name) ~= "string" or name == "" or name:find("|r$") then return end
+    local map = label.dataProvider and label.dataProvider:GetMap()
+    local mapID = map and map:GetMapID()
+    if not mapID then return end
+    local target
+    local x, y = map:GetNormalizedCursorPosition()
+    if x and C_Map.GetMapInfoAtPosition then
+        local at = C_Map.GetMapInfoAtPosition(mapID, x, y)
+        if at and at.mapID ~= mapID then target = at.mapID end
+    end
+    if not target then
+        local here = C_Map.GetMapInfo(mapID)
+        if here and Enum and Enum.UIMapType and here.mapType == Enum.UIMapType.Zone then target = mapID end
+    end
+    local suffix = target and LevelSuffix(target)
+    if not suffix then return end
+    label:SetLabel(typeKey, name .. suffix, info.description, info.labelColor, info.descriptionColor, info.callback)
+    label:EvaluateLabels()
+end
+
+local labelHooked = false
+local function HookLabel()
+    if labelHooked then return true end
+    local map = _G.WorldMapFrame
+    if not (map and map.dataProviders) then return false end
+    for provider in pairs(map.dataProviders) do
+        local label = provider.Label
+        if label and label.SetLabel and label.labelInfoByType then
+            label:HookScript("OnUpdate", function(self) pcall(DecorateLabel, self) end)
+            labelHooked = true
+            return true
+        end
+    end
+    return false
+end
+
 -- Redraw the open map after a settings change.
 function MR.ApplySettings()
     HookMap()
+    HookLabel()
     for pin in pairs(pins) do SafeDraw(pin) end
 end
 
 function MR.Initialize()
     if not DB() then return end
+    HookLabel()
     if not HookMap() then
         local f = CreateFrame("Frame")
         f:RegisterEvent("ADDON_LOADED")
         f:SetScript("OnEvent", function(self, _, name)
-            if name == "Blizzard_WorldMap" and HookMap() then self:UnregisterAllEvents() end
+            if name == "Blizzard_WorldMap" then
+                HookLabel()
+                if HookMap() then self:UnregisterAllEvents() end
+            end
         end)
     end
 end

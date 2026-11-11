@@ -1,0 +1,270 @@
+19|1433|28.4|49|Marshal Marris|1433|28.4|49|Marshal Marris
+55|1431|7.8|34.1|Sven Yorgen|1431|7.8|34.1|Sven Yorgen
+99|1421|44.2|39.8|Dalar Dawnweaver|1421|44.2|39.8|Dalar Dawnweaver
+105|1420|83.1|68.9|High Executor Derrington|1420|83.1|68.9|High Executor Derrington
+115|1433|28.4|49|Marshal Marris|1433|28.4|49|Marshal Marris
+155|1436|55.7|47.5|The Defias Traitor|1436|56.3|47.5|Gryan Stoutmantle
+169|1433|24.5|46.2|Wanted: Gath'Ilzogg|1433|24.9|44.5|Magistrate Solomon
+176|1429|24.5|74.7|Wanted Poster|1429|42.1|65.9|Marshal Dughan
+193|1434|35.6|10.5|Sir S. J. Erlgadin|1434|35.6|10.5|Sir S. J. Erlgadin
+197|1434|35.7|10.8|Hemet Nesingwary|1434|35.7|10.8|Hemet Nesingwary
+202|1434|38|3|Lieutenant Doren|1434|38|3|Lieutenant Doren
+206|1434|37.8|3.6|Brother Nimetz|1434|37.8|3.6|Brother Nimetz
+208|1434|35.7|10.8|Hemet Nesingwary|1434|35.7|10.8|Hemet Nesingwary
+211|1422|42.7|84|Commander Ashlam Valorfist|1422|42.7|84|Commander Ashlam Valorfist
+228|1431|73.5|46.8|Commander Althea Ebonlocke|1431|73.5|46.8|Commander Althea Ebonlocke
+248|1433|79.4|46.8|Old Lion Statue|1433|58.2|49.8|An Empty Jar
+249|1433|79.4|46.8|Old Lion Statue|1429|65.2|69.7|Theocritus
+253|1431|71.9|46.4|Lord Ello Ebonlocke|1431|71.9|46.4|Lord Ello Ebonlocke
+255|1432|34.6|44.5|Magistrate Bluntnose|1432|34.6|44.5|Magistrate Bluntnose
+256|1432|37.3|46.5|WANTED|1432|34.6|44.5|Magistrate Bluntnose
+271|1432|81.7|64.1|Vyrin Swiftwind|1432|83.5|65.5|Daryl the Youngling
+278|1432|46|13.6|Chief Engineer Hinderweir VII|1432|46|13.6|Chief Engineer Hinderweir VII
+303|1437|49.7|18.2|Motley Garmason|1437|49.7|18.2|Motley Garmason
+304|1437|49.8|18.3|Longbraid the Grim|1437|49.8|18.3|Longbraid the Grim
+314|1426|63.1|49.8|Rudra Amberstill|1426|63.1|49.8|Rudra Amberstill
+442|1421|43.4|40.9|High Executor Hadrec|1421|43.4|40.9|High Executor Hadrec
+450|1458|48.8|69.3|Master Apothecary Faranell|1421|42.8|40.9|Apothecary Renferrel
+452|1421|46.5|74.4|Deathstalker Faerleia|1421|46.5|74.4|Deathstalker Faerleia
+474|1437|47.5|47|Dragonmaw Catapult|1437|9.9|57.5|Captain Stoutfist
+504|1424|49.5|58.7|Marshal Redpath|1424|49.5|58.7|Marshal Redpath
+517|1424|61.4|19.1|Apothecary Lydon|1424|61.4|19.1|Apothecary Lydon
+518|1424|62.6|20.6|Melisara|1424|62.6|20.6|Melisara
+519|1424|62.6|20.6|Melisara|1424|62.6|20.6|Melisara
+520|1424|62.6|20.6|Melisara|1424|62.6|20.6|Melisara
+531|1432|83.5|65.5|Daryl the Youngling|1432|81.7|64.1|Vyrin Swiftwind
+540|1424|50.6|57.1|Loremaster Dibbs|1424|50.6|57.1|Loremaster Dibbs
+541|1424|62.3|20.5|High Executor Darthalia|1424|62.3|20.5|High Executor Darthalia
+543|1453|76.9|47.8|Count Remington Ridgewell|1453|76.9|47.8|Count Remington Ridgewell
+547|1424|62.8|20.2|Deathguard Humbert|1424|62.8|20.2|Deathguard Humbert
+591|1434|32.3|27.7|Kin'weelay|1434|32.3|27.7|Kin'weelay
+611|1434|27.3|77.5|Catelyn the Blade|1434|27.2|76.9|Baron Revilgaz
+613|1434|27.8|77.1|"Sea Wolf" MacKinley|1434|27.8|77.1|"Sea Wolf" MacKinley
+614|-|-|-|-|-|-|-|-
+618|-|-|-|-|-|-|-|-
+628|1434|28.3|77.6|Drizzlik|1434|28.3|77.6|Drizzlik
+629|1434|32.3|27.7|Kin'weelay|1434|32.3|27.7|Kin'weelay
+630|1434|38.5|80.6|Princess Poobah|1434|38.5|80.6|Princess Poobah
+631|1437|49.9|18.2|Rhag Garmason|1437|51.3|8|Ebenezer Rustlocke's Corpse
+639|1417|73.8|34|Zengu|1417|73.8|34|Zengu
+640|1417|73.8|34|Zengu|1417|74.7|36.3|Tor'gan
+643|1417|73.8|34|Zengu|1417|73.8|34|Zengu
+644|1417|73.8|34|Zengu|1417|73.8|34|Zengu
+645|1417|73.8|34|Zengu|1417|28.9|59.6|Trollbane's Tomb
+646|1417|28.9|59.6|Trollbane's Tomb|1417|73.8|34|Zengu
+652|1417|36.2|57.4|Stone of Inner Binding|1417|36.1|58.1|Keystone
+656|1418|51.4|76.9|Theldurin the Lost|1417|62.5|33.7|Shards of Myzrael
+673|1417|74.7|36.3|Tor'gan|1417|74.7|36.3|Tor'gan
+679|1417|74.2|33.9|Drum Fel|1417|74.2|33.9|Drum Fel
+680|1417|74|33.1|Korin Fel|1417|74|33.1|Korin Fel
+682|1417|45.8|47.6|Captain Nials|1417|45.8|47.6|Captain Nials
+684|1417|46|47.8|Wanted Board|1417|45.8|47.6|Captain Nials
+685|1417|46|47.8|Wanted Board|1417|45.8|47.6|Captain Nials
+694|1417|46.7|47|Skuerto|1417|46.2|47.8|Apprentice Kryten
+695|1417|46.2|47.8|Apprentice Kryten|1417|46.7|47|Skuerto
+696|1417|46.7|47|Skuerto|1417|46.7|47|Skuerto
+697|1417|46.7|47|Skuerto|1453|50.5|87.5|Archmage Malin
+705|1418|42.4|52.9|Rigglefuzz|1418|42.4|52.9|Rigglefuzz
+706|1418|53.8|43.3|Sigrun Ironhew|1418|53.8|43.3|Sigrun Ironhew
+717|1418|61.9|54.3|Garek|1418|61.9|54.3|Garek
+731|1439|35.7|83.7|Prospector Remtravel|1439|37.4|41.8|Archaeologist Hollee
+735|1426|59.2|22|Gerrig Bonegrip|1426|59.2|22|Gerrig Bonegrip
+736|1458|53.7|54.5|Keeper Bel'dugur|1458|53.7|54.5|Keeper Bel'dugur
+762|1426|63.5|23|Historian Karnik|1426|63.5|22.6|Advisor Belgrum
+793|1418|2.9|45.6|Gorn|1418|2.9|45.6|Gorn
+908|-|-|-|-|-|-|-|-
+909|-|-|-|-|-|-|-|-
+969|1452|61.9|38.3|Witch Doctor Mau'ari|1452|61.9|38.3|Witch Doctor Mau'ari
+1005|-|-|-|-|-|-|-|-
+1006|-|-|-|-|-|-|-|-
+1089|1442|45.9|60.4|Braelyn Firehand|1442|26.6|10.9|Talon Den Hoard
+1166|1445|36.3|31.4|Overlord Mok'Morokk|1445|36.3|31.4|Overlord Mok'Morokk
+1172|1445|37.2|33.1|Draz'Zilb|1445|37.2|33.1|Draz'Zilb
+1173|1445|36.3|31.4|Overlord Mok'Morokk|1445|37.2|33.1|Draz'Zilb
+1380|1443|36.2|79.2|Uthek the Wise|1443|36.2|79.2|Uthek the Wise
+1381|1443|75|68.2|Warug|1443|75|68.2|Warug
+1383|1431|87.5|35.2|Apothecary Faustin|1431|87.5|35.2|Apothecary Faustin
+1424|1435|47.9|54.8|Fel'zerul|1435|47.9|54.8|Fel'zerul
+1448|1453|69.5|40.4|Brohann Caskbelly|1453|69.5|40.4|Brohann Caskbelly
+1488|1443|52.6|54.4|Takata Steelblade|1443|52.6|54.4|Takata Steelblade
+2078|1439|56.7|13.5|Gelkak Gyromast|1439|56.7|13.5|Gelkak Gyromast
+2203|1418|2.4|46.1|Jarkal Mossmeld|1418|2.4|46.1|Jarkal Mossmeld
+2499|1438|60.9|68.5|Denalan|1438|60.9|68.5|Denalan
+2501|1432|37.1|49.4|Ghak Healtouch|1432|37.1|49.4|Ghak Healtouch
+2721|1435|34.3|66.1|Fallen Hero of the Horde|-|-|-|Spirit of Kirith
+2935|1424|61.4|19.1|Apothecary Lydon|1411|55.9|74.7|Master Gadrin
+2937|1411|55.9|74.7|Master Gadrin|1424|61.4|19.1|Apothecary Lydon
+2944|1446|52.4|26.9|Curgle Cranklehop|1438|55.4|92.2|Daryn Lightwind
+2946|1426|63.5|23|Historian Karnik|1446|37.6|81.4|Uldum Pedestal
+2954|-|-|-|Stone Watcher of Norgannon|1446|37.6|81.4|Uldum Pedestal
+2966|1456|75.6|31.6|Nara Wildmane|1446|37.6|81.4|Uldum Pedestal
+2967|1446|37.6|81.4|Uldum Pedestal|1456|75.6|31.6|Nara Wildmane
+2977|1446|37.6|81.4|Uldum Pedestal|1426|63.5|23|Historian Karnik
+2993|1419|66.9|19.5|Thadius Grimshade|1425|9.8|44.5|Gryphon Master Talonaxe
+2994|1425|9.8|44.5|Gryphon Master Talonaxe|1425|9.8|44.5|Gryphon Master Talonaxe
+3062|1444|76.2|43.8|Talo Thornhoof|1444|76.2|43.8|Talo Thornhoof
+3127|1444|74.4|43.4|Witch Doctor Uzer'i|1444|74.4|43.4|Witch Doctor Uzer'i
+3181|-|-|-|item:Margol's Horn|1432|18.2|84|Mountaineer Pebblebitty
+3182|1432|18.2|84|Mountaineer Pebblebitty|1426|62.6|23.6|Curator Thorius
+3201|1426|62.6|23.6|Curator Thorius|1432|18.2|84|Mountaineer Pebblebitty
+3372|1427|41.1|25.6|Dying Archaeologist|1427|41.3|25.4|Altar of Suntara
+3452|1427|39.1|39|Kalaran Windblade|1427|39.1|39|Kalaran Windblade
+3463|1427|39.2|39|Squire Maltrake|1427|39.2|39|Squire Maltrake
+3510|1447|77.1|42.8|Lord Arkkoroc|1447|77.1|42.8|Lord Arkkoroc
+3514|1413|48.1|5.4|Kadrak|1413|48.1|5.4|Kadrak
+3566|1427|41.1|25.6|Dying Archaeologist|1426|62.6|23.6|Curator Thorius
+3602|1447|60.8|66.4|Loramus Thalipedes|1447|60.8|66.4|Loramus Thalipedes
+3627|1435|34.3|66.1|Fallen Hero of the Horde|1435|34.3|66.1|Fallen Hero of the Horde
+3628|1435|34.3|66.1|Fallen Hero of the Horde|1435|34.3|66.1|Fallen Hero of the Horde
+3962|1449|44.7|8.1|Linken|1449|44.7|8.1|Linken
+4021|1413|45.3|28.4|Regthar Deathgate|1413|45.3|28.4|Regthar Deathgate
+4023|1428|95.1|31.6|Cyrus Therepentous|1428|95.1|31.6|Cyrus Therepentous
+4182|1428|85.8|68.9|Helendis Riverhorn|1428|85.8|68.9|Helendis Riverhorn
+4787|1446|67|22.4|Yeh'kinya|1446|67|22.4|Yeh'kinya
+5054|1452|61.9|38.4|Storm Shadowhoof|1452|61.9|38.4|Storm Shadowhoof
+5055|1452|61.9|38.4|Storm Shadowhoof|1452|61.9|38.4|Storm Shadowhoof
+5056|1452|61.9|38.4|Storm Shadowhoof|1452|61.9|38.4|Storm Shadowhoof
+5063|1452|61|38.8|Malyfous's Catalogue|1452|61|38.8|Malyfous Darkhammer
+5065|1446|66.9|24|Prospector Ironboot|1446|66.9|24|Prospector Ironboot
+5067|1452|61|38.8|Malyfous's Catalogue|1452|61|38.8|Malyfous Darkhammer
+5068|1452|61|38.8|Malyfous's Catalogue|1452|61|38.8|Malyfous Darkhammer
+5098|1420|83.1|68.9|High Executor Derrington|1420|83.1|68.9|High Executor Derrington
+5121|1452|31.3|45.2|Donova Snowden|1452|31.3|45.2|Donova Snowden
+5124|1452|61|38.8|Malyfous Darkhammer|1452|61|38.8|Malyfous Darkhammer
+5153|1422|49.2|78.6|Marlene Redpath|1422|39.5|66.8|Chromie
+5156|1448|50.9|81.6|Taronn Redfeather|1448|50.9|81.6|Taronn Redfeather
+5162|1452|54.5|51.2|Haleh|1422|39.4|66.8|Jeziba
+5164|1422|39.4|66.8|Jeziba|1422|39.3|66.6|Catalogue of the Wayward
+5166|1422|39.3|66.6|Catalogue of the Wayward|1422|39.4|66.8|Jeziba
+5167|1422|39.3|66.6|Catalogue of the Wayward|1422|39.4|66.8|Jeziba
+5168|1423|71.7|50|Carlin Redpath|1423|71.7|50|Carlin Redpath
+5247|1423|46.5|16|Aurora Skycaller|1423|46.5|16|Aurora Skycaller
+5264|1423|71.6|50.1|Duke Nicholas Zverenhoff|1423|71.9|48.4|Lord Maxwell Tyrosus
+5265|1423|71.9|48.4|Lord Maxwell Tyrosus|1423|72|48.4|The Argent Hold
+5342|1420|83.1|71.6|Alexi Barov|1420|83.1|71.6|Alexi Barov
+5344|1422|43.5|83.7|Weldon Barov|1422|43.5|83.7|Weldon Barov
+5461|1422|70.6|74.1|Magistrate Marduke|1422|70.6|74.1|Magistrate Marduke
+5462|1422|70.6|74.1|Magistrate Marduke|1423|71.9|48.3|Leonid Barthalomew the Revered
+5464|-|-|-|Menethil's Gift|1423|71.9|48.3|Leonid Barthalomew the Revered
+5465|1423|71.9|48.3|Leonid Barthalomew the Revered|1422|70.6|74.1|Magistrate Marduke
+5803|1422|42.7|83.8|Alchemist Arbington|1422|42.7|83.8|Alchemist Arbington
+5804|1420|83.3|69.2|Apothecary Dithers|1420|83.3|69.2|Apothecary Dithers
+5862|1422|50.8|77.8|Myranda the Hag|1422|42|14.8|Highlord Taelan Fordring
+5944|1422|42|14.8|Highlord Taelan Fordring|1423|5.2|35.6|Tirion Fordring
+5981|1452|49.9|9.8|Rivern Frostwind|1452|49.9|9.8|Rivern Frostwind
+6025|1422|51.9|28.1|Kirsta Deepshadow|1422|51.9|28.1|Kirsta Deepshadow
+6041|1423|70.9|48.4|Smokey LaRue|1423|70.9|48.4|Smokey LaRue
+6135|1423|22.2|63.5|Nathanos Blightcaller|1423|22.2|63.5|Nathanos Blightcaller
+6136|1423|22.2|63.5|Nathanos Blightcaller|1423|22.2|63.5|Nathanos Blightcaller
+6145|1458|56.3|92.2|Varimathras|1423|22.2|63.5|Nathanos Blightcaller
+6146|1423|22.2|63.5|Nathanos Blightcaller|1423|75.2|71.2|Crusader Lord Valdelmar
+6147|1423|75.2|71.2|Crusader Lord Valdelmar|1423|22.2|63.5|Nathanos Blightcaller
+6148|1423|22.2|63.5|Nathanos Blightcaller|1423|22.2|63.5|Nathanos Blightcaller
+6182|1453|80.2|38.3|Highlord Bolvar Fordragon|1453|78.3|70.7|Master Mathias Shaw
+6183|1453|78.3|70.7|Master Mathias Shaw|1453|78.3|70.7|Master Mathias Shaw
+6184|1453|78.3|70.7|Master Mathias Shaw|1422|43.6|84.5|Flint Shadowmore
+6185|1422|43.6|84.5|Flint Shadowmore|1422|43.6|84.5|Flint Shadowmore
+6186|1422|43.6|84.5|Flint Shadowmore|1453|80.2|38.3|Highlord Bolvar Fordragon
+6283|1442|47.2|61.2|Maggran Earthbinder|1442|47.2|61.2|Maggran Earthbinder
+6284|1442|59.1|75.7|Wanted Poster: Besseleth|1442|47.2|61.2|Maggran Earthbinder
+6481|1442|47.2|64|Mor'rogal|1442|47.2|64|Mor'rogal
+6570|1422|50.8|77.8|Myranda the Hag|1445|56.7|87.7|Emberstrife
+6621|1440|11.9|34.5|Karang Amakkar|1440|11.9|34.5|Karang Amakkar
+6641|1440|12.1|34.6|Muglash|1440|12.2|34.2|Warsong Runner
+7701|1427|37.6|26.5|Wanted/Missing/Lost & Found|1427|37.7|26.6|Lookout Captain Lolo Longstriker
+7816|1425|80.3|81.5|Katoom the Angler|1425|80.3|81.5|Katoom the Angler
+7845|1425|78.2|81.2|Primal Torntusk|1425|59.7|77.8|Elder Torntusk
+7846|1425|59.7|77.8|Elder Torntusk|1425|59.7|77.8|Elder Torntusk
+7847|1425|59.7|77.8|Elder Torntusk|1425|78.2|81.2|Primal Torntusk
+7849|1425|79.2|79.5|Huntsman Markhor|1425|79.2|79.5|Huntsman Markhor
+7850|1425|78.2|81.2|Primal Torntusk|1425|78.2|81.2|Primal Torntusk
+7861|1425|79.1|79|Call to Arms!|1425|78.2|81.2|Primal Torntusk
+7862|1425|79.1|79|Call to Arms!|1425|78.2|81.2|Primal Torntusk
+8283|1451|51.4|38.3|Wanted Poster: Deathclasp|1451|50.8|33.7|Vish Kozus
+8301|1451|49.5|36.4|Baristolth of the Shifting Sands|1451|49.5|36.4|Baristolth of the Shifting Sands
+8302|1451|49.5|36.4|Baristolth of the Shifting Sands|1451|49.5|36.4|Baristolth of the Shifting Sands
+8304|1451|49.2|34.2|Commander Mar'alith|1451|49.2|34.2|Commander Mar'alith
+8306|1451|49.2|34.2|Commander Mar'alith|1451|49.2|34.2|Commander Mar'alith
+8308|-|-|-|item:Brann Bronzebeard's Lost Letter|1451|41.3|88.5|Rutgar Glyphshaper
+8309|1451|41.3|88.5|Rutgar Glyphshaper|1451|41.3|88.5|Rutgar Glyphshaper
+8310|1451|40.8|88.9|Frankal Stonebridge|1451|40.8|88.9|Frankal Stonebridge
+8314|1451|41.3|88.5|Rutgar Glyphshaper|1451|49.7|37.5|Geologist Larksbane
+8315|1451|49.7|37.5|Geologist Larksbane|1451|49.7|37.5|Geologist Larksbane
+8331|1451|48.6|37.9|Huum Wildmane|1451|52|38.2|Aurel Goldleaf
+8332|1451|52|38.2|Aurel Goldleaf|1451|52|38.2|Aurel Goldleaf
+8341|1451|52|38.2|Aurel Goldleaf|1451|52|38.2|Aurel Goldleaf
+8348|1451|48.6|37.8|Bor Wildmane|1451|48.6|37.8|Bor Wildmane
+8349|1451|52|38.2|Aurel Goldleaf|1451|48.6|37.8|Bor Wildmane
+8361|1451|48.6|37.8|Bor Wildmane|1451|48.6|37.8|Bor Wildmane
+8362|1451|48.6|37.8|Bor Wildmane|1451|48.6|37.8|Bor Wildmane
+8363|1451|48.6|37.8|Bor Wildmane|1451|48.6|37.8|Bor Wildmane
+8481|1448|65.2|2.7|Gorn One Eye|1448|65.2|2.7|Gorn One Eye
+8498|-|-|-|item:Tactical Task Briefing X|1451|49.2|34.2|Commander Mar'alith
+8501|-|-|-|item:Combat Task Briefing XII|1451|49.2|34.2|Commander Mar'alith
+8502|-|-|-|item:Combat Task Briefing III|1451|49.2|34.2|Commander Mar'alith
+8507|1451|50|36.4|Windcaller Kaldon|1451|50|36.4|Windcaller Kaldon
+8534|-|-|-|item:Tactical Task Briefing VI|1451|51.2|38.3|Windcaller Proudhorn
+8535|-|-|-|item:Tactical Task Briefing IV|1451|48.6|37.8|Bor Wildmane
+8536|-|-|-|item:Tactical Task Briefing III|1451|48.6|37.8|Bor Wildmane
+8537|-|-|-|item:Tactical Task Briefing II|1451|48.6|37.8|Bor Wildmane
+8538|-|-|-|item:Tactical Task Briefing V|1451|49.2|34.2|Commander Mar'alith
+8539|-|-|-|item:Combat Task Briefing V|1451|49.2|34.2|Commander Mar'alith
+8551|1434|26.7|73.6|Captain Hecklebury Smotts|1434|26.7|73.6|Captain Hecklebury Smotts
+8552|-|-|-|item:Monogrammed Sash|1434|26.7|73.6|Captain Hecklebury Smotts
+8554|1434|26.7|73.6|Sprogger|1434|26.7|73.6|Captain Hecklebury Smotts
+8606|1446|65.2|18.6|Narain Soothfancy|1446|65.2|18.6|Narain Soothfancy
+8687|-|-|-|item:Combat Task Briefing VII|1451|49.2|34.2|Commander Mar'alith
+8731|1451|50|36.4|Windcaller Kaldon|1451|50|36.4|Windcaller Kaldon
+8737|-|-|-|item:Tactical Task Briefing I|1451|48.6|37.8|Bor Wildmane
+8738|-|-|-|item:Tactical Task Briefing VII|1451|51.2|38.3|Windcaller Proudhorn
+8739|-|-|-|item:Tactical Task Briefing VIII|1451|51.2|38.3|Windcaller Proudhorn
+8740|-|-|-|item:Tactical Task Briefing IX|1451|51.2|38.3|Windcaller Proudhorn
+8770|-|-|-|item:Combat Task Briefing I|1451|49.2|34.2|Commander Mar'alith
+8771|-|-|-|item:Combat Task Briefing II|1451|49.2|34.2|Commander Mar'alith
+8772|-|-|-|item:Combat Task Briefing VI|1451|49.2|34.2|Commander Mar'alith
+8773|-|-|-|item:Combat Task Briefing IV|1451|49.2|34.2|Commander Mar'alith
+8774|-|-|-|item:Combat Task Briefing VIII|1451|49.2|34.2|Commander Mar'alith
+8775|-|-|-|item:Combat Task Briefing IX|1451|49.2|34.2|Commander Mar'alith
+8776|-|-|-|item:Combat Task Briefing X|1451|49.2|34.2|Commander Mar'alith
+8777|-|-|-|item:Combat Task Briefing XI|1451|49.2|34.2|Commander Mar'alith
+8829|-|-|-|item:Logistics Task Briefing XI|1451|52|38.2|Aurel Goldleaf
+8928|1446|52.5|27.2|Mux Manascrambler|1446|52.5|27.2|Mux Manascrambler
+8962|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8963|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8964|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8965|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8970|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8985|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8986|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8987|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+8988|1428|32.3|25.8|Bodley|1428|32.3|25.8|Bodley
+87318|1437|50|12.8|Corma Villard|1437|51.4|9|Essene Villard
+87491|1437|45.6|16.8|Captive Fire Elemental|1437|49.8|18|Roggo Harlbarrow
+88756|1437|50|18.2|Ashlan Stonesmirk|1437|50.1|18.3|Ashlan Stonesmirk
+88757|1437|51.4|9|Essene Villard|1437|51.4|9|Essene Villard
+88758|1437|51.4|9|Essene Villard|1437|50|12.8|Corma Villard
+91548|-|-|-|-|-|-|-|-
+91752|1429|47.2|32.4|Kelsey Fargo|1429|48.9|41.6|Marshal McBride
+91775|1429|42.1|65.9|Marshal Dughan|1429|42.1|65.9|Marshal Dughan
+91777|1429|42.1|65.9|Marshal Dughan|1429|49.4|40.4|Brother Paxton
+92706|1413|62.6|37.5|WANTED|1413|62.7|36.3|Gazlowe
+92867|-|-|-|-|-|-|-|-
+95885|1421|58|69.8|Offering Stone|1421|58.1|69.9|Offering Stone
+95999|1433|24.4|46.3|Wanted: Incinerator Gar'im|1433|24.9|44.3|Magistrate Solomon
+96222|1443|43.4|78.9|Umarak|-|-|-|-
+96261|1412|33.5|22.5|Muln Earthfury|1412|33.5|22.5|Muln Earthfury
+97003|1413|52.6|29.1|Gur'ak|1413|52.6|29.1|Gur'ak
+97005|1413|61.9|39.4|Bainham|1413|61.8|39.4|Bainham
+97250|1413|44.6|59.2|Grunt Logmar|1413|44.6|59.2|Grunt Logmar
+97985|1458|49.2|70.4|Calder Gray|1458|49.2|70.4|Calder Gray
+98216|1437|38.8|52.3|Prospector Whelgar|1437|38.8|52.3|Prospector Whelgar
+98283|1437|56.3|40.6|Rethiel the Greenwarden|1437|56.3|40.6|Rethiel the Greenwarden
+98291|1437|49.4|42.1|Howin Kindfeather|1437|49.4|42.1|Howin Kindfeather
+98293|1437|58.8|45.3|Dragonmaw Armaments|1437|9.9|57.4|Captain Stoutfist
+98297|1437|49.4|42.1|Howin Kindfeather|1437|49.4|42.1|Howin Kindfeather
+98310|1437|38.8|52.3|Prospector Whelgar|1437|38.8|52.3|Prospector Whelgar
+98403|1438|55.5|56.9|Tallonkai Swiftroot|1438|55.4|56.8|Tallonkai Swiftroot
+98427|1412|50.5|63.1|Morin Cloudstalker|1412|53|60.2|Morin Cloudstalker
+98477|-|-|-|-|-|-|-|-
+99052|1411|52.2|43.1|Orgnil Soulscar|1411|52.2|43.2|Orgnil Soulscar
+99156|1420|65.5|60.2|Deathguard Linnea|1420|65.4|60.2|Deathguard Linnea

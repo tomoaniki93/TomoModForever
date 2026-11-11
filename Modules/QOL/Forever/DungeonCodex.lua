@@ -22,6 +22,10 @@
 --
 -- Optional: one chat line on level up when a dungeon comes within reach.
 --
+-- Elites tab (1.2.5): the zones with elite quests for your faction
+-- (EliteQuestData.lua), by level; each zone lists its elite quests with
+-- their level, minimum level and state, and opens the zone map.
+--
 -- Quests tab (1.2.4): the quests of the selected dungeon for your faction
 -- (DungeonQuestData.lua), with their state read from the game: done,
 -- in your quest log, or still to take. Titles come from the client in
@@ -147,6 +151,23 @@ local function DungeonName(d) return IS_FR and d.fr or d.en end
 -- ---------------------------------------------------------------------
 -- Waypoint / map
 -- ---------------------------------------------------------------------
+-- A point on a Classic uiMapID (x / y in %), named; the client's own map
+-- when that ID exists there, else the codex zone it belongs to.
+local function PlacePoint(name, map, x, y, fallbackZone)
+    if map and C_Map and C_Map.GetMapInfo and not C_Map.GetMapInfo(map) then
+        map = fallbackZone and ResolveZone(fallbackZone) or nil
+    end
+    if not (map and x and y) then return false end
+    local WP = TomoMod_Waypoint
+    if WP and WP.NewWaypoint then return WP.NewWaypoint(name, map, x, y) end
+    if C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(map) then
+        C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(map, x / 100, y / 100))
+        if C_SuperTrack then C_SuperTrack.SetSuperTrackedUserWaypoint(true) end
+        return true
+    end
+    return false
+end
+
 local function PlaceWaypoint(d)
     local map, x, y = Entrance(d)
     if not (map and x and y) then
@@ -193,7 +214,37 @@ end
 
 local STATUS_COLOR = { now = GREEN, soon = YELLOW, later = DIM, past = DIM }
 
+-- Elite zones for the player's faction, as list entries shaped like the
+-- dungeons (key, names, min / max, zone) so the list and the map button
+-- work unchanged. Their zone joins the codex zones for the map lookup.
+local function EliteZones()
+    local out, fac = {}, Faction()
+    local zones = Data().zones
+    for _, z in ipairs(TomoMod_EliteQuestData or {}) do
+        local quests, minL, maxL = {}, nil, nil
+        for _, q in ipairs(z.quests) do
+            if q[5] == "B" or q[5] == fac then
+                quests[#quests + 1] = q
+                minL = math.min(minL or q[3], q[3])
+                maxL = math.max(maxL or q[3], q[3])
+            end
+        end
+        if #quests > 0 then
+            local zoneKey = "elite_" .. z.key
+            if not zones[zoneKey] then zones[zoneKey] = { id = z.id, en = z.en, fr = z.fr } end
+            out[#out + 1] = { elite = true, key = zoneKey, en = z.en, fr = z.fr, zone = zoneKey,
+                              min = minL, max = maxL, quests = quests }
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.min ~= b.min then return a.min < b.min end
+        return DungeonName(a) < DungeonName(b)
+    end)
+    return out
+end
+
 local function BuildList(mode)
+    if mode == "elite" then return EliteZones() end
     local out, lvl = {}, PlayerLevel()
     for _, d in ipairs(Data().dungeons) do
         local s = Status(d, lvl)
@@ -270,6 +321,23 @@ local function DungeonQuests(d, fac)
     return out, todo
 end
 
+local function EliteQuests(d)
+    local out, todo = {}, 0
+    for _, q in ipairs(d.quests or {}) do
+        local state = QuestState(q[1])
+        if state ~= "done" then todo = todo + 1 end
+        out[#out + 1] = { id = q[1], name = q[2], level = q[3], req = q[4], side = q[5], state = state, elite = true,
+                          giver = q[6], map = q[7], x = q[8], y = q[9],
+                          ender = q[10], emap = q[11], ex = q[12], ey = q[13], zone = d.zone }
+    end
+    table.sort(out, function(a, b)
+        if a.state ~= b.state then return STATE_ORDER[a.state] < STATE_ORDER[b.state] end
+        if a.level ~= b.level then return a.level < b.level end
+        return a.name < b.name
+    end)
+    return out, todo
+end
+
 local function GiverText(giver)
     if not giver then return nil end
     local item = giver:match("^item:(.+)$")
@@ -329,8 +397,10 @@ end
 local function SetMode(mode)
     local db = DB()
     if db then db.mode = mode end
-    win.tabMine.bg:SetVertexColor(mode ~= "all" and 0.24 or 0.11, mode ~= "all" and 0.18 or 0.09, mode ~= "all" and 0.10 or 0.07, 1)
-    win.tabAll.bg:SetVertexColor(mode == "all" and 0.24 or 0.11, mode == "all" and 0.18 or 0.09, mode == "all" and 0.10 or 0.07, 1)
+    for tab, m in pairs({ [win.tabMine] = "mine", [win.tabAll] = "all", [win.tabElite] = "elite" }) do
+        local on = mode == m
+        tab.bg:SetVertexColor(on and 0.24 or 0.11, on and 0.18 or 0.09, on and 0.10 or 0.07, 1)
+    end
     list = BuildList(mode)
     offset = 0
     -- Keep the selection if it is still listed, else the first one.
@@ -400,10 +470,13 @@ local function CreateWindow()
     local sep = Line(win); sep:SetPoint("TOPLEFT", 1, -31); sep:SetPoint("TOPRIGHT", -1, -31); sep:SetHeight(1)
 
     -- Tabs
-    win.tabMine = Flat(win, (LIST_W - 14) / 2, 22, T("Mon niveau", "My level"), function() SetMode("mine") end)
+    local tabW = (LIST_W - 20) / 3
+    win.tabMine = Flat(win, tabW + 12, 22, T("Mon niveau", "My level"), function() SetMode("mine") end)
     win.tabMine:SetPoint("TOPLEFT", 8, -40)
-    win.tabAll = Flat(win, (LIST_W - 14) / 2, 22, T("Tous", "All"), function() SetMode("all") end)
-    win.tabAll:SetPoint("LEFT", win.tabMine, "RIGHT", 6, 0)
+    win.tabAll = Flat(win, tabW - 12, 22, T("Tous", "All"), function() SetMode("all") end)
+    win.tabAll:SetPoint("LEFT", win.tabMine, "RIGHT", 4, 0)
+    win.tabElite = Flat(win, tabW, 22, T("Élites", "Elites"), function() SetMode("elite") end)
+    win.tabElite:SetPoint("LEFT", win.tabAll, "RIGHT", 4, 0)
 
     -- List
     local listFrame = CreateFrame("Frame", nil, win)
@@ -527,6 +600,18 @@ local function CreateWindow()
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:AddLine(QuestTitle(q.id, q.name), YELLOW[1], YELLOW[2], YELLOW[3], true)
             if q.level then GameTooltip:AddLine(string.format(T("Niveau %d", "Level %d"), q.level), TEXT[1], TEXT[2], TEXT[3]) end
+            if q.req then GameTooltip:AddLine(string.format(T("Disponible dès le niveau %d", "Available from level %d"), q.req), TEXT[1], TEXT[2], TEXT[3]) end
+            if q.elite then
+                GameTooltip:AddLine(T("Élite : quête de groupe", "Elite: group quest"), RED[1], RED[2], RED[3])
+                if q.ender and q.ender ~= q.giver then
+                    GameTooltip:AddLine(string.format(T("À rendre : %s", "Turn in: %s"), q.ender), TEXT[1], TEXT[2], TEXT[3], true)
+                end
+                if q.x then
+                    GameTooltip:AddLine(string.format(T("Clic : point de route vers le donneur (%d, %d)", "Click: waypoint to the giver (%d, %d)"), q.x, q.y), GREEN[1], GREEN[2], GREEN[3])
+                elseif q.ex then
+                    GameTooltip:AddLine(string.format(T("Clic : point de route vers le rendu (%d, %d)", "Click: waypoint to the turn-in (%d, %d)"), q.ex, q.ey), GREEN[1], GREEN[2], GREEN[3])
+                end
+            end
             local giver = GiverText(q.giver)
             if giver then GameTooltip:AddLine(string.format(T("Donneur : %s", "Quest giver: %s"), giver), TEXT[1], TEXT[2], TEXT[3], true) end
             if q.prereq then
@@ -538,6 +623,22 @@ local function CreateWindow()
             GameTooltip:Show()
         end)
         r:SetScript("OnLeave", function(self) self.hl:SetVertexColor(1, 1, 1, 0); GameTooltip:Hide() end)
+        -- Elite quests: click for a waypoint to the giver (or to the turn-in
+        -- when an item starts the quest).
+        r:SetScript("OnClick", function(self)
+            local q = self.q
+            if not (q and q.elite) then return end
+            local title = QuestTitle(q.id, q.name)
+            local ok
+            if q.x then
+                ok = PlacePoint(string.format("%s (%s)", q.giver or title, title), q.map, q.x, q.y, q.zone)
+                if ok then print(PREFIX .. string.format(T("Point de route : %s, donneur de %s.", "Waypoint: %s, giver of %s."), q.giver or "?", title)) end
+            elseif q.ex then
+                ok = PlacePoint(string.format("%s (%s)", q.ender or title, title), q.emap, q.ex, q.ey, q.zone)
+                if ok then print(PREFIX .. string.format(T("Point de route : %s, à qui rendre %s.", "Waypoint: %s, turn-in of %s."), q.ender or "?", title)) end
+            end
+            if not ok then print(PREFIX .. string.format(T("Pas de position connue pour %s.", "No known position for %s."), title)) end
+        end)
         qrows[i] = r
     end
     det.qempty = FS(qf, FONT, 11, DIM); det.qempty:SetPoint("TOPLEFT", 2, -4); det.qempty:SetWidth(DW)
@@ -597,10 +698,15 @@ RefreshQuests = function()
             local c = (q.state == "done" and DIM) or (q.level and q.level > lvl + 2 and RED) or TEXT
             r.name:SetTextColor(c[1], c[2], c[3])
             local info = {}
-            if q.level then info[#info + 1] = string.format(T("Niv. %d", "Lvl %d"), q.level) end
+            if q.level and q.req then
+                info[#info + 1] = string.format(T("Niv. %d (dès le niv. %d)", "Lvl %d (from level %d)"), q.level, q.req)
+            elseif q.level then
+                info[#info + 1] = string.format(T("Niv. %d", "Lvl %d"), q.level)
+            end
             local giver = GiverText(q.giver)
             if giver then info[#info + 1] = giver end
             if q.side == "B" then info[#info + 1] = T("Les deux factions", "Both factions") end
+            if q.elite and (q.x or q.ex) then info[#info + 1] = T("clic : point de route", "click: waypoint") end
             r.info:SetText(table.concat(info, "  -  "))
             r:Show()
         else
@@ -608,7 +714,7 @@ RefreshQuests = function()
         end
     end
     if #qlist == 0 then
-        det.qempty:SetText(T("Aucune quête connue pour ta faction dans ce donjon.", "No known quest for your faction in this dungeon."))
+        det.qempty:SetText(T("Aucune quête connue pour ta faction ici.", "No known quest for your faction here."))
         det.qempty:Show()
     else
         det.qempty:Hide()
@@ -638,6 +744,35 @@ ShowDetail = function(d)
 
     local lvl, fac = PlayerLevel(), Faction()
     det.name:SetText(DungeonName(d))
+
+    if d.elite then
+        -- Elite zone: its elite quests, the zone map; no route, no waypoint.
+        local quests, todo = EliteQuests(d)
+        local st = Status(d, lvl)
+        local c = STATUS_COLOR[st]
+        det.sub:SetText(string.format(T("Quêtes élites  -  niveaux |cff%02x%02x%02x%d-%d|r  -  %d à faire sur %d",
+                                        "Elite quests  -  levels |cff%02x%02x%02x%d-%d|r  -  %d to do of %d"),
+            c[1] * 255, c[2] * 255, c[3] * 255, d.min, d.max, todo, #quests))
+        det.tags:SetText(T("Quêtes de groupe : prévois des alliés.", "Group quests: bring friends."))
+        for _, k in ipairs({ "routeHead", "rline", "note", "tabRoute", "tabQuests", "wp" }) do det[k]:Hide() end
+        if qlist.key ~= d.key then qoffset = 0 end
+        qlist = quests
+        qlist.key = d.key
+        det.quests:Show()
+        RefreshQuests()
+        local map = Entrance(d)
+        det.pos:ClearAllPoints()
+        det.pos:SetPoint("BOTTOMLEFT", det.wp, "TOPLEFT", 0, 8)
+        det.pos:SetText(string.format(T("Emplacement : %s", "Location: %s"), ZoneName(d)))
+        det.pos:SetTextColor(DIM[1], DIM[2], DIM[3])
+        det.map:ClearAllPoints()
+        det.map:SetPoint("BOTTOMLEFT", 0, 0)
+        det.map:SetEnabled(map ~= nil)
+        return
+    end
+    det.wp:Show()
+    det.map:ClearAllPoints()
+    det.map:SetPoint("LEFT", det.wp, "RIGHT", 8, 0)
     local st = Status(d, lvl)
     local hint = (st == "now" and T("à ta portée", "right for you"))
         or (st == "soon" and string.format(T("dans %d niveau(x)", "in %d level(s)"), d.min - lvl))
@@ -717,7 +852,7 @@ function DC.Toggle(show)
     CreateWindow()
     if show == nil then show = not win:IsShown() end
     if show then
-        SetMode(db.mode == "all" and "all" or "mine")
+        SetMode((db.mode == "all" or db.mode == "elite") and db.mode or "mine")
         win:Show()
     else
         win:Hide()
@@ -850,6 +985,6 @@ function DC.Initialize()
             print(PREFIX .. string.format(T("Nouveau(x) donjon(s) à ta portée : %s. Itinéraire : /codex",
                 "New dungeon(s) within reach: %s. Route: /codex"), table.concat(names, ", ")))
         end
-        if win and win:IsShown() then SetMode(db.mode == "all" and "all" or "mine") end
+        if win and win:IsShown() then SetMode((db.mode == "all" or db.mode == "elite") and db.mode or "mine") end
     end)
 end

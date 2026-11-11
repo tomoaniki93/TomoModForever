@@ -320,6 +320,7 @@ TomoMod_Defaults = {
                 mute = false,
                 deafen = false,
                 copy = true,
+                codex = true,
                 loot = true,
                 settings = true,
                 scroll = true,
@@ -327,7 +328,7 @@ TomoMod_Defaults = {
             order = {
                 "friends", "guild", "playerStatus",
                 "voice", "mute", "deafen",
-                "copy",
+                "copy", "codex",
                 "loot", "settings",
                 "scroll",
             },
@@ -713,6 +714,7 @@ TomoMod_Defaults = {
         enabled = false,
         tint = true,              -- tint the unexplored areas
         tintColor = { r = 0.45, g = 0.70, b = 1.00 },
+        zoneLevels = true,        -- level range after the zone name on the world map
     },
 
     -- Prettier graphics, set through CVars (CVarOptimizer.lua). All off by
@@ -1423,6 +1425,8 @@ TomoMod_Defaults = {
         -- Power
         showPower = true,
         powerHeight = 3,
+        powerShow = "mana",       -- "mana" (every mana user), "healers", "all"
+        showManaText = true,      -- mana % on the health bar
 
         -- Absorb
         showAbsorb = true,

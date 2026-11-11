@@ -285,6 +285,14 @@ function PF.CreateFrame(index, unit)
         powerBG:SetAllPoints()
         powerBG:SetColorTexture(0.050, 0.042, 0.033, 0.90)
         f.powerBG = powerBG
+
+        -- Mana in %, bottom right of the health bar (mana is scarce on Forever).
+        local manaText = health:CreateFontString(nil, "OVERLAY")
+        manaText:SetFont(db.font or ADDON_FONT, math.max(7, (db.fontSize or 11) - 2), db.fontOutline or "OUTLINE")
+        manaText:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT", -3, 2)
+        manaText:SetJustifyH("RIGHT")
+        manaText:Hide()
+        f.manaText = manaText
     end
 
     -- ---- NAME TEXT ----
@@ -584,23 +592,57 @@ function PF.UpdatePower(f)
     if not f or not f.power then return end
     if not UnitExists(f.unit) then return end
 
-    -- Only show power bar for healers
-    local role = TomoMod_Utils.SafeGroupRole(f.unit)
-    if role ~= "HEALER" then
+    local db = TomoModForeverDB and TomoModForeverDB.partyFrames or {}
+    local pType = UnitPowerType(f.unit)
+    local secret = issecretvalue and issecretvalue(pType)
+    local isMana = not secret and pType == 0
+
+    -- Who gets a bar: every mana user (default: mana is the resource that
+    -- runs out on Forever, and roles are rarely set there), only healers, or
+    -- everyone. Before 1.2.5, only members with the HEALER role had one.
+    local mode = db.powerShow or "mana"
+    local show
+    if mode == "all" then
+        show = true
+    elseif mode == "healers" then
+        show = TomoMod_Utils.SafeGroupRole(f.unit) == "HEALER"
+    else
+        show = isMana
+    end
+    if not show then
         f.power:Hide()
         if f.powerBG then f.powerBG:Hide() end
+        if f.manaText then f.manaText:Hide() end
         return
     end
 
     f.power:Show()
     if f.powerBG then f.powerBG:Show() end
 
-    local pType = UnitPowerType(f.unit)
     local cur = UnitPower(f.unit)
     local max = UnitPowerMax(f.unit)
 
     f.power:SetMinMaxValues(0, max)
     f.power:SetValue(cur)
+
+    -- Mana text: %, red under 20, orange under 40.
+    if f.manaText then
+        local readable = not (issecretvalue and (issecretvalue(cur) or issecretvalue(max)))
+        if isMana and db.showManaText ~= false and readable and max and max > 0 and UnitIsConnected(f.unit) and not UnitIsDeadOrGhost(f.unit) then
+            local pct = math.floor(cur / max * 100 + 0.5)
+            f.manaText:SetText(pct .. "%")
+            if pct < 20 then
+                f.manaText:SetTextColor(1.00, 0.35, 0.30)
+            elseif pct < 40 then
+                f.manaText:SetTextColor(1.00, 0.65, 0.20)
+            else
+                f.manaText:SetTextColor(0.45, 0.70, 1.00)
+            end
+            f.manaText:Show()
+        else
+            f.manaText:Hide()
+        end
+    end
 
     local pc = POWER_COLORS[pType]
     if pc then
@@ -1090,7 +1132,7 @@ local function OnEvent(self, event, arg1, ...)
         local f = GetFrameForUnit(arg1)
         if f then PF.UpdateHealPrediction(f) end
 
-    elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" then
+    elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
         local f = GetFrameForUnit(arg1)
         if f then PF.UpdatePower(f) end
 
@@ -1196,7 +1238,7 @@ end
 -- so with one flag.
 local UNIT_EVENTS = {
     "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_ABSORB_AMOUNT_CHANGED",
-    "UNIT_HEAL_PREDICTION", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER",
+    "UNIT_HEAL_PREDICTION", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
     "UNIT_NAME_UPDATE", "UNIT_AURA", "UNIT_FLAGS", "UNIT_CONNECTION",
 }
 

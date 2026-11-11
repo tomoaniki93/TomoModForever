@@ -51,6 +51,16 @@ local function CommonCards(page, root, ap)
            function(r) r:Toggle(T("Soins entrants", "Incoming heals"), p .. "showHealPrediction", ap) end)
     c:Pair(function(l) l:Toggle(T("Barre de mana", "Mana bar"), p .. "showPower", ap) end,
            function(r) r:Slider(T("Hauteur mana", "Mana height"), p .. "powerHeight", 1, 10, 1, ap) end)
+    if p == "partyFrames." then
+        c:Select(T("Barre de ressource pour", "Resource bar for"), p .. "powerShow", {
+            { text = T("Tous les membres à mana", "Every mana user"), value = "mana" },
+            { text = T("Soigneurs seulement", "Healers only"), value = "healers" },
+            { text = T("Tout le monde (rage, énergie...)", "Everyone (rage, energy...)"), value = "all" },
+        }, ap, T("La mana est rare sur Forever : par défaut, chaque membre qui en utilise a sa barre.",
+                 "Mana is scarce on Forever: by default, every member who uses it has a bar."))
+        c:Toggle(T("Mana en % sur la barre de vie", "Mana % on the health bar"), p .. "showManaText", ap,
+            T("Bleu, orange sous 40 %, rouge sous 20 %.", "Blue, orange under 40%, red under 20%."))
+    end
     c:Done()
 
     c = page:Card(T("Nom et icônes", "Name and icons"))

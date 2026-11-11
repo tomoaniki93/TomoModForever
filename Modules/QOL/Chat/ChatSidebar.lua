@@ -42,6 +42,7 @@ local ICON_TEXTURES = {
         active = SIDEBAR_TEX .. "deafen_active.tga",
     },
     copy = SIDEBAR_TEX .. "copy.tga",
+    codex = SIDEBAR_TEX .. "codex.tga",
     settings = SIDEBAR_TEX .. "settings.tga",
     scroll = SIDEBAR_TEX .. "scroll.tga",
 }
@@ -59,6 +60,7 @@ local STATIC_BUTTONS = {
     guild = true,
     voice = true,
     copy = true,
+    codex = true,
     settings = true,
     scroll = true,
 }
@@ -525,6 +527,15 @@ function Sidebar:BuildButtons()
     copy:SetScript("OnClick", function()
         PlayClick()
         if Chat.Modules.Copy then Chat.Modules.Copy:Toggle() end
+    end)
+
+    -- Dungeon codex (/codex): dungeons, routes, dungeon and elite quests.
+    local codex = CreateButton(parent, "codex")
+    SetTooltip(codex, Localize("chat_v4_btn_codex", "Dungeon Codex"), Localize("chat_v4_tip_codex", "Dungeons for your level, their routes, dungeon quests and elite quests (/codex)."))
+    codex:SetScript("OnClick", function()
+        PlayClick()
+        local dc = TomoMod_DungeonCodex
+        if dc and dc.Toggle then dc.Toggle() end
     end)
 
     local settings = CreateButton(parent, "settings")
