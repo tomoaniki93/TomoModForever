@@ -66,6 +66,7 @@ CHANGELOG = {
         version = "1.2.4",
         highlights = {
             L["wn_124_triage"],
+            L["wn_124_quests"],
         },
     },
     {

@@ -21,6 +21,11 @@
 -- the data file; `set` also prints the line to paste into it.
 --
 -- Optional: one chat line on level up when a dungeon comes within reach.
+--
+-- Quests tab (1.2.4): the quests of the selected dungeon for your faction
+-- (DungeonQuestData.lua), with their state read from the game: done,
+-- in your quest log, or still to take. Titles come from the client in
+-- its own language when it knows them, the English name otherwise.
 -- =====================================================================
 
 TomoMod_DungeonCodex = TomoMod_DungeonCodex or {}
@@ -214,6 +219,63 @@ local win
 local rows, steps = {}, {}
 local list, offset, selected = {}, 0, nil
 local VISIBLE
+local detailTab = "route"         -- "route" | "quests"
+local qrows, qlist, qoffset = {}, {}, 0
+local QROW_H, QVISIBLE = 30, 0
+local RefreshQuests
+
+-- ---------------------------------------------------------------------
+-- Dungeon quests
+-- ---------------------------------------------------------------------
+local ICON_DONE  = "Interface\\RaidFrame\\ReadyCheck-Ready"
+local ICON_LOG   = "Interface\\GossipFrame\\ActiveQuestIcon"
+local ICON_AVAIL = "Interface\\GossipFrame\\AvailableQuestIcon"
+
+local function QuestTitle(id, fallback)
+    if C_QuestLog and C_QuestLog.GetTitleForQuestID then
+        local ok, t = pcall(C_QuestLog.GetTitleForQuestID, id)
+        if ok and type(t) == "string" and t ~= "" and not (issecretvalue and issecretvalue(t)) then return t end
+        if C_QuestLog.RequestLoadQuestByID then pcall(C_QuestLog.RequestLoadQuestByID, id) end
+    end
+    return fallback
+end
+
+local function QuestState(id)
+    if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted and C_QuestLog.IsQuestFlaggedCompleted(id) then return "done" end
+    if C_QuestLog and C_QuestLog.GetLogIndexForQuestID and C_QuestLog.GetLogIndexForQuestID(id) then return "log" end
+    if C_QuestLog and C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(id) then return "log" end
+    return "avail"
+end
+
+local STATE_ORDER = { log = 1, avail = 2, done = 3 }
+
+-- Quests of a dungeon for the player's faction, in log first, then to take
+-- (by level), then done. Returns the list and how many are not done.
+local function DungeonQuests(d, fac)
+    local data = TomoMod_DungeonQuestData and TomoMod_DungeonQuestData[d.key]
+    local out, todo = {}, 0
+    for _, q in ipairs(data or {}) do
+        local side = q[4]
+        if side == "B" or side == fac then
+            local state = QuestState(q[1])
+            if state ~= "done" then todo = todo + 1 end
+            out[#out + 1] = { id = q[1], name = q[2], level = q[3], side = side, giver = q[5], prereq = q[6], state = state }
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.state ~= b.state then return STATE_ORDER[a.state] < STATE_ORDER[b.state] end
+        if (a.level or 0) ~= (b.level or 0) then return (a.level or 0) < (b.level or 0) end
+        return a.name < b.name
+    end)
+    return out, todo
+end
+
+local function GiverText(giver)
+    if not giver then return nil end
+    local item = giver:match("^item:(.+)$")
+    if item then return string.format(T("Commence avec l'objet %s", "Starts from the item %s"), item) end
+    return giver
+end
 
 local function Flat(parent, w, h, label, onClick)
     local b = CreateFrame("Button", nil, parent)
@@ -400,7 +462,7 @@ local function CreateWindow()
     det.tags = FS(det, FONT, 10, GOLD);        det.tags:SetPoint("TOPLEFT", det.sub, "BOTTOMLEFT", 0, -4); det.tags:SetWidth(DW)
 
     det.routeHead = FS(det, FONT_BOLD, 11, GOLD)
-    det.routeHead:SetPoint("TOPLEFT", det.tags, "BOTTOMLEFT", 0, -12)
+    det.routeHead:SetPoint("TOPLEFT", det.tags, "BOTTOMLEFT", 0, -38)
     local rline = Line(det); rline:SetPoint("TOPLEFT", det.routeHead, "BOTTOMLEFT", 0, -3); rline:SetPoint("RIGHT", det, "RIGHT", 0, 0); rline:SetHeight(1)
     det.rline = rline
 
@@ -422,6 +484,64 @@ local function CreateWindow()
     det.wp:SetPoint("BOTTOMLEFT", 0, 0)
     det.map = Flat(det, 130, 26, T("Ouvrir la carte", "Open map"), function() if selected then OpenZoneMap(selected) end end)
     det.map:SetPoint("LEFT", det.wp, "RIGHT", 8, 0)
+
+    -- Route / Quests tabs, under the tags line.
+    local TAB_W = 120
+    det.tabRoute = Flat(det, TAB_W, 20, T("Itinéraire", "Route"), function() detailTab = "route"; ShowDetail(selected) end)
+    det.tabRoute:SetPoint("TOPLEFT", det.tags, "BOTTOMLEFT", 0, -8)
+    det.tabQuests = Flat(det, TAB_W + 30, 20, T("Quêtes", "Quests"), function() detailTab = "quests"; ShowDetail(selected) end)
+    det.tabQuests:SetPoint("LEFT", det.tabRoute, "RIGHT", 6, 0)
+
+    -- Quest list (scrollable), between the tabs and the position line.
+    local qf = CreateFrame("Frame", nil, det)
+    qf:SetPoint("TOPLEFT", det.tabRoute, "BOTTOMLEFT", 0, -8)
+    qf:SetPoint("RIGHT", det, "RIGHT", 0, 0)
+    qf:SetPoint("BOTTOM", det.wp, "TOP", 0, 26)
+    qf:EnableMouseWheel(true)
+    qf:SetScript("OnMouseWheel", function(_, delta)
+        local maxOff = math.max(0, #qlist - QVISIBLE)
+        qoffset = math.min(maxOff, math.max(0, qoffset - delta))
+        RefreshQuests()
+    end)
+    qf:Hide()
+    det.quests = qf
+    QVISIBLE = math.max(1, math.floor((H - 40 - 10 - 120 - 60) / QROW_H))
+    for i = 1, QVISIBLE do
+        local r = CreateFrame("Button", nil, qf)
+        r:SetHeight(QROW_H - 2)
+        r:SetPoint("TOPLEFT", 0, -(i - 1) * QROW_H)
+        r:SetPoint("RIGHT", qf, "RIGHT", -6, 0)
+        local hl = r:CreateTexture(nil, "BACKGROUND")
+        hl:SetAllPoints(); hl:SetTexture(SOLID); hl:SetVertexColor(1, 1, 1, 0)
+        r.hl = hl
+        r.icon = r:CreateTexture(nil, "ARTWORK")
+        r.icon:SetSize(14, 14); r.icon:SetPoint("TOPLEFT", 2, -2)
+        r.name = FS(r, FONT, 11, TEXT); r.name:SetPoint("TOPLEFT", r.icon, "TOPRIGHT", 6, 1)
+        r.name:SetPoint("RIGHT", r, "RIGHT", -2, 0); r.name:SetWordWrap(false)
+        r.info = FS(r, FONT, 9, DIM); r.info:SetPoint("TOPLEFT", r.name, "BOTTOMLEFT", 0, -2)
+        r.info:SetPoint("RIGHT", r, "RIGHT", -2, 0); r.info:SetWordWrap(false)
+        r:SetScript("OnEnter", function(self)
+            local q = self.q
+            if not q then return end
+            self.hl:SetVertexColor(1, 1, 1, 0.05)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(QuestTitle(q.id, q.name), YELLOW[1], YELLOW[2], YELLOW[3], true)
+            if q.level then GameTooltip:AddLine(string.format(T("Niveau %d", "Level %d"), q.level), TEXT[1], TEXT[2], TEXT[3]) end
+            local giver = GiverText(q.giver)
+            if giver then GameTooltip:AddLine(string.format(T("Donneur : %s", "Quest giver: %s"), giver), TEXT[1], TEXT[2], TEXT[3], true) end
+            if q.prereq then
+                GameTooltip:AddLine(string.format(T("Après : %s", "After: %s"), QuestTitle(q.prereq, "#" .. q.prereq)), DIM[1], DIM[2], DIM[3], true)
+            end
+            local st = (q.state == "done" and T("Faite", "Done")) or (q.state == "log" and T("Dans ton journal", "In your quest log")) or T("À prendre", "To take")
+            GameTooltip:AddLine(st, GOLD[1], GOLD[2], GOLD[3])
+            GameTooltip:AddLine("ID " .. q.id, DIM[1], DIM[2], DIM[3])
+            GameTooltip:Show()
+        end)
+        r:SetScript("OnLeave", function(self) self.hl:SetVertexColor(1, 1, 1, 0); GameTooltip:Hide() end)
+        qrows[i] = r
+    end
+    det.qempty = FS(qf, FONT, 11, DIM); det.qempty:SetPoint("TOPLEFT", 2, -4); det.qempty:SetWidth(DW)
+    det.qempty:SetWordWrap(true)
 
     det.empty = FS(det, FONT, 11, DIM); det.empty:SetPoint("CENTER")
 
@@ -464,6 +584,37 @@ RefreshList = function()
     win.levelFS:SetText(string.format(T("Niveau %d", "Level %d"), lvl))
 end
 
+RefreshQuests = function()
+    local det = win.det
+    local lvl = PlayerLevel()
+    for i = 1, QVISIBLE do
+        local r, q = qrows[i], qlist[i + qoffset]
+        r.q = q
+        if q then
+            r.icon:SetTexture(q.state == "done" and ICON_DONE or q.state == "log" and ICON_LOG or ICON_AVAIL)
+            r.icon:SetDesaturated(false)
+            r.name:SetText(QuestTitle(q.id, q.name))
+            local c = (q.state == "done" and DIM) or (q.level and q.level > lvl + 2 and RED) or TEXT
+            r.name:SetTextColor(c[1], c[2], c[3])
+            local info = {}
+            if q.level then info[#info + 1] = string.format(T("Niv. %d", "Lvl %d"), q.level) end
+            local giver = GiverText(q.giver)
+            if giver then info[#info + 1] = giver end
+            if q.side == "B" then info[#info + 1] = T("Les deux factions", "Both factions") end
+            r.info:SetText(table.concat(info, "  -  "))
+            r:Show()
+        else
+            r:Hide()
+        end
+    end
+    if #qlist == 0 then
+        det.qempty:SetText(T("Aucune quête connue pour ta faction dans ce donjon.", "No known quest for your faction in this dungeon."))
+        det.qempty:Show()
+    else
+        det.qempty:Hide()
+    end
+end
+
 local SRC_TEXT = {
     override = { fr = "Position : enregistrée par toi", en = "Position: recorded by you" },
     guide    = { fr = "Position : relevée par les guides Forever", en = "Position: from Forever guides" },
@@ -473,10 +624,11 @@ local SRC_TEXT = {
 ShowDetail = function(d)
     local det = win.det
     local show = d ~= nil
-    for _, k in ipairs({ "name", "sub", "tags", "routeHead", "rline", "note", "pos", "wp", "map" }) do
+    for _, k in ipairs({ "name", "sub", "tags", "routeHead", "rline", "note", "pos", "wp", "map", "tabRoute", "tabQuests" }) do
         if show then det[k]:Show() else det[k]:Hide() end
     end
     for _, s in ipairs(steps) do s.num:Hide(); s.txt:Hide() end
+    det.quests:Hide()
     if not d then
         det.empty:SetText(T("Aucun donjon.", "No dungeon."))
         det.empty:Show()
@@ -502,9 +654,24 @@ ShowDetail = function(d)
     end
     det.tags:SetText(table.concat(tags, "  -  "))
 
+    -- Tabs: the quest count says what is left to do.
+    local quests, todo = DungeonQuests(d, fac)
+    det.tabQuests.text:SetText(string.format(T("Quêtes (%d)", "Quests (%d)"), todo))
+    local onQuests = detailTab == "quests"
+    det.tabRoute.bg:SetVertexColor(onQuests and 0.11 or 0.24, onQuests and 0.09 or 0.18, onQuests and 0.07 or 0.10, 1)
+    det.tabQuests.bg:SetVertexColor(onQuests and 0.24 or 0.11, onQuests and 0.18 or 0.09, onQuests and 0.10 or 0.07, 1)
+    if onQuests then
+        for _, k in ipairs({ "routeHead", "rline", "note" }) do det[k]:Hide() end
+        if qlist.key ~= d.key then qoffset = 0 end
+        qlist = quests
+        qlist.key = d.key
+        det.quests:Show()
+        RefreshQuests()
+    end
+
     det.routeHead:SetText(string.format(T("Itinéraire (%s)", "Route (%s)"), fac == "A" and "Alliance" or "Horde"))
     local r = d.routes and (d.routes[fac] or d.routes.both)
-    local lines = r and L(r) or {}
+    local lines = (not onQuests and r) and L(r) or {}
     local prev = det.rline
     for i, s in ipairs(steps) do
         local text = lines[i]
@@ -521,7 +688,7 @@ ShowDetail = function(d)
 
     det.note:ClearAllPoints()
     det.note:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", prev == det.rline and 0 or -22, -10)
-    det.note:SetText(L(d.note) or "")
+    det.note:SetText(onQuests and "" or (L(d.note) or ""))
 
     local map, x, y, src = Entrance(d)
     det.pos:ClearAllPoints()
@@ -633,6 +800,38 @@ function DC.Initialize()
     SLASH_TOMOMODCODEX1 = "/codex"
     SLASH_TOMOMODCODEX2 = "/tmfcodex"
     SlashCmdList.TOMOMODCODEX = Slash
+
+    -- Quest titles arrive from the server; the quest log changes state.
+    local q = CreateFrame("Frame")
+    for _, e in ipairs({ "QUEST_DATA_LOAD_RESULT", "QUEST_TURNED_IN", "QUEST_ACCEPTED", "QUEST_REMOVED" }) do
+        pcall(q.RegisterEvent, q, e)
+    end
+    local pending = false
+    q:SetScript("OnEvent", function()
+        if pending or not (win and win:IsShown() and detailTab == "quests") then return end
+        pending = true
+        C_Timer.After(0.2, function()
+            pending = false
+            if win and win:IsShown() and selected then ShowDetail(selected) end
+        end)
+    end)
+
+    -- One chat line at login (not after a /reload) about the codex.
+    local login = CreateFrame("Frame")
+    login:RegisterEvent("PLAYER_ENTERING_WORLD")
+    login:SetScript("OnEvent", function(self, _, isInitialLogin)
+        self:UnregisterAllEvents()
+        local db = DB()
+        if not (isInitialLogin and db and db.enabled and db.loginHint ~= false) then return end
+        C_Timer.After(8, function()
+            local text = TomoMod_L and TomoMod_L["codex_login_hint"]
+            if type(text) ~= "string" or text == "codex_login_hint" then
+                text = T("Tape |cffffd100/codex|r pour voir les donjons de ton niveau, leur itinéraire et leurs quêtes.",
+                         "Type |cffffd100/codex|r to see the dungeons for your level, how to get there and their quests.")
+            end
+            print(PREFIX .. text)
+        end)
+    end)
 
     local f = CreateFrame("Frame")
     f:RegisterEvent("PLAYER_LEVEL_UP")

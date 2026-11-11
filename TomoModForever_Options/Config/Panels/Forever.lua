@@ -546,6 +546,7 @@ K.RegisterPage({
             c:Done()
 
             c = page:Card(T("Réglages", "Settings"))
+            c:Toggle(T("Rappeler /codex dans le chat à la connexion", "Remind /codex in the chat at login"), "dungeonCodex.loginHint", DCApply)
             c:Toggle(T("Prévenir dans le chat quand un donjon devient accessible", "Chat line when a dungeon comes within reach"), "dungeonCodex.levelUpHint", DCApply,
                 T("Deux niveaux avant le minimum du donjon.", "Two levels before the dungeon's minimum."))
             c:Slider(T("Taille de la fenêtre", "Window size"), "dungeonCodex.scale", 0.7, 1.6, 0.05, DCApply, "%.2f")

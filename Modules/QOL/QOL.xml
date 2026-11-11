@@ -68,6 +68,7 @@
     <Include file="Forever\TrainerData.lua" />
     <Include file="Forever\TrainerReminder.lua" />
     <Include file="Forever\DungeonCodexData.lua" />
+    <Include file="Forever\DungeonQuestData.lua" />
     <Include file="Forever\DungeonCodex.lua" />
 
     <!-- Modules: Mail (TomoMail port) -->

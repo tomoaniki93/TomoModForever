@@ -1,0 +1,438 @@
+# key: ID|name|level|side(A/H/B)|giver|prereq   (- = unknown; giver "item:X" = starts from an item)
+[rfc]
+5723|Testing an Enemy's Strength|15|H|Rahauro|-
+5722|Searching for the Lost Satchel|16|H|Rahauro|-
+5724|Returning the Lost Satchel|16|H|Maur Grimtotem|5722
+5725|The Power to Destroy...|16|H|Varimathras|-
+5728|Hidden Enemies|16|H|Thrall|5727
+5761|Slaying the Beast|16|H|Neeru Fireblade|-
+[hot]
+96395|An Ancient Grudge|15|B|Ghostly Attendant|-
+96403|Important Heirlooms|15|B|Thom Filch|-
+96394|The Restless Dead|15|A|Afadra Dunwall|-
+96393|Old Ironforge Incursion|16|A|Earthseer Farsen|-
+98423|The Treaty of Understanding|16|A|item:Treaty of Understanding|-
+[rol]
+95189|Crest of Lordaeron|22|B|item:Crest of Lordaeron|-
+95250|Abominable Creatures|21|A|Captain Truman|-
+95195|Bloodied Insignia|22|A|item:Bloodied Insignia|-
+92415|Remember That I Love You|22|A|item:Blood-Stained Letter|-
+92422|The Wrath of Rath'mael|22|H|Deathguard Kristof|-
+92421|Light's Justice|22|H|Morbin Lightbane|-
+92401|A Frightened Request|22|H|Tabitha Heartweaver|-
+95216|The New Plague|22|H|Theodore Griffs|-
+97288|Unending Torment|21|H|item:Abominable Head|-
+97290|Unending Torment|21|H|Master Apothecary Faranell|97288
+[wc]
+1486|Deviate Hides|17|B|Nalpak|-
+1491|Smart Drinks|18|B|Mebok Mizzyrix|-
+959|Trouble at the Docks|18|B|Crane Operator Bigglefuzz|-
+1487|Deviate Eradication|21|B|Ebru|-
+6981|The Glowing Shard|26|B|item:Glowing Shard|-
+3369|In Nightmares|26|B|-|6981
+962|Serpentbloom|18|H|Apothecary Zamah|-
+914|Leaders of the Fang|22|H|Nara Wildmane|1490
+[vc]
+214|Red Silk Bandanas|17|A|Scout Riell|-
+168|Collecting Memories|18|A|Wilder Thistlenettle|-
+92753|Destruction in Deadmines|18|A|item:Extra-Destructive Explosives|-
+92819|Destruction in Deadmines|18|A|Alba Fairmoon|92753
+167|Oh Brother. . .|20|A|Wilder Thistlenettle|-
+2040|Underground Assault|20|A|Shoni the Shilent|2041
+166|The Defias Brotherhood|22|A|Gryan Stoutmantle|155
+373|The Unsent Letter|22|A|item:An Unsent Letter|-
+1654|The Test of Righteousness|22|A|Jordan Stilwell|-
+[sfk]
+1740|The Orb of Soran'ruk|25|B|Doan Karhan|-
+1654|The Test of Righteousness|22|A|Jordan Stilwell|-
+1013|The Book of Ur|26|H|Keeper Bel'dugur|-
+1098|Deathstalkers in Shadowfang|25|H|High Executor Hadrec|-
+1014|Arugal Must Die|27|H|Dalar Dawnweaver|-
+[bfd]
+1740|The Orb of Soran'ruk|25|B|Doan Karhan|-
+971|Knowledge in the Deeps|23|A|Gerrig Bonegrip|-
+1275|Researching the Corruption|24|A|Gershala Nightwhisper|-
+1199|Twilight Falls|25|A|Argent Guard Manados|-
+1200|Blackfathom Villainy|27|A|Argent Guard Thaelrid|-
+6564|Allegiance to the Old Gods|22|H|item:Damp Note|-
+6563|The Essence of Aku'Mai|22|H|Je'neu Sancrea|-
+6565|Allegiance to the Old Gods|26|H|Je'neu Sancrea|6564
+6921|Amongst the Ruins|27|H|Je'neu Sancrea|-
+6561|Blackfathom Villainy|27|H|Argent Guard Thaelrid|-
+[stocks]
+386|What Comes Around...|25|A|Guard Berton|-
+377|Crime and Punishment|26|A|Councilman Millstipe|-
+387|Quell The Uprising|26|A|Warden Thelwater|-
+388|The Color of Blood|26|A|Nikova Raskol|-
+378|The Fury Runs Deep|27|A|Motley Garmason|-
+391|The Stockade Riots|29|A|Warden Thelwater|-
+[exc]
+98815|Highland Hides|28|A|James Halloran|-
+95772|Songblade Search|31|A|Dorin Songblade|-
+95795|Fallen in the Fen|31|A|Daewyn|-
+95810|Lost Relic Carry|31|A|item:Titan Relic|-
+98824|Prehistoric Prism|31|A|-|95810
+95646|Horrors in the Highland|31|A|Rethiel the Greenwarden|-
+95737|Seeking Caitlin|31|A|Llana|-
+95647|Lost in the Thicket Things|31|A|Caitlin Grassman|-
+95809|Heartwoven|31|A|-|95647
+95697|Changing Tastes|31|H|Borstan|-
+95664|Elder Knowledge|31|H|item:Titan Relic|-
+98823|Earthen Echo|31|H|-|95664
+95663|Dragonmaw Rumors|31|H|Zaruk|-
+95682|Open the Maw|31|H|Deathstalker Agent|95663
+[dal]
+92458|Heart of Disruption|33|A|item:Dalaran Sewer Key|-
+92489|Power Overwhelming|33|A|High Sorcerer Andromath|-
+92456|A Green Sample|33|A|Shylamiir|-
+92457|Starving Arcane|33|A|Archmage Modera|-
+96984|Heart of Disruption|33|H|item:Dalaran Sewer Key|-
+96986|The Grave Knight|33|H|Melisara|-
+96988|Source of Power|33|H|Doctor Martin Felben|-
+96987|Opportunistic Education|33|H|Rexxie Copperclutch|-
+[rfk]
+1221|Blueleaf Tubers|26|B|Mebok Mizzyrix|-
+1144|Willix the Importer|30|B|Willix the Importer|-
+1701|Fire Hardened Mail|28|A|Furen Longbeard|-
+1142|Mortality Wanes|30|A|Heralath Fallowbrook|-
+1101|The Crone of the Kraul|34|A|Falfindel Waywarder|1100
+1838|Brutal Armor|30|H|Thun'grim Firegaze|-
+1102|A Vengeful Fate|34|H|Auld Stonespire|-
+1109|Going, Going, Guano!|33|H|Master Apothecary Faranell|-
+[gnomer]
+2904|A Fine Mess|30|B|Kernobee|-
+2951|The Sparklematic 5200!|30|B|The Sparklematic 5200|-
+2952|The Sparklematic 5200!|30|B|The Sparklematic 5200|-
+2953|More Sparklematic Action|30|B|The Sparklematic 5200|-
+2945|Grime-Encrusted Ring|34|B|item:Grime-Encrusted Ring|-
+2922|Save Techbot's Brain!|26|A|Tinkmaster Overspark|2923
+2926|Gnogaine|27|A|Ozzie Togglevolt|-
+2928|Gyrodrillmatic Excavationators|30|A|Shoni the Shilent|-
+2962|The Only Cure is More Green Glow|30|A|Ozzie Togglevolt|2926
+2924|Essential Artificials|30|A|Klockmort Spannerspan|2925
+2930|Data Rescue|30|A|Master Mechanic Castpipe|2931
+2929|The Grand Betrayal|35|A|High Tinker Mekkatorque|-
+2947|Return of the Ring|34|A|The Sparklematic 5200|2945
+2948|Gnome Improvement|34|A|Talvash del Kissel|2947
+2841|Rig Wars|35|H|Nogg|-
+2843|Gnomer-gooooone!|35|H|Scooty|2842
+2949|Return of the Ring|34|H|The Sparklematic 5200|2945
+2950|Nogg's Ring Redo|34|H|Nogg|2949
+[smgy]
+1951|Rituals of Power|40|B|Magus Tirth|1950
+1050|Mythology of the Titans|38|A|Librarian Mae Paledust|-
+1051|Vorrel's Revenge|33|H|Vorrel Sengutz|-
+1160|Test of Lore|36|H|Parqual Fintallas|1159
+1049|Compendium of the Fallen|38|H|Sage Truthseeker|-
+1113|Hearts of Zeal|33|H|Master Apothecary Faranell|1109
+[smlib]
+1951|Rituals of Power|40|B|Magus Tirth|1950
+1050|Mythology of the Titans|38|A|Librarian Mae Paledust|-
+96800|Past Due|38|A|Magus Olvek|-
+1053|In the Name of the Light|40|A|Raleigh the Devout|-
+1051|Vorrel's Revenge|33|H|Vorrel Sengutz|-
+1160|Test of Lore|36|H|Parqual Fintallas|1159
+1049|Compendium of the Fallen|38|H|Sage Truthseeker|-
+1113|Hearts of Zeal|33|H|Master Apothecary Faranell|1109
+1048|Into The Scarlet Monastery|42|H|Varimathras|-
+[drowned]
+95789|Shady Saltseers|40|B|Krazek|-
+95791|The Saltseer Captain|40|B|Krazek|-
+95788|Magics of the Drowned City|40|A|-|-
+95787|Take Two With Water|40|A|-|-
+97130|Ancient Gurubashi Secrets|40|A|Archmage Timear|-
+95776|The Only Good Brinescale...|38|H|Commander Aggro'gosh|-
+96774|Ancient Gurubashi Idol|40|H|Mazu'kon|-
+95775|The Drowned City|40|H|Kin'weelay|-
+[smarm]
+1951|Rituals of Power|40|B|Magus Tirth|1950
+1050|Mythology of the Titans|38|A|Librarian Mae Paledust|-
+1053|In the Name of the Light|40|A|Raleigh the Devout|-
+1051|Vorrel's Revenge|33|H|Vorrel Sengutz|-
+1160|Test of Lore|36|H|Parqual Fintallas|1159
+1049|Compendium of the Fallen|38|H|Sage Truthseeker|-
+1113|Hearts of Zeal|33|H|Master Apothecary Faranell|1109
+1048|Into The Scarlet Monastery|42|H|Varimathras|-
+[rfd]
+6626|A Host of Evil|35|B|Myriam Moonsinger|-
+3525|Extinguishing the Idol|37|B|Belnistrasz|-
+3523|Scourge of the Downs|37|B|Belnistrasz|-
+96773|The Coldbringer's Eye|41|B|Archmage Lan'dalock / Sutara Plainstalker|-
+93604|Agamaggan's Blood|45|B|-|-
+3636|Bring the Light|42|A|Archbishop Benedictus|-
+6522|An Unholy Alliance|36|H|item:Small Scroll|-
+6521|An Unholy Alliance|36|H|Varimathras|6522
+3341|Bring the End|42|H|Andrew Brownell|-
+[smcath]
+1951|Rituals of Power|40|B|Magus Tirth|1950
+1050|Mythology of the Titans|38|A|Librarian Mae Paledust|-
+1053|In the Name of the Light|40|A|Raleigh the Devout|-
+1051|Vorrel's Revenge|33|H|Vorrel Sengutz|-
+1160|Test of Lore|36|H|Parqual Fintallas|1159
+1394|Final Passage|36|H|-|1160
+1049|Compendium of the Fallen|38|H|Sage Truthseeker|-
+1113|Hearts of Zeal|33|H|Master Apothecary Faranell|1109
+1048|Into The Scarlet Monastery|42|H|Varimathras|-
+[kroldok]
+94981|Key Ingredients|41|B|Alphonse Dumas / Kreza Darkthorn|-
+94984|Tome of Twilight|44|B|Ashe Amberhall|-
+94982|Eye of Mugg|45|B|-|-
+96771|Vengeance of the Highborne|45|A|-|-
+94980|Krol'dok Moulding|41|A|item:Krol'dok Moulding|-
+94998|Curios of Curiosity|42|A|Ashe Amberhall|-
+94997|Lingering Essence|42|A|Sergeant Riftan|-
+94983|Twilight Mementos|42|A|Sergeant Riftan|-
+94973|Krol'dok Moulding|41|H|item:Krol'dok Moulding|-
+94975|A Token of Vengeance|42|H|-|-
+[ulda]
+2418|Power Stones|36|B|Rigglefuzz|-
+709|Solution to Doom|40|B|Theldurin the Lost|-
+1956|Power in Uldaman|40|B|Tabetha|-
+1192|Indurium Ore|42|B|Pozzik|-
+704|Agmond's Fate|38|A|Prospector Ironband|739
+722|Amulet of Secrets|40|A|Hammertoe Grez|-
+2240|The Hidden Chamber|40|A|Baelog|-
+2199|Lore for a Price|41|A|Talvash del Kissel|-
+2198|The Shattered Necklace|41|A|item:Shattered Necklace|-
+17|Uldaman Reagent Run|42|A|Ghak Healtouch|-
+3375|Replacement Phial|42|A|Talvash del Kissel|-
+1360|Reclaimed Treasures|43|A|Krom Stoutarm|-
+2201|Find the Gems|43|A|Remains of a Paladin|-
+2204|Restoring the Necklace|44|A|Talvash's Scrying Bowl|-
+2361|Restoring the Necklace|44|A|Talvash del Kissel|-
+1139|The Lost Tablets of Will|45|A|Advisor Belgrum|-
+2279|The Platinum Discs|47|A|The Discs of Norgannon|-
+2439|The Platinum Discs|47|A|Dinita Stonemantle|2279
+2283|Necklace Recovery|41|H|Dran Droffers|-
+2202|Uldaman Reagent Run|42|H|Jarkal Mossmeld|-
+2338|Translating the Journal|42|H|Jarkal Mossmeld|-
+2342|Reclaimed Treasures|43|H|Patrick Garrett|-
+2340|Deliver the Gems|44|H|Jarkal Mossmeld|-
+2339|Find the Gems and Power Source|44|H|Jarkal Mossmeld|-
+2341|Necklace Recovery, Take 3|44|H|Dran Droffers|-
+2280|The Platinum Discs|47|H|The Discs of Norgannon|-
+2440|The Platinum Discs|47|H|Bena Winterhoof|2280
+[zf]
+2865|Scarab Shells|45|B|Tran'rek|-
+3042|Troll Temper|45|B|Trenton Lighthammer|-
+2846|Tiara of the Deep|46|B|Tabetha|-
+2768|Divino-matic Rod|47|B|Chief Engineer Bilgewhizzle|-
+3527|The Prophecy of Mosh'aru|47|B|Yeh'kinya|-
+2770|Gahz'rilla|50|B|Wizzle Brassbolts|-
+96770|The Witch Doctor's Head|46|A|Archmage Lan'dalock|-
+2991|Nekrum's Medallion|47|A|Thadius Grimshade|-
+96775|Zum'rah's Head|46|H|Mazu'kon|-
+[mara]
+7070|Shadowshard Fragments|42|B|Archmage Tervosh / Uthel'nay|-
+7028|Twisted Evils|47|B|Willow|-
+7041|Vyletongue Corruption|47|B|Talendria / Vark Battlescar|-
+7067|The Pariah's Instructions|48|B|Centaur Pariah|-
+93404|Rot and Regret|49|B|-|-
+7044|Legends of Maraudon|49|B|Cavindra|-
+7046|The Scepter of Celebras|49|B|Celebras the Redeemed|-
+7065|Corruption of Earth and Seed|51|B|Keeper Marandis / Selendra|-
+7066|Seed of Life|51|B|Zaetar's Spirit|-
+96776|An'she's Radiance|51|H|-|-
+[alcaz]
+96337|More Valuable Than Gold|53|B|-|-
+96335|The Man in the Iron Chains|53|B|-|-
+96772|The Dragon's Journal|53|A|-|-
+96381|A Bit of Wet Work|53|A|-|-
+96377|State Secrets|53|A|-|-
+96332|A Little Payback|53|H|-|-
+96334|Blood Red Bandanas|53|H|-|-
+95483|Thrall Needs to Know|53|H|-|-
+[st]
+1475|Into The Temple of Atal'Hakkar|50|A|Brohann Caskbelly|-
+1445|The Temple of Atal'Hakkar|50|H|Fel'zerul|-
+3446|Into the Depths|51|B|Marvon Rivetseeker|-
+3447|Secret of the Circle|51|B|Marvon Rivetseeker|-
+8236|The Azure Key|52|B|Archmage Xylem|-
+8232|The Green Drake|52|B|Ogtinc|-
+8253|Destroy Morphaz|52|B|Archmage Xylem|-
+8257|Blood of Morphaz|52|B|Ogtinc|-
+4146|Zapper Fuel|52|H|Liv Rizzlefix|-
+4148|Bloodpetal Zapper|52|H|-|4146
+1446|Jammal'an the Prophet|53|B|Atal'ai Exile|-
+3528|The God Hakkar|53|B|Yeh'kinya|-
+3373|The Essence of Eranikus|55|B|item:Essence of Eranikus|-
+[brd]
+3802|Dark Iron Legacy|52|B|Franclorn Forgewright|-
+4136|Ribbly Screwspigot|53|B|Yuka Screwspigot|-
+4201|The Love Potion|54|B|Mistress Nagmara|-
+4083|The Spectral Chalice|55|B|item:Spectral Chalice|-
+4123|The Heart of the Mountain|55|B|Maxwort Uberglint|-
+4295|Rocknot's Ale|55|B|Private Rocknot|-
+4024|A Taste of Flame|58|B|Cyrus Therepentous|-
+7848|Attunement to the Core|60|B|Lothos Riftwaker|-
+9015|The Challenge|60|B|Falrin Treeshaper|-
+7604|A Binding Contract|60|B|item:Thorium Brotherhood Contract|-
+4242|Abandoned Hope|54|A|Marshal Windsor|-
+4126|Hurley Blackbreath|55|A|Ragnar Thunderbrew|-
+4263|Incendius!|56|A|Jalinda Sprig|-
+4286|The Good Stuff|56|A|Oralius|-
+4264|A Crumpled Up Note|58|A|item:A Crumpled Up Note|-
+4282|A Shred of Hope|58|A|Marshal Windsor|-
+4322|Jail Break!|58|A|Marshal Windsor|-
+4362|The Fate of the Kingdom|59|A|King Magni Bronzebeard|-
+4363|The Princess's Surprise|59|A|Princess Moira Bronzebeard|-
+4081|KILL ON SIGHT: Dark Iron Dwarves|52|H|WANTED poster|-
+4082|KILL ON SIGHT: High Ranking Dark Iron Officials|54|H|KILL ON SIGHT poster|-
+7201|The Last Element|54|H|Shadowmage Vivian Lagrave|-
+97197|Fragment of the Firelands|55|H|-|-
+4134|Lost Thunderbrew Recipe|55|H|Shadowmage Vivian Lagrave|-
+3907|Disharmony of Fire|56|H|Thunderheart|-
+4132|Operation: Death to Angerforge|58|H|Warlord Goretooth|-
+4121|Precarious Predicament|58|H|Grark Lorkrub|-
+4063|The Rise of the Machines|58|H|Lotwil Veriatus|-
+4003|The Royal Rescue|59|H|Thrall|-
+4004|The Princess Saved?|60|H|Princess Moira Bronzebeard|4003
+[dme]
+7488|Lethtendris's Web|57|A|Latronicus Moonspear|-
+7489|Lethtendris's Web|57|H|Talo Thornhoof|-
+7441|Pusillin and the Elder Azj'Tordin|58|B|Azj'Tordin|-
+7581|The Prison's Bindings|60|B|Daio the Decrepit|-
+1193|A Broken Trap|60|B|Broken Trap|-
+5528|The Gordok Taste Test|60|B|Stomper Kreeg|-
+1318|Unfinished Gordok Business|60|B|-|-
+8948|Anthion's Old Friend|60|B|Anthion Harmon|-
+8949|Falrin's Vendetta|60|B|Falrin Treeshaper|-
+8950|The Instigator's Enchantment|60|B|Falrin Treeshaper|-
+8967|The Left Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+8990|The Right Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+[lbrs]
+4788|The Final Tablets|58|B|Prospector Ironboot|-
+8181|Confront Yeh'kinya|58|B|-|4788
+5001|Bijou's Belongings|59|B|Bijou|-
+4862|En-Ay-Es-Tee-Why|59|B|Kibler|-
+4729|Kibler's Exotic Pets|59|B|Kibler|-
+5047|Finkle Einhorn, At Your Service!|60|B|Finkle Einhorn|-
+4866|Mother's Milk|60|B|Ragged John|-
+5127|The Demon Forge|60|B|Lorax|-
+4867|Urok Doomhowl|60|B|Warosh|-
+4735|Egg Collection|60|B|Tinkee Steamboil|-
+4734|Egg Freezing|60|B|Tinkee Steamboil|-
+4742|Seal of Ascension|60|B|Vaelan|-
+4743|Seal of Ascension|60|B|Vaelan|4742
+5160|The Matron Protectorate|60|B|Awbee|-
+8995|Mea Culpa, Lord Valthalak|60|B|Bodley|-
+8996|Return to Bodley|60|B|-|8995
+8966|The Left Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+8989|The Right Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+5002|Message to Maxwell|59|A|Bijou|-
+4701|Put Her Down|59|A|Helendis Riverhorn|-
+5089|General Drakkisath's Command|60|A|item:General Drakkisath's Command|-
+5081|Maxwell's Mission|60|A|Marshal Maxwell|-
+4765|Delivery to Ridgewell|60|A|Mayara Brightwing|-
+4764|Doomrigger's Clasp|60|A|Mayara Brightwing|-
+4983|Bijou's Reconnaissance Report|59|H|Bijou|-
+4724|The Pack Mistress|59|H|Galamav the Marksman|-
+6569|Oculus Illusions|60|H|Myranda the Hag|-
+4903|Warlord's Command|60|H|item:Warlord's Command|-
+[blackmaw]
+92344|Get to the Roots of It|55|B|Mathrengyl Bearwalker / Nara Wildmane|-
+92066|The Twin Bears|55|B|Lorekeeper Nok|-
+92069|Claws That Rend, Tusks that Gore|58|B|Ogtinc|-
+97173|Blackmaw Magic|59|B|-|-
+97327|Blackmaw Pouches|60|B|Ekkal|-
+[dmw]
+7461|The Madness Within|60|B|Shen'dralar Ancient|-
+7462|The Treasure of the Shen'dralar|60|B|Shen'dralar Ancient|7461
+7581|The Prison's Bindings|60|B|Daio the Decrepit|-
+1193|A Broken Trap|60|B|Broken Trap|-
+7507|Foror's Compendium|60|B|item:Foror's Compendium of Dragon Slaying|-
+7508|The Forging of Quel'Serrar|60|B|item:A Dull and Flat Elven Blade|-
+7499|Codex of Defense|60|B|item:Codex of Defense|-
+7505|Frost Shock and You|60|B|item:Frost Shock and You|-
+7498|Garona: A Study on Stealth and Treachery|60|B|item:Garona: A Study on Stealth and Treachery|-
+7502|Harnessing Shadows|60|B|item:Harnessing Shadows|-
+7504|Holy Bologna: What the Light Won't Tell You|60|B|item:Holy Bologna: What the Light Won't Tell You|-
+7500|The Arcanist's Cookbook|60|B|item:The Arcanist's Cookbook|-
+7506|The Emerald Dream...|60|B|item:The Emerald Dream|-
+7503|The Greatest Race of Hunters|60|B|item:The Greatest Race of Hunters|-
+7501|The Light and How to Swing It|60|B|item:The Light and How to Swing It|-
+[dmn]
+5518|The Gordok Ogre Suit|60|B|Knot Thimblejack|-
+5525|Free Knot!|60|B|Knot Thimblejack|-
+5528|The Gordok Taste Test|60|B|Stomper Kreeg|-
+1318|Unfinished Gordok Business|60|B|-|-
+7484|Libram of Focus|60|B|Lorekeeper Lydros|-
+7485|Libram of Protection|60|B|Lorekeeper Lydros|-
+7483|Libram of Rapidity|60|B|Lorekeeper Lydros|-
+7462|The Treasure of the Shen'dralar|60|B|Shen'dralar Ancient|-
+7877|The Treasure of the Shen'dralar|60|A|Shen'dralar Ancient|-
+7509|The Forging of Quel'Serrar|60|B|-|7508
+8948|Anthion's Old Friend|60|B|Anthion Harmon|-
+8949|Falrin's Vendetta|60|B|Falrin Treeshaper|-
+8950|The Instigator's Enchantment|60|B|Falrin Treeshaper|-
+[shaper]
+95925|Mapping the Way Forward|60|A|-|-
+95924|Panic at the Digsite|60|A|-|-
+95928|Crystalline Elements|60|H|-|-
+97049|Essence of Seeping Slimes|60|H|-|-
+95926|The Dark Crystal|60|H|-|-
+[stratlive]
+5848|Of Love and Family|60|B|Artist Renfray|-
+5125|Aurius' Reckoning|60|B|Aurius|5122
+5122|The Medallion of Faith|60|B|Aurius|-
+5243|Houses of the Holy|60|B|Leonid Barthalomew the Revered|-
+5213|The Active Agent|60|B|Betina Bigglezink|-
+5251|The Archivist|60|B|Duke Nicholas Zverenhoff|-
+5214|The Great Fras Siabi|60|B|Smokey LaRue|-
+5282|The Restless Souls|60|B|Egan|-
+5262|The Truth Comes Crashing Down|60|B|item:Head of Balnazzar|-
+5463|Menethil's Gift|60|B|Leonid Barthalomew the Revered|-
+8945|Dead Man's Plea|60|B|Anthion Harmon|-
+8968|The Left Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+8991|The Right Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+7642|Collection of Goods|60|A|Grimand Elmore|-
+[stratud]
+5848|Of Love and Family|60|B|Artist Renfray|-
+5263|Above and Beyond|60|B|Duke Nicholas Zverenhoff|-
+5265|The Argent Hold|60|B|-|5263
+5125|Aurius' Reckoning|60|B|Aurius|5122
+5122|The Medallion of Faith|60|B|Aurius|-
+5243|Houses of the Holy|60|B|Leonid Barthalomew the Revered|-
+5213|The Active Agent|60|B|Betina Bigglezink|-
+5212|The Flesh Does Not Lie|60|B|Betina Bigglezink|-
+5214|The Great Fras Siabi|60|B|Smokey LaRue|-
+5282|The Restless Souls|60|B|Egan|-
+5463|Menethil's Gift|60|B|Leonid Barthalomew the Revered|-
+8945|Dead Man's Plea|60|B|Anthion Harmon|-
+8968|The Left Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+8991|The Right Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+7642|Collection of Goods|60|A|Grimand Elmore|-
+6163|Ramstein|60|H|Nathanos Blightcaller|-
+[scholo]
+5582|Healthy Dragon Scale|58|B|item:Healthy Dragon Scale|-
+5529|Plagued Hatchlings|58|B|Betina Bigglezink|-
+5531|Betina Bigglezink|60|B|Leonid Barthalomew the Revered|-
+4771|Dawn's Gambit|60|B|Betina Bigglezink|-
+5382|Doctor Theolen Krastinov, the Butcher|60|B|Eva Sarkhoff|-
+5384|Kirtonos the Herald|60|B|Eva Sarkhoff|-
+5515|Krastinov's Bag of Horrors|60|B|Eva Sarkhoff|-
+5466|The Lich, Ras Frostwhisper|60|B|Magistrate Marduke|-
+8969|The Left Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+8992|The Right Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+5343|Barov Family Fortune|60|A|Weldon Barov|-
+5341|Barov Family Fortune|60|H|Alexi Barov|-
+[ubrs]
+5063|Cap of the Scarlet Savant|60|B|Malyfous Darkhammer|5047
+5067|Leggings of Arcana|60|B|Malyfous Darkhammer|5063
+5068|Breastplate of Bloodthirst|60|B|Malyfous Darkhammer|5067
+6821|Eye of the Emberseer|60|B|Duke Hydraxis|-
+4735|Egg Collection|60|B|Tinkee Steamboil|-
+4743|Seal of Ascension|60|B|Vaelan|4742
+5160|The Matron Protectorate|60|B|Awbee|-
+8995|Mea Culpa, Lord Valthalak|60|B|Bodley|-
+8996|Return to Bodley|60|B|-|8995
+8966|The Left Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+8989|The Right Piece of Lord Valthalak's Amulet|60|B|Bodley|-
+6502|Drakefire Amulet|60|A|Haleh|-
+5102|General Drakkisath's Demise|60|A|Marshal Maxwell|-
+4765|Delivery to Ridgewell|60|A|Mayara Brightwing|-
+4764|Doomrigger's Clasp|60|A|Mayara Brightwing|-
+4982|Bijou's Belongings|59|H|Bijou|-
+6602|Blood of the Black Dragon Champion|60|H|Rexxar|-
+4974|For The Horde!|60|H|Thrall|-
+4768|The Darkstone Tablet|60|H|Shadowmage Vivian Lagrave|-

@@ -702,6 +702,7 @@ TomoMod_Defaults = {
         enabled = true,
         mode = "mine",            -- mine | all
         levelUpHint = true,       -- chat line when a dungeon comes within reach
+        loginHint = true,         -- chat line at login about /codex
         scale = 1.0,
         overrides = {},           -- [key] = { map, x, y } set with /codex set
         position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 40 },
