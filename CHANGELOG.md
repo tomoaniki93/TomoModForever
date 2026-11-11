@@ -1,5 +1,15 @@
 ## ####################################
 
+## CHANGELOG 1.2.6
+
+#### World Map
+
+- **Fixed** - Zone level ranges never showed (player report). Blizzard's map label keeps its text in `labelInfoByType[type].name`; 1.2.5 read a `.label` field that does not exist, so it never found a name to extend. The label is now rewritten with Blizzard's own fields (name, description, colours, texture). Blizzard adds the range itself when `C_Map.GetMapLevels` gives one; Forever gives none, so the ranges come from TomoMod's Classic table (Forever's new zones have no range yet).
+- **Changed** - If the map label is not built yet at login, the hook is tried again when the world map opens.
+- **New** - `/tm maplevels` (or `/tm niveaux`): whether the label is hooked, and the levels of the open map and its zones (game / table).
+
+## ####################################
+
 ## CHANGELOG 1.2.5
 
 #### Party Frames: mana

@@ -63,6 +63,12 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.6",
+        highlights = {
+            L["wn_126_levels"],
+        },
+    },
+    {
         version = "1.2.5",
         highlights = {
             L["wn_125_elites"],

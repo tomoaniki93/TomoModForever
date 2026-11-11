@@ -69,7 +69,10 @@ SlashCmdList["TOMOMOD"] = function(msg)
     local rawMsg = (msg or ""):match("^%s*(.-)%s*$")
     msg = string.lower(rawMsg)
 
-    if msg == "triage" or msg == "tri" then
+    if msg == "maplevels" or msg == "niveaux" then
+        if TomoMod_MapReveal and TomoMod_MapReveal.DebugLevels then TomoMod_MapReveal.DebugLevels() end
+        return
+    elseif msg == "triage" or msg == "tri" then
         if TomoMod_Triage and TomoMod_Triage.Debug then TomoMod_Triage.Debug() end
         return
     elseif msg == "flight" or msg == "vol" then

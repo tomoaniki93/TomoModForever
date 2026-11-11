@@ -221,9 +221,11 @@ local function DecorateLabel(label)
     local db = DB()
     if not (db and db.zoneLevels ~= false) then return end
     local typeKey = MAP_AREA_LABEL_TYPE and MAP_AREA_LABEL_TYPE.AREA_NAME
+    -- Blizzard keeps the label in labelInfoByType[type].name (1.2.5 read a
+    -- .label field that does not exist, so no level was ever added).
     local infos = label.labelInfoByType
     local info = typeKey and infos and infos[typeKey]
-    local name = info and info.label
+    local name = info and info.name
     if type(name) ~= "string" or name == "" or name:find("|r$") then return end
     local map = label.dataProvider and label.dataProvider:GetMap()
     local mapID = map and map:GetMapID()
@@ -240,7 +242,7 @@ local function DecorateLabel(label)
     end
     local suffix = target and LevelSuffix(target)
     if not suffix then return end
-    label:SetLabel(typeKey, name .. suffix, info.description, info.labelColor, info.descriptionColor, info.callback)
+    label:SetLabel(typeKey, name .. suffix, info.description, info.nameColor, info.descriptionColor, info.textureInfo)
     label:EvaluateLabels()
 end
 
@@ -260,6 +262,21 @@ local function HookLabel()
     return false
 end
 
+-- /tm maplevels : is the label hooked, and what levels does the open map get.
+function MR.DebugLevels()
+    local function P(...) print("|cffc9a252[TMF carte]|r", ...) end
+    P("label hooked:", tostring(labelHooked), "option:", tostring(DB() and DB().zoneLevels ~= false))
+    local map = _G.WorldMapFrame
+    local mapID = map and map.GetMapID and map:GetMapID()
+    if not mapID then P("open the world map first") return end
+    local ok, lo, hi = pcall(C_Map.GetMapLevels, mapID)
+    P("map", mapID, "game levels:", tostring(ok and lo), tostring(ok and hi), "table:", CLASSIC_LEVELS[mapID] and (CLASSIC_LEVELS[mapID][1] .. "-" .. CLASSIC_LEVELS[mapID][2]) or "-")
+    for _, child in ipairs(C_Map.GetMapChildrenInfo and C_Map.GetMapChildrenInfo(mapID) or {}) do
+        local l, h = ZoneLevels(child.mapID)
+        P("  ", child.mapID, child.name, l and (l .. "-" .. h) or "-")
+    end
+end
+
 -- Redraw the open map after a settings change.
 function MR.ApplySettings()
     HookMap()
@@ -269,7 +286,10 @@ end
 
 function MR.Initialize()
     if not DB() then return end
-    HookLabel()
+    -- The label provider may only exist once the map has been shown.
+    if not HookLabel() and _G.WorldMapFrame and _G.WorldMapFrame.HookScript then
+        _G.WorldMapFrame:HookScript("OnShow", HookLabel)
+    end
     if not HookMap() then
         local f = CreateFrame("Frame")
         f:RegisterEvent("ADDON_LOADED")
