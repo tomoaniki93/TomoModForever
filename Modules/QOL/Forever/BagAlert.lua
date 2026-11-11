@@ -355,6 +355,12 @@ local function Play(s, silent)
     elseif s.pct >= threshold then
         line = line .. T("  -  pense à vendre", "  -  time to sell")
     end
+    -- Items that can go (Triage.lua), beyond the greys already counted.
+    local tri, tdb = TomoMod_Triage, TomoModForeverDB and TomoModForeverDB.triage
+    if tri and tri.Count and tdb and tdb.enabled and tdb.alertCount and s.pct >= threshold then
+        local n = tri.Count()
+        if n > 0 then line = line .. string.format(T("  -  %d à jeter", "  -  %d to throw"), n) end
+    end
     banner.sub:SetText(line)
 
     banner.pctFS:SetTextColor(c[1], c[2], c[3])

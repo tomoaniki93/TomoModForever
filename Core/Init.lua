@@ -69,7 +69,10 @@ SlashCmdList["TOMOMOD"] = function(msg)
     local rawMsg = (msg or ""):match("^%s*(.-)%s*$")
     msg = string.lower(rawMsg)
 
-    if msg == "flight" or msg == "vol" then
+    if msg == "triage" or msg == "tri" then
+        if TomoMod_Triage and TomoMod_Triage.Debug then TomoMod_Triage.Debug() end
+        return
+    elseif msg == "flight" or msg == "vol" then
         if TomoMod_FlightTimer and TomoMod_FlightTimer.Debug then TomoMod_FlightTimer.Debug() end
         return
     elseif msg == "camp" then
@@ -642,6 +645,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("Waypoint",           TomoMod_Waypoint)
         safeInit("ChatFrameSkin",      TomoMod_ChatFrameSkin)
         safeInit("BagsV4",             TomoMod_BagSkin)
+        safeInit("Triage",             TomoMod_Triage)
         safeInit("GameMenuSkin",       TomoMod_GameMenuSkin)
         safeInit("BlizzardAuraFrames", TomoMod_BlizzardAuraFrames)
         safeInit("ActionBarSkin",      TomoMod_ActionBarSkin)

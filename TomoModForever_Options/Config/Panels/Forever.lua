@@ -395,12 +395,13 @@ K.RegisterPage({
 -- Bag space banner
 -- ---------------------------------------------------------------------
 local function BAApply() Call("TomoMod_BagAlert", "ApplySettings") end
+local function TRApply() Call("TomoMod_Triage", "ApplySettings") end
 
 K.RegisterPage({
     key = "bagalert",
     section = SECTION,
     label = T("Place dans les sacs", "Bag space"),
-    kw = "sac sacs bag bags place space plein full inventaire inventory vendre sell gris grey alerte alert",
+    kw = "sac sacs bag bags place space plein full inventaire inventory vendre sell gris grey alerte alert jeter throw supprimer delete butin loot tri triage pièce coin",
     locate = "TomoMod_BagAlertFrame",
     onHide = function() if TomoMod_BagAlert and TomoMod_BagAlert.IsPreview and TomoMod_BagAlert.IsPreview() then TomoMod_BagAlert.Preview(false) end end,
     build = function(parent)
@@ -437,6 +438,26 @@ K.RegisterPage({
             c:Toggle(T("Son à l'apparition", "Sound when shown"), "bagAlert.sound", BAApply)
             c:Info(T("Seuls les sacs normaux comptent (pas les carquois, gibernes ni sacs d'âmes). Clic sur la bannière : ouvrir les sacs ; clic droit : fermer. Pour la placer : bouton « Déplacer » en haut de la fenêtre.",
                      "Only regular bags count (no quivers, ammo pouches or soul bags). Click the banner: open bags; right click: close. To place it: \"Move\" button at the top of the window."))
+            c:Done()
+
+            c = page:Card(T("Quoi jeter, quoi ramasser", "What to throw away, what to loot"))
+            ModuleToggle(c, "triage", T("Classer les objets à jeter", "Rank items to throw away"))
+            c:Select(T("Numéros dans les sacs", "Numbers in the bags"), "triage.badges", {
+                { text = T("Quand les sacs sont presque pleins", "When the bags are nearly full"), value = "full" },
+                { text = T("Toujours", "Always"), value = "always" },
+                { text = T("Jamais", "Never"), value = "off" },
+            }, TRApply, T("Les objets les moins chers à la revente portent un numéro (1 = le premier à jeter) dans les sacs TomoMod. « Presque pleins » suit le seuil de l'alerte ci-dessus.",
+                          "The items cheapest to sell carry a number (1 = first to go) in TomoMod's bags. \"Nearly full\" follows the alert threshold above."))
+            c:Slider(T("Objets numérotés", "Numbered items"), "triage.badgeCount", 1, 10, 1, TRApply)
+            c:Toggle(T("Pièce d'or sur le butin qui vaut le coup", "Gold coin on loot worth taking"), "triage.lootCoins", TRApply,
+                T("Sacs pleins : chaque objet du butin est comparé à ton objet le moins cher (le plus cher du butin avec ton moins cher, et ainsi de suite). S'il vaut plus, il a une pièce d'or. Un butin qui rentre sur une pile que tu as déjà n'a pas besoin de place.",
+                  "Full bags: each loot item is compared with your cheapest item (the dearest loot with your cheapest item, and so on). If it is worth more, it gets a gold coin. Loot that fits on a stack you already carry needs no room."))
+            c:Toggle(T("Lignes dans les infobulles", "Tooltip lines"), "triage.tooltip", TRApply,
+                T("« À jeter n°3 » avec la valeur de la pile, et sur le butin, l'objet à jeter pour le prendre.",
+                  "\"To throw away #3\" with the stack's value, and on loot, the item to drop to take it."))
+            c:Toggle(T("Nombre d'objets à jeter dans l'alerte", "Items to throw away in the alert"), "triage.alertCount", BAApply)
+            c:Info(T("Jamais proposés : les objets épinglés dans les sacs TomoMod (clic milieu), les objets de quête et ceux qu'un objectif de ton journal de quêtes demande, les objets sans prix de vente, les munitions, et tout ce qui est au-dessus de vert.",
+                     "Never suggested: items pinned in TomoMod's bags (middle click), quest items and items an objective of your quest log asks for, items with no vendor price, ammunition, and anything above green."))
             c:Done()
         end)
     end,

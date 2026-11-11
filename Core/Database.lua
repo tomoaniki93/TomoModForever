@@ -662,6 +662,16 @@ TomoMod_Defaults = {
 
     -- Bag space banner (BagAlert.lua): at login and when loot crosses
     -- the threshold. Only general-purpose bags are counted.
+    -- What to throw away / what to loot (Triage.lua).
+    triage = {
+        enabled = true,
+        badges = "full",          -- numbers in TomoMod's bags: "full" (nearly full), "always", "off"
+        badgeCount = 5,           -- how many of the cheapest items get a number
+        lootCoins = true,         -- gold coin on loot worth making room for (full bags)
+        tooltip = true,           -- "To throw away #n" / which item to drop for a loot
+        alertCount = true,        -- disposable items in the bag space banner
+    },
+
     bagAlert = {
         enabled = true,
         threshold = 90,           -- % of slots used

@@ -62,6 +62,7 @@
     <Include file="Forever\FlightData.lua" />
     <Include file="Forever\FlightTimer.lua" />
     <Include file="Forever\BagAlert.lua" />
+    <Include file="Forever\Triage.lua" />
     <Include file="Forever\MapRevealData.lua" />
     <Include file="Forever\MapReveal.lua" />
     <Include file="Forever\TrainerData.lua" />

@@ -239,6 +239,18 @@ function Slots:CreatePhysicalSlot(bagID, slotID)
     pin:Hide()
     wrapper.pin = pin
 
+    -- Throw-away rank (Triage.lua): a number on a dark plate, bottom left.
+    -- Digits only, so any font draws it.
+    local triagePlate = CreateTextPlate(button, "BOTTOMLEFT", 2, 2, 14, 12)
+    triagePlate:Hide()
+    wrapper.triagePlate = triagePlate
+    local triage = button:CreateFontString(nil, "OVERLAY", nil, 3)
+    triage:SetFont(FONT_BOLD, 9, "OUTLINE")
+    triage:SetPoint("CENTER", triagePlate, "CENTER", 0, 0)
+    triage:SetTextColor(1.00, 0.82, 0.00, 1)
+    triage:Hide()
+    wrapper.triage = triage
+
     -- TomoGear upgrade marker. This is drawn on TomoMod's visual wrapper only;
     -- no script is attached to Blizzard's secure item button.
     local upgrade = button:CreateTexture(nil, "OVERLAY", nil, 4)
@@ -322,6 +334,7 @@ function Slots:Render(wrapper, item)
         wrapper.ilvl:SetText("")
         wrapper.ilvlPlate:Hide()
         wrapper.pin:Hide()
+        if wrapper.triage then wrapper.triage:Hide(); wrapper.triagePlate:Hide() end
         if wrapper.upgrade then wrapper.upgrade:Hide() end
         button:SetAlpha(1)
         button:EnableMouse(true)
@@ -395,6 +408,23 @@ function Slots:Render(wrapper, item)
     wrapper.pin:SetShown(Bags.Modules.Data:IsPinned(item.itemID))
 
     if wrapper.upgrade then wrapper.upgrade:Hide() end
+
+    -- Throw-away rank: the N cheapest items, with a gold edge.
+    if wrapper.triage then
+        local tri = TomoMod_Triage
+        local limit = tri and tri.BadgeLimit and tri.BadgeLimit() or 0
+        local rank = limit > 0 and tri.RankOf(item.bagID, item.slotID)
+        if rank and rank <= limit then
+            wrapper.triage:SetText(rank)
+            wrapper.triage:Show()
+            wrapper.triagePlate:SetWidth(rank >= 10 and 18 or 14)
+            wrapper.triagePlate:Show()
+            SetBorder(wrapper.border, 1.00, 0.82, 0.00, 0.85)
+        else
+            wrapper.triage:Hide()
+            wrapper.triagePlate:Hide()
+        end
+    end
 end
 
 function Slots:LayoutDisplay(items)

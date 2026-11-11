@@ -1,5 +1,18 @@
 ## ####################################
 
+## CHANGELOG 1.2.4
+
+#### Bags: what to throw away, what to loot
+
+- **New** - `Triage.lua` ranks the items of your regular bags from the cheapest to sell (vendor price x stack) to the dearest. Never ranked: items pinned in TomoMod's bags (middle click), quest items, items an unfinished objective of your quest log asks for (read by name, French "Item : 3/8" included), items with no vendor price, ammunition, and anything above green.
+- **New** - In TomoMod's bags, the cheapest items carry a gold number on a dark plate, bottom left, with a gold edge (1 = first to go). Shown when the bags are nearly full (the bag space alert threshold), always or never; 1 to 10 numbered items (5 by default). With the loot window open on full bags, every item paired with a loot is numbered.
+- **New** - Loot window, full bags: the dearest loot is paired with your cheapest item, the next with the next, and so on. Loot worth more than its pair, or needed by a quest, gets a gold coin (a texture, not a font symbol). Loot that fits on a stack you already carry needs no room and is left out.
+- **New** - Tooltips: "To throw away #3 - value" on ranked bag items; on loot, "Worth it: drop X (value)" or "Worth less than X".
+- **New** - The bag space banner adds "N to throw" past its threshold.
+- **New** - Settings on the Adventure > Bag space page; `/tm tri` lists the five cheapest items and what the quest log asks for. Works with Blizzard's bags too (coins, tooltips, banner); the numbers need TomoMod's bags.
+
+## ####################################
+
 ## CHANGELOG 1.2.3
 
 #### Pet Happiness

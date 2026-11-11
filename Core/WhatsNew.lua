@@ -63,6 +63,12 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.4",
+        highlights = {
+            L["wn_124_triage"],
+        },
+    },
+    {
         version = "1.2.3",
         highlights = {
             L["wn_123_flight"],

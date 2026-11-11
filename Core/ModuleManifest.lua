@@ -489,6 +489,15 @@ R.Define{
 }
 
 R.Define{
+    key = "triage", label = "mod_triage", group = "qol",
+    toggles = {
+        { path = "triage.enabled", label = "mod_triage_enabled" },
+    },
+    global = "TomoMod_Triage", applyMode = "gate", apply = "ApplySettings",
+    combatSafe = true,
+}
+
+R.Define{
     key = "mapReveal", label = "mod_mapReveal", group = "qol",
     toggles = {
         { path = "mapReveal.enabled", label = "mod_mapReveal_enabled" },
