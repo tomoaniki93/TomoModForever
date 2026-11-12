@@ -65,6 +65,7 @@ CHANGELOG = {
     {
         version = "1.2.6",
         highlights = {
+            L["wn_126_dquests"],
             L["wn_126_levels"],
         },
     },
