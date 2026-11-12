@@ -298,7 +298,7 @@ local function QuestState(id)
     return "avail"
 end
 
-local STATE_ORDER = { log = 1, avail = 2, locked = 3, done = 4 }
+local STATE_ORDER = { log = 1, chain = 1, avail = 2, locked = 3, done = 4 }
 local ICON_NO = "Interface\\RaidFrame\\ReadyCheck-NotReady"
 
 local function Places() return TomoMod_DungeonQuestPlaces or {} end
@@ -307,14 +307,6 @@ local function Done(id)
     return C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted and C_QuestLog.IsQuestFlaggedCompleted(id) or false
 end
 
--- First quest of the chain still to do before this one, or nil.
-local function MissingStep(place)
-    for _, step in ipairs(place and place.c or {}) do
-        for _, id in ipairs(step) do
-            if not Done(id) then return id end
-        end
-    end
-end
 
 -- Localized zone name of a Classic uiMapID.
 local function ZoneLabel(map)
@@ -327,6 +319,40 @@ local function WhereText(p)
     local zone = p[1] and ZoneLabel(p[1])
     if zone and p[2] then return string.format("%s (%s, %s)", zone, p[2], p[3]) end
     return zone
+end
+
+-- Where the player stands in a quest's chain: the first step not done, a
+-- step in the quest log (a chain of same-named quests, like The Defias
+-- Brotherhood, shows its first step in the log under the same title), and
+-- that step's number out of the chain's length (the quest itself last).
+local function InLog(id)
+    if C_QuestLog and C_QuestLog.GetLogIndexForQuestID and C_QuestLog.GetLogIndexForQuestID(id) then return true end
+    return C_QuestLog and C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(id) or false
+end
+
+local function ChainProgress(place)
+    local steps = place and place.c
+    if not steps then return nil end
+    local missing, current, stepNo
+    for i, step in ipairs(steps) do
+        for _, id in ipairs(step) do
+            if not Done(id) then
+                missing = missing or id
+                if not current and InLog(id) then current, stepNo = id, i end
+            end
+        end
+    end
+    return missing, current, stepNo, #steps + 1
+end
+
+-- State of a dungeon or elite quest, chain included.
+local function FullState(id, place)
+    local state = QuestState(id)
+    if state ~= "avail" then return state end
+    local missing, current, stepNo, total = ChainProgress(place)
+    if current then return "chain", missing, current, stepNo, total end
+    if missing then return "locked", missing end
+    return "avail"
 end
 
 local function PlaceTitle(id)
@@ -342,13 +368,11 @@ local function DungeonQuests(d, fac)
     for _, q in ipairs(data or {}) do
         local side = q[4]
         if side == "B" or side == fac then
-            local state = QuestState(q[1])
             local place = Places()[q[1]]
-            local missing = state == "avail" and MissingStep(place) or nil
-            if missing then state = "locked" end
+            local state, missing, current, stepNo, total = FullState(q[1], place)
             if state ~= "done" then todo = todo + 1 end
             out[#out + 1] = { id = q[1], name = q[2], level = q[3], side = side, giver = q[5], prereq = q[6], state = state,
-                              place = place, missing = missing }
+                              place = place, missing = missing, current = current, stepNo = stepNo, steps = total }
         end
     end
     table.sort(out, function(a, b)
@@ -362,11 +386,13 @@ end
 local function EliteQuests(d)
     local out, todo = {}, 0
     for _, q in ipairs(d.quests or {}) do
-        local state = QuestState(q[1])
+        local place = Places()[q[1]]
+        local state, missing, current, stepNo, total = FullState(q[1], place)
         if state ~= "done" then todo = todo + 1 end
         out[#out + 1] = { id = q[1], name = q[2], level = q[3], req = q[4], side = q[5], state = state, elite = true,
                           giver = q[6], map = q[7], x = q[8], y = q[9],
-                          ender = q[10], emap = q[11], ex = q[12], ey = q[13], zone = d.zone }
+                          ender = q[10], emap = q[11], ex = q[12], ey = q[13], zone = d.zone,
+                          place = place, missing = missing, current = current, stepNo = stepNo, steps = total }
     end
     table.sort(out, function(a, b)
         if a.state ~= b.state then return STATE_ORDER[a.state] < STATE_ORDER[b.state] end
@@ -641,6 +667,8 @@ local function CreateWindow()
             if q.req then GameTooltip:AddLine(string.format(T("Disponible dès le niveau %d", "Available from level %d"), q.req), TEXT[1], TEXT[2], TEXT[3]) end
             if q.elite then
                 GameTooltip:AddLine(T("Élite : quête de groupe", "Elite: group quest"), RED[1], RED[2], RED[3])
+            end
+            if q.elite and not q.place then
                 if q.ender and q.ender ~= q.giver then
                     GameTooltip:AddLine(string.format(T("À rendre : %s", "Turn in: %s"), q.ender), TEXT[1], TEXT[2], TEXT[3], true)
                 end
@@ -650,7 +678,7 @@ local function CreateWindow()
                     GameTooltip:AddLine(string.format(T("Clic : point de route vers le rendu (%d, %d)", "Click: waypoint to the turn-in (%d, %d)"), q.ex, q.ey), GREEN[1], GREEN[2], GREEN[3])
                 end
             end
-            local pl = not q.elite and q.place
+            local pl = q.place
             if pl then
                 local s1, e1 = pl.s, pl.e
                 if s1 and s1.item then
@@ -669,7 +697,7 @@ local function CreateWindow()
                     for _, step in ipairs(pl.c) do
                         for _, id in ipairs(step) do
                             local cp = Places()[id]
-                            local icon = Done(id) and ICON_DONE or ICON_NO
+                            local icon = Done(id) and ICON_DONE or (InLog(id) and ICON_LOG) or ICON_NO
                             local who = cp and cp.s and cp.s[4]
                             local where = cp and cp.s and not cp.s.item and cp.s[1] and ZoneLabel(cp.s[1])
                             local text = string.format("|T%s:12|t %s%s", icon, cp and cp.l and ("[" .. cp.l .. "] ") or "", PlaceTitle(id))
@@ -688,9 +716,12 @@ local function CreateWindow()
                 GameTooltip:AddLine(string.format(T("Après : %s", "After: %s"), QuestTitle(q.prereq, "#" .. q.prereq)), DIM[1], DIM[2], DIM[3], true)
             end
             local st = (q.state == "done" and T("Faite", "Done")) or (q.state == "log" and T("Dans ton journal", "In your quest log"))
-                or (q.state == "locked" and T("Pas encore disponible : fais d'abord la chaîne", "Not available yet: do the chain first")) or T("À prendre", "To take")
+                or (q.state == "locked" and T("Pas encore disponible : fais d'abord la chaîne", "Not available yet: do the chain first"))
+                or (q.state == "chain" and string.format(T("Chaîne en cours : « %s » (étape %d sur %d) est dans ton journal",
+                    "Chain in progress: \"%s\" (step %d of %d) is in your quest log"), PlaceTitle(q.current), q.stepNo, q.steps))
+                or T("À prendre", "To take")
             if pl and q.state ~= "done" then
-                local target = q.missing and Places()[q.missing] or pl
+                local target = (q.current and Places()[q.current]) or (q.missing and Places()[q.missing]) or pl
                 local hasPoint = (target.s and target.s[2]) or (target.e and target.e[2])
                 if hasPoint then GameTooltip:AddLine(T("Clic : point de route", "Click: waypoint"), GREEN[1], GREEN[2], GREEN[3]) end
             end
@@ -703,15 +734,19 @@ local function CreateWindow()
         -- when an item starts the quest).
         r:SetScript("OnClick", function(self)
             local q = self.q
-            if q and not q.elite and q.place and q.state ~= "done" then
+            if q and q.place and q.state ~= "done" then
                 -- The first quest of the chain still to do, else this quest:
                 -- its giver, or where to bring the item that starts it.
-                local id = q.missing or q.id
+                local id = q.current or q.missing or q.id
                 local target = Places()[id] or q.place
                 local title = PlaceTitle(id)
                 local s1, e1 = target.s, target.e
                 local ok
-                if s1 and s1[2] and not s1.item then
+                -- A step already in the log: where to turn it in.
+                if (q.current or q.state == "log") and e1 and e1[2] then
+                    ok = PlacePoint(string.format("%s (%s)", e1[4] or title, title), e1[1], e1[2], e1[3])
+                    if ok then print(PREFIX .. string.format(T("Point de route : %s, à qui rendre %s.", "Waypoint: %s, turn-in of %s."), e1[4] or "?", title)) end
+                elseif s1 and s1[2] and not s1.item then
                     ok = PlacePoint(string.format("%s (%s)", s1[4] or title, title), s1[1], s1[2], s1[3])
                     if ok then print(PREFIX .. string.format(T("Point de route : %s, donneur de %s.", "Waypoint: %s, giver of %s."), s1[4] or "?", title)) end
                 elseif e1 and e1[2] then
@@ -793,7 +828,7 @@ RefreshQuests = function()
         local r, q = qrows[i], qlist[i + qoffset]
         r.q = q
         if q then
-            r.icon:SetTexture(q.state == "done" and ICON_DONE or q.state == "log" and ICON_LOG or ICON_AVAIL)
+            r.icon:SetTexture(q.state == "done" and ICON_DONE or (q.state == "log" or q.state == "chain") and ICON_LOG or ICON_AVAIL)
             r.icon:SetDesaturated(q.state == "locked")
             r.name:SetText(QuestTitle(q.id, q.name))
             local c = (q.state == "done" and DIM) or (q.level and q.level > lvl + 2 and RED) or TEXT
@@ -807,8 +842,10 @@ RefreshQuests = function()
             local giver = GiverText(q.giver)
             if giver then info[#info + 1] = giver end
             if q.side == "B" then info[#info + 1] = T("Les deux factions", "Both factions") end
-            if q.elite and (q.x or q.ex) then info[#info + 1] = T("clic : point de route", "click: waypoint") end
-            if q.missing then
+            if q.elite and (q.x or q.ex) and not q.missing then info[#info + 1] = T("clic : point de route", "click: waypoint") end
+            if q.current then
+                info = { string.format(T("|cffffd100Chaîne en cours : étape %d sur %d|r", "|cffffd100Chain in progress: step %d of %d|r"), q.stepNo, q.steps) }
+            elseif q.missing then
                 info = { string.format(T("|cffff9933Prérequis : %s|r", "|cffff9933Needs: %s|r"), PlaceTitle(q.missing)) }
             elseif not q.elite and q.place and q.place.s and q.place.s[1] then
                 local zone = ZoneLabel(q.place.s[1])
