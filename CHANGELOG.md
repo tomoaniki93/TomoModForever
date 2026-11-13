@@ -1,5 +1,19 @@
 ## ####################################
 
+## CHANGELOG 1.2.7
+
+#### Mail
+
+- **Fixed** - Alts tab empty (player report: a main and two alts, none listed). Forever's realm text can change between sessions (the cluster part of "CAMWOW EU4 Realm 7 PvE"), and the Alts tab, the autocomplete and "send to all alts" kept only the characters whose saved realm text matched exactly. Alts are now matched by name (not ourselves) and faction; one entry per name, so a realm change no longer lists a character twice.
+- **Fixed** - A character whose level, class or faction was not known yet when saved was dropped; the save is now retried, and repeated on level up and at logout.
+- **Fixed** - Per-character mail settings and recents were keyed "Name-Realm", so a realm change gave the character a fresh, empty profile. They are keyed by name now; an older "Name-Realm" profile is taken over.
+- **Fixed** - Guild tab empty when the mailbox opens: the roster was read right after asking the server for it, and the empty result was cached for 10 seconds. An empty read is no longer cached, and the list refreshes on `GUILD_ROSTER_UPDATE`. Offline members are listed (unless "Online only" is ticked): the guild panel's "Show offline members" box is ticked while the mailbox is open and put back afterwards.
+- **Fixed** - Recent tab never filled: the name was read from the send box once the letter was sent, when Blizzard has already cleared it. The name given to `SendMail()` is used. Names are trimmed and lose any "-Realm" suffix; recent names take their class colour when known.
+- **Fixed** - Guild letter headers broke on names starting with an accented letter.
+- **New** - `/tml alts`: what the module sees for this character and the saved character list.
+
+## ####################################
+
 ## CHANGELOG 1.2.6
 
 #### Commands

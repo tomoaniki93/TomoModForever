@@ -4,7 +4,7 @@
 
 **TomoModForever** is a streamlined edition of TomoMod built for **World of Warcraft: Forever**. It keeps the TomoMod interface (unit frames, party and raid frames, nameplates, castbars, resources, cooldowns, chat, bags, mail, damage meter, skins and quality-of-life tools) and leaves out every module Forever has no use for.
 
-**Author:** TomoAniki · **Interface:** 16001 · **Version:** 1.2.6
+**Author:** TomoAniki · **Interface:** 16001 · **Version:** 1.2.7
 
 ## Installation
 

@@ -63,6 +63,14 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.7",
+        highlights = {
+            L["wn_127_alts"],
+            L["wn_127_guild"],
+            L["wn_127_recent"],
+        },
+    },
+    {
         version = "1.2.6",
         highlights = {
             L["wn_126_dquests"],

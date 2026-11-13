@@ -20,15 +20,13 @@ local CACHE_TTL     = 5
 
 local function BuildNameCache()
     cachedNames = {}
-    local realm   = GetRealmName()
-    local faction = UnitFactionGroup("player")
     local player  = UnitName("player")
 
     -- Alts
     local alts = TM.db.global.alts
     for _, entry in ipairs(alts) do
         local p, r, f, lvl, class = strsplit("|", entry)
-        if r == realm and f == faction and p ~= player then
+        if TM:IsMailableAlt(p, f) then
             cachedNames[p:lower()] = { name = p, source = "alt", class = class }
         end
     end

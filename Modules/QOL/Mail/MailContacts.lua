@@ -29,17 +29,55 @@ local activeRows = {}
 --  Guild cache (same logic, kept intact)
 -- ============================================================
 
+-- First character of a name, UTF-8 aware ("Élodie" gives "É", not a
+-- broken byte), upper-cased when it is plain ASCII.
+local function FirstLetter(name)
+    local c = name:match("^[%z\1-\127\194-\244][\128-\191]*") or name:sub(1, 1)
+    if #c == 1 then c = c:upper() end
+    return c
+end
+
+-- Throttled roster request (the server ignores calls closer than ~10 s).
+local lastRosterRequest = 0
+local function RequestRoster()
+    if GetTime() - lastRosterRequest < 10 then return end
+    lastRosterRequest = GetTime()
+    if C_GuildInfo and C_GuildInfo.GuildRoster then
+        C_GuildInfo.GuildRoster()
+    elseif GuildRoster then
+        GuildRoster()
+    end
+end
+
+-- Classic-era clients only list offline members while the guild panel's
+-- "Show offline members" box is ticked. It is ticked while the mailbox
+-- is open and put back as it was when the mailbox closes.
+local savedShowOffline = nil
+local function ShowOfflineMembers(want)
+    if not (GetGuildRosterShowOffline and SetGuildRosterShowOffline) then return end
+    local cur = GetGuildRosterShowOffline() and true or false
+    if want and not cur then
+        if savedShowOffline == nil then savedShowOffline = cur end
+        SetGuildRosterShowOffline(true)
+    end
+end
+local function RestoreShowOffline()
+    if savedShowOffline ~= nil and SetGuildRosterShowOffline then
+        SetGuildRosterShowOffline(savedShowOffline)
+    end
+    savedShowOffline = nil
+end
+
 local function BuildGuildCache()
     guildCache = {}
     if not IsInGuild() then return end
 
-    if C_GuildInfo and C_GuildInfo.GuildRoster then
-        C_GuildInfo.GuildRoster()
-    end
+    local onlineOnly = TM.db.profile.guildOnlineOnly
+    ShowOfflineMembers(not onlineOnly)
+    RequestRoster()
 
     local player     = UnitName("player")
-    local onlineOnly = TM.db.profile.guildOnlineOnly
-    local numMembers = GetNumGuildMembers()
+    local numMembers = GetNumGuildMembers() or 0
 
     for i = 1, numMembers do
         local name, _, _, lvl, _, _, _, _, isOnline, _, class = GetGuildRosterInfo(i)
@@ -47,7 +85,7 @@ local function BuildGuildCache()
             local shortName = strsplit("-", name)
             if shortName ~= player then
                 if not onlineOnly or isOnline then
-                    local letter = shortName:sub(1, 1):upper()
+                    local letter = FirstLetter(shortName)
                     if not guildCache[letter] then
                         guildCache[letter] = {}
                     end
@@ -69,7 +107,9 @@ local function BuildGuildCache()
         end)
     end
 
-    guildCacheTime = GetTime()
+    -- The roster is filled asynchronously: an empty read right after the
+    -- request is not cached, GUILD_ROSTER_UPDATE triggers the next one.
+    if numMembers > 0 then guildCacheTime = GetTime() else guildCacheTime = 0 end
 end
 
 local function GetGuildCache()
@@ -120,14 +160,11 @@ end
 
 local function GetAltsData()
     local alts    = TM.db.global.alts
-    local realm   = GetRealmName()
-    local faction = UnitFactionGroup("player")
-    local player  = UnitName("player")
     local result  = {}
 
     for _, entry in ipairs(alts) do
         local p, r, f, lvl, class = strsplit("|", entry)
-        if r == realm and f == faction and p ~= player then
+        if TM:IsMailableAlt(p, f) then
             table.insert(result, {
                 name   = p,
                 level  = tonumber(lvl) or 0,
@@ -181,7 +218,7 @@ local function GetRecentData()
             table.insert(result, {
                 name   = name,
                 level  = 0,
-                class  = nil,
+                class  = Contacts:ResolveClass(name),
                 online = false,
                 source = "recent",
             })
@@ -638,15 +675,33 @@ end
 
 function Contacts:OnInitialize() end
 
+local rosterWatcher
 function Contacts:OnMailShow()
     isMailOpen = true
     guildCacheTime = 0
     self:CreateUI()
+    if IsInGuild() then
+        ShowOfflineMembers(not TM.db.profile.guildOnlineOnly)
+        RequestRoster()
+    end
+    if not rosterWatcher then
+        rosterWatcher = CreateFrame("Frame")
+        rosterWatcher:SetScript("OnEvent", function()
+            guildCacheTime = 0
+            if flyout and flyout:IsShown() then
+                PopulateList()
+                Contacts:UpdateFooter()
+            end
+        end)
+    end
+    rosterWatcher:RegisterEvent("GUILD_ROSTER_UPDATE")
 end
 
 function Contacts:OnMailHide()
     isMailOpen = false
     if flyout then flyout:Hide() end
+    if rosterWatcher then rosterWatcher:UnregisterEvent("GUILD_ROSTER_UPDATE") end
+    RestoreShowOffline()
 end
 
 -- ============================================================
