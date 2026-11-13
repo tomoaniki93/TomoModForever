@@ -509,7 +509,7 @@ local auraLinks, auraLinksBuilt, auraCandidates
 -- [G5] Why these two are tracked: if the client ever renames the category API,
 -- every guard below fails softly and the map comes out empty -- which looks
 -- exactly like "this ability simply has no linked buff". Counting what was
--- built is what tells the two apart, and /tm forge prints it.
+-- built is what tells the two apart, and /tmf forge prints it.
 local auraLinkAPI, auraLinkCount = false, 0
 
 local function BuildAuraLinks()

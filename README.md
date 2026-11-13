@@ -15,7 +15,7 @@ Copy these folders into the Forever client's `Interface\AddOns\` folder:
 
 Do not enable TomoMod and TomoModForever at the same time: they share their Lua globals. Settings are stored separately (`TomoModForeverDB`).
 
-Open the settings with `/tm`, the layout mode with `/tm layout`, the command list with `/tm help`.
+Open the settings with `/tmf`, the layout mode with `/tmf layout`, the command list with `/tmf help`.
 
 ## Not included
 

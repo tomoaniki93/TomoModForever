@@ -5,7 +5,7 @@
 TomoMod_RegisterLocale("enUS", {
     ["info_key_shortcuts_title"] = "Mythic keystone shortcuts",
     ["info_key_shortcuts_left"] = "Left click: announce party keys (/tmt key)",
-    ["info_key_shortcuts_right"] = "Right click: open Keystone Roulette (/tm key)",
+    ["info_key_shortcuts_right"] = "Right click: open Keystone Roulette (/tmf key)",
     ["key_roulette_title"] = "KEYSTONE ROULETTE",
     ["key_roulette_subtitle"] = "Randomly choose one of the party keystones",
     ["key_roulette_spin"] = "SPIN THE ROULETTE",
@@ -18,7 +18,7 @@ TomoMod_RegisterLocale("enUS", {
 TomoMod_RegisterLocale("frFR", {
     ["info_key_shortcuts_title"] = "Raccourcis de clé mythique",
     ["info_key_shortcuts_left"] = "Clic gauche : annoncer les clés du groupe (/tmt key)",
-    ["info_key_shortcuts_right"] = "Clic droit : ouvrir Keystone Roulette (/tm key)",
+    ["info_key_shortcuts_right"] = "Clic droit : ouvrir Keystone Roulette (/tmf key)",
     ["key_roulette_title"] = "ROULETTE DE CLÉS MYTHIQUES",
     ["key_roulette_subtitle"] = "Choisit au hasard une clé mythique du groupe",
     ["key_roulette_spin"] = "LANCER LA ROULETTE",
@@ -31,7 +31,7 @@ TomoMod_RegisterLocale("frFR", {
 TomoMod_RegisterLocale("deDE", {
     ["info_key_shortcuts_title"] = "Mythisch+-Schlüsselstein-Kürzel",
     ["info_key_shortcuts_left"] = "Linksklick: Gruppenschlüsselsteine ansagen (/tmt key)",
-    ["info_key_shortcuts_right"] = "Rechtsklick: Schlüsselstein-Roulette öffnen (/tm key)",
+    ["info_key_shortcuts_right"] = "Rechtsklick: Schlüsselstein-Roulette öffnen (/tmf key)",
     ["key_roulette_title"] = "SCHLÜSSELSTEIN-ROULETTE",
     ["key_roulette_subtitle"] = "Wählt zufällig einen Schlüsselstein der Gruppe",
     ["key_roulette_spin"] = "ROULETTE STARTEN",
@@ -44,7 +44,7 @@ TomoMod_RegisterLocale("deDE", {
 TomoMod_RegisterLocale("esES", {
     ["info_key_shortcuts_title"] = "Atajos de piedras angulares míticas",
     ["info_key_shortcuts_left"] = "Clic izquierdo: anunciar las piedras del grupo (/tmt key)",
-    ["info_key_shortcuts_right"] = "Clic derecho: abrir la Ruleta de piedras (/tm key)",
+    ["info_key_shortcuts_right"] = "Clic derecho: abrir la Ruleta de piedras (/tmf key)",
     ["key_roulette_title"] = "RULETA DE PIEDRAS ANGULARES",
     ["key_roulette_subtitle"] = "Elige al azar una piedra angular del grupo",
     ["key_roulette_spin"] = "GIRAR LA RULETA",
@@ -57,7 +57,7 @@ TomoMod_RegisterLocale("esES", {
 TomoMod_RegisterLocale("itIT", {
     ["info_key_shortcuts_title"] = "Scorciatoie per chiavi mitiche",
     ["info_key_shortcuts_left"] = "Clic sinistro: annuncia le chiavi del gruppo (/tmt key)",
-    ["info_key_shortcuts_right"] = "Clic destro: apri la Roulette delle chiavi (/tm key)",
+    ["info_key_shortcuts_right"] = "Clic destro: apri la Roulette delle chiavi (/tmf key)",
     ["key_roulette_title"] = "ROULETTE DELLE CHIAVI MITICHE",
     ["key_roulette_subtitle"] = "Sceglie casualmente una chiave mitica del gruppo",
     ["key_roulette_spin"] = "AVVIA LA ROULETTE",
@@ -70,7 +70,7 @@ TomoMod_RegisterLocale("itIT", {
 TomoMod_RegisterLocale("ptBR", {
     ["info_key_shortcuts_title"] = "Atalhos de pedras-chave míticas",
     ["info_key_shortcuts_left"] = "Clique esquerdo: anunciar as chaves do grupo (/tmt key)",
-    ["info_key_shortcuts_right"] = "Clique direito: abrir a Roleta de pedras-chave (/tm key)",
+    ["info_key_shortcuts_right"] = "Clique direito: abrir a Roleta de pedras-chave (/tmf key)",
     ["key_roulette_title"] = "ROLETA DE PEDRAS-CHAVE",
     ["key_roulette_subtitle"] = "Escolhe aleatoriamente uma pedra-chave do grupo",
     ["key_roulette_spin"] = "GIRAR A ROLETA",

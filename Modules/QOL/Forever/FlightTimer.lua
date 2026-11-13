@@ -573,7 +573,7 @@ function FT.Preview(on)
 end
 function FT.IsPreview() return preview end
 
--- /tm flight : speed in use, and with a flight master's map open, how many
+-- /tmf flight : speed in use, and with a flight master's map open, how many
 -- destinations get a time from the built-in data.
 function FT.Debug()
     local function P(...) print("|cffc9a252[TMF vol]|r", ...) end

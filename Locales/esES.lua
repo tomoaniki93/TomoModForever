@@ -27,7 +27,7 @@ TomoMod_RegisterLocale("esES", {
     -- CONFIG: General Panel
     -- =====================
     ["section_about"]                   = "Acerca de",
-    ["about_text"]                      = "|cffffd100TomoModForever|r %s por TomoAniki\nInterfaz ligera con QOL, UnitFrames y Nameplates.\nEscribe /tm help para la lista de comandos.",
+    ["about_text"]                      = "|cffffd100TomoModForever|r %s por TomoAniki\nInterfaz ligera con QOL, UnitFrames y Nameplates.\nEscribe /tmf help para la lista de comandos.",
     ["section_general"]                 = "General",
     ["btn_reset_all"]                   = "Reiniciar todo",
     ["info_reset_all"]                  = "Esto reiniciará TODOS los ajustes y recargará la interfaz.",
@@ -104,7 +104,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_castbar_ni_color"]            = "Hechizo no interrumpible",
     ["opt_castbar_interrupt_color"]     = "Hechizo interrumpido",
     ["info_castbar_colors_reload"]      = "Los cambios de color se aplican a nuevos lanzamientos. /reload para efecto completo.",
-    ["btn_toggle_lock"]                 = "Bloquear/Desbloquear (/tm uf)",
+    ["btn_toggle_lock"]                 = "Bloquear/Desbloquear (/tmf uf)",
     ["info_unlock_drag"]                = "Desbloquea para mover los marcos. Las posiciones se guardan automáticamente.",
 
     -- Per-unit options
@@ -142,7 +142,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_castbar_height"]              = "Altura de barra de lanzamiento",
     ["opt_castbar_show_icon"]           = "Mostrar icono",
     ["opt_castbar_show_timer"]          = "Mostrar temporizador",
-    ["info_castbar_drag"]               = "Posición: /tm sr para desbloquear y mover la barra de lanzamiento.",
+    ["info_castbar_drag"]               = "Posición: /tmf sr para desbloquear y mover la barra de lanzamiento.",
     ["btn_reset_castbar_position"]      = "Reiniciar posición de la barra de lanzamiento",
     ["opt_castbar_show_latency"]        = "Mostrar latencia",
 
@@ -497,7 +497,7 @@ TomoMod_RegisterLocale("esES", {
 
     -- Position
     ["section_position"]                = "Posición",
-    ["info_rb_position"]                = "Usa /tm uf para desbloquear y mover las barras. La posición se guarda automáticamente.",
+    ["info_rb_position"]                = "Usa /tmf uf para desbloquear y mover las barras. La posición se guarda automáticamente.",
     ["info_rb_druid"]                   = "Las barras se adaptan automáticamente a tu clase y especialización.\nDruida: el recurso cambia con la forma (Oso |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Ira, Gato |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Energía, Equilibrio |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Poder astral).",
 
     -- =====================
@@ -828,7 +828,7 @@ TomoMod_RegisterLocale("esES", {
     ["leveling_ttl"]                    = "Tiempo para nivel:",
     ["leveling_remaining"]              = "Restante",
     ["leveling_session"]                = "Este nivel",
-    ["leveling_drag_hint"]              = "/tm sr para desbloquear y mover",
+    ["leveling_drag_hint"]              = "/tmf sr para desbloquear y mover",
 
     -- =====================
     -- CONFIG: Profiles Panel (3 Tabs)
@@ -932,7 +932,7 @@ TomoMod_RegisterLocale("esES", {
     -- UnitFrames
     ["msg_uf_locked"]                   = "Bloqueado",
     ["msg_uf_unlocked"]                 = "Desbloqueado — Arrastra para reposicionar",
-    ["msg_uf_initialized"]              = "Inicializado — /tm uf para bloquear/desbloquear",
+    ["msg_uf_initialized"]              = "Inicializado — /tmf uf para bloquear/desbloquear",
     ["msg_uf_enabled"]                  = "activado (recarga necesaria)",
     ["msg_uf_disabled"]                 = "desactivado (recarga necesaria)",
     ["msg_uf_position_reset"]           = "posición reiniciada",
@@ -1111,7 +1111,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_boss_enable"]                 = "Activar barras de jefe",
     ["opt_boss_height"]                 = "Altura de barras",
     ["opt_boss_spacing"]                = "Espacio entre barras",
-    ["info_boss_drag"]                  = "Desbloquea (/tm uf) para mover. Arrastra Jefe 1 para reposicionar las 5 barras juntas.",
+    ["info_boss_drag"]                  = "Desbloquea (/tmf uf) para mover. Arrastra Jefe 1 para reposicionar las 5 barras juntas.",
     ["info_boss_colors"]                = "Los colores de barra usan colores de clasificación de Nameplate (Jefe = rojo, Mini-jefe = morado).",
     ["msg_boss_initialized"]            = "Barras de jefe cargadas.",
 
@@ -1241,7 +1241,7 @@ TomoMod_RegisterLocale("esES", {
     ["grid_dimmed"]                    = "Cuadrícula",
     ["grid_bright"]                    = "Cuadrícula +",
     ["grid_disabled"]                  = "Cuadrícula OFF",
-    ["layout_unlocked"]                 = "EditMode ACTIVO — arrastra los elementos. Haz clic en Bloquear o /tm layout cuando termines.",
+    ["layout_unlocked"]                 = "EditMode ACTIVO — arrastra los elementos. Haz clic en Bloquear o /tmf layout cuando termines.",
     ["layout_snap_on"]                   = "Imán: SÍ",
     ["layout_snap_off"]                  = "Imán: NO",
     ["layout_nudger_hint"]               = "Haz clic o arrastra un elemento para abrir TomoLayout. Mayús: colocar sin imán.",
@@ -1273,7 +1273,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_prey_tracker_enable"]          = "Activar Rastreador de Presa",
     ["opt_prey_tracker_width"]           = "Ancho",
     ["opt_prey_tracker_font"]            = "Tamaño de fuente",
-    ["info_prey_tracker"]                = "Función exclusiva de Midnight. Muestra una barra de progreso móvil durante una caza de Presa activa. Posiciónela mediante /tm layout.",
+    ["info_prey_tracker"]                = "Función exclusiva de Midnight. Muestra una barra de progreso móvil durante una caza de Presa activa. Posiciónela mediante /tmf layout.",
 
     -- =====================
     -- SKINS (Chat)
@@ -1585,7 +1585,7 @@ TomoMod_RegisterLocale("esES", {
     -- Step 1: Welcome
     ["ins_step1_title"]              = "Bienvenido a TomoMod",
     ["ins_subtitle"]                 = "Suite de interfaz y QOL para The War Within",
-    ["ins_welcome_desc"]             = "Este asistente te guiar\195\161 en |cffffd10016 pasos|r para configurar TomoMod seg\195\186n\ntus preferencias: unit frames, party frames, castbars, nameplates, barras de acci\195\179n,\nrecursos, skins, sonido, Mythic+, QOL, optimizaciones y SkyRide.\n\nTodas estas opciones pueden cambiarse en cualquier momento con |cffffd100/tm|r.",
+    ["ins_welcome_desc"]             = "Este asistente te guiar\195\161 en |cffffd10016 pasos|r para configurar TomoMod seg\195\186n\ntus preferencias: unit frames, party frames, castbars, nameplates, barras de acci\195\179n,\nrecursos, skins, sonido, Mythic+, QOL, optimizaciones y SkyRide.\n\nTodas estas opciones pueden cambiarse en cualquier momento con |cffffd100/tmf|r.",
 
     -- Step 2: Profile
     ["ins_step2_title"]              = "Perfil de juego",
@@ -1595,7 +1595,7 @@ TomoMod_RegisterLocale("esES", {
     ["ins_profile_create"]           = "Crear perfil",
     ["ins_profile_created"]          = "Perfil creado: ",
     ["ins_spec_section"]             = "Asignaci\195\179n de especializaci\195\179n",
-    ["ins_spec_info"]                = "Puedes asignar este perfil a tus especializaciones desde el panel Perfiles (/tm).\nCada especializaci\195\179n puede usar una configuraci\195\179n diferente.",
+    ["ins_spec_info"]                = "Puedes asignar este perfil a tus especializaciones desde el panel Perfiles (/tmf).\nCada especializaci\195\179n puede usar una configuraci\195\179n diferente.",
 
     -- Step 3: Visual Skins
     ["ins_step3_title"]              = "Skins visuales",
@@ -1648,7 +1648,7 @@ TomoMod_RegisterLocale("esES", {
     ["ins_ab_opacity_section"]       = "Opacidad global de barras",
     ["ins_ab_opacity"]               = "Opacidad",
     ["ins_ab_manage_section"]        = "Gesti\195\179n de barras",
-    ["ins_ab_manage_info"]           = "Usa el panel Barras de acci\195\179n (/tm |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Barras de acci\195\179n |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Gesti\195\179n)\npara desbloquear y reposicionar cada barra.",
+    ["ins_ab_manage_info"]           = "Usa el panel Barras de acci\195\179n (/tmf |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Barras de acci\195\179n |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t Gesti\195\179n)\npara desbloquear y reposicionar cada barra.",
 
     -- Step 7: LustSound
     ["ins_step7_title"]              = "Sonido \226\128\148 Hero\195\173smo / Sed de sangre",
@@ -1691,7 +1691,7 @@ TomoMod_RegisterLocale("esES", {
 
     -- Step 10: QOL
     ["ins_step10_title"]             = "Calidad de vida (QOL)",
-    ["ins_qol_info"]                 = "Activa los m\195\179dulos QOL que desees.\nTodos son accesibles por separado en /tm |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t QOL.",
+    ["ins_qol_info"]                 = "Activa los m\195\179dulos QOL que desees.\nTodos son accesibles por separado en /tmf |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t QOL.",
     ["ins_qol_auto_section"]         = "Automatizaciones",
     ["ins_qol_auto_repair"]          = "Reparar autom\195\161ticamente en el comerciante",
     ["ins_qol_fast_loot"]            = "Saqueo r\195\161pido (recogida r\195\161pida de objetos)",
@@ -1718,7 +1718,7 @@ TomoMod_RegisterLocale("esES", {
     -- Step 12: Done
     ["ins_step12_title"]             = "\194\161Configuraci\195\179n completada!",
     ["ins_done_check"]               = "|TInterface\\RAIDFRAME\\ReadyCheck-Ready:0|t  \194\161Todo listo!",
-    ["ins_done_recap"]               = "Tu configuraci\195\179n de TomoMod est\195\161 guardada. Algunos recordatorios:\n\n|cffffd100/tm|r              |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t  Abrir el panel de configuraci\195\179n\n|cffffd100/tm sr|r           |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t  Desbloquear y mover elementos\n|cffffd100/tm install|r      |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t  Relanzar este instalador\n\nTodas las opciones configuradas aqu\195\173 pueden cambiarse en cualquier momento\ndesde los paneles correspondientes en la GUI de TomoMod.\n\nSe necesita un |cffffd100reload de la UI|r para aplicar ciertos cambios\n(nameplates, skins, UnitFrames).",
+    ["ins_done_recap"]               = "Tu configuraci\195\179n de TomoMod est\195\161 guardada. Algunos recordatorios:\n\n|cffffd100/tmf|r              |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t  Abrir el panel de configuraci\195\179n\n|cffffd100/tmf sr|r           |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t  Desbloquear y mover elementos\n|cffffd100/tmf install|r      |TInterface\\BUTTONS\\UI-SpellbookIcon-NextPage:0|t  Relanzar este instalador\n\nTodas las opciones configuradas aqu\195\173 pueden cambiarse en cualquier momento\ndesde los paneles correspondientes en la GUI de TomoMod.\n\nSe necesita un |cffffd100reload de la UI|r para aplicar ciertos cambios\n(nameplates, skins, UnitFrames).",
     ["ins_done_reload"]              = "|TInterface\\BUTTONS\\UI-RefreshButton:0|t  Recargar UI",
 
     -- Step NEW: Unit Frames
@@ -1818,7 +1818,7 @@ TomoMod_RegisterLocale("esES", {
     ["info_abs_layout"]              = "Usa el EditMode para mover las barras o arrastra las superposiciones.\nDespliega una barra abajo para ajustar el tama\195\177o de los botones y la escala.",
     -- General panel
     ["opt_gui_scale"]                = "Escala de la ventana de configuraci\195\179n",
-    ["info_gui_scale"]               = "Escala de la ventana /tm \226\128\148 tambi\195\169n se puede redimensionar arrastrando su esquina inferior derecha.",
+    ["info_gui_scale"]               = "Escala de la ventana /tmf \226\128\148 tambi\195\169n se puede redimensionar arrastrando su esquina inferior derecha.",
     ["btn_gui_reset_size"]           = "Restablecer tama\195\177o y escala de la ventana",
     ["btn_relaunch_installer"]       = "Relanzar instalador",
     ["info_relaunch_installer"]      = "Inicia el asistente de configuraci\195\179n de 16 pasos.",
@@ -1853,7 +1853,7 @@ TomoMod_RegisterLocale("esES", {
     ["preview_tag_live"]                = "REAL",
     ["preview_tag_sim"]                 = "SIM",
     -- ConfigUI footer
-    ["ui_footer_hint"]               = "/tm  \194\183  /tm sr para mover elementos",
+    ["ui_footer_hint"]               = "/tmf  \194\183  /tmf sr para mover elementos",
 
     -- =====================
     -- SKINS CATEGORY (top-level)
@@ -1935,7 +1935,7 @@ TomoMod_RegisterLocale("esES", {
     ["tab_skin_mail"]                    = "Correo",
 
     -- =====================
-    -- MÓDULO WAYPOINT (/tm way)
+    -- MÓDULO WAYPOINT (/tmf way)
     -- =====================
     -- GUI
     ["tab_qol_waypoint"]                  = "Marcador",
@@ -1957,7 +1957,7 @@ TomoMod_RegisterLocale("esES", {
     ["way_no_pos"]                       = "No se puede determinar la posición del jugador.",
     ["way_bad_map"]                      = "No se puede colocar un marcador en este mapa.",
     ["way_bad_coords"]                   = "Las coordenadas deben estar entre 0 y 100.",
-    ["way_usage"]                        = "Uso: /tm way [mapID] x y [nombre]  |  /tm way clear",
+    ["way_usage"]                        = "Uso: /tmf way [mapID] x y [nombre]  |  /tmf way clear",
 
     -- =====================
     -- Resource names
@@ -2159,7 +2159,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_cb_unit_show_timer"]           = "Mostrar temporizador",
     ["opt_cb_unit_show_latency"]         = "Mostrar latencia",
     ["info_cb_latency"]                  = "Muestra una capa oscura con la latencia de red al final de la barra.",
-    ["info_cb_position"]                 = "Usa /tm layout para desbloquear y arrastrar esta barra.",
+    ["info_cb_position"]                 = "Usa /tmf layout para desbloquear y arrastrar esta barra.",
     ["btn_cb_reset_position"]            = "Restablecer posición",
     ["cb_move_label"]                    = "(Arrastra para mover)",
     ["cb_player_missing_notice"]         = "La barra de lanzamiento del jugador no está activada — actívala en los ajustes de Barras de lanzamiento antes de poder moverla.",
@@ -2216,7 +2216,7 @@ TomoMod_RegisterLocale("esES", {
     ["pf_opt_font_size"]                 = "Tamaño de fuente",
 
     ["pf_section_position"]              = "Posición",
-    ["pf_info_position"]                 = "Usa /tm layout para desbloquear y arrastrar los marcos de grupo.",
+    ["pf_info_position"]                 = "Usa /tmf layout para desbloquear y arrastrar los marcos de grupo.",
     ["pf_btn_reset_position"]            = "Restablecer posición",
 
     ["pf_section_health_extras"]         = "Extras de salud",
@@ -2279,7 +2279,7 @@ TomoMod_RegisterLocale("esES", {
     ["pf_opt_trinket_size"]              = "Tamaño del icono de abalorio",
     ["pf_opt_show_spec"]                 = "Mostrar icono de especialización",
     ["pf_section_arena_pos"]             = "Posición de arena",
-    ["pf_info_arena_pos"]                = "Usa /tm layout para desbloquear y arrastrar los marcos de arena.",
+    ["pf_info_arena_pos"]                = "Usa /tmf layout para desbloquear y arrastrar los marcos de arena.",
     ["pf_btn_reset_arena_pos"]           = "Restablecer posición",
 
     -- ═══════════════════════════════════
@@ -2316,7 +2316,7 @@ TomoMod_RegisterLocale("esES", {
     ["rf_section_font"]                  = "Fuente",
     ["rf_opt_font_size"]                 = "Tamaño de fuente",
     ["rf_section_position"]              = "Posición",
-    ["rf_info_position"]                 = "Usa /tm layout para desbloquear y mover los marcos de banda.",
+    ["rf_info_position"]                 = "Usa /tmf layout para desbloquear y mover los marcos de banda.",
     ["rf_btn_reset_position"]            = "Restablecer posición",
     ["rf_info_test_raid"]                = "Simula una banda de 20 jugadores para previsualizar el diseño fuera de combate.",
     ["rf_btn_test_raid"]                 = "Simular 20 jugadores",
@@ -2370,7 +2370,7 @@ TomoMod_RegisterLocale("esES", {
     ["rf_opt_br_only_instance"]          = "Solo en mazmorras/bandas",
     ["rf_opt_br_size"]                   = "Tamaño del contador",
     ["rf_opt_br_font"]                   = "Tamaño de fuente del contador",
-    ["rf_info_battlerez"]                = "Un contador movible que muestra cuántas rez de combate hay disponibles y el tiempo hasta la siguiente carga. Lee el pool compartido, funciona en cualquier clase. Muévelo con /tm layout.",
+    ["rf_info_battlerez"]                = "Un contador movible que muestra cuántas rez de combate hay disponibles y el tiempo hasta la siguiente carga. Lee el pool compartido, funciona en cualquier clase. Muévelo con /tmf layout.",
 
     -- Diseño por tamaño
     ["rf_section_size_overrides"]        = "Diseño por tamaño (10/25/40)",
@@ -2415,7 +2415,7 @@ TomoMod_RegisterLocale("esES", {
     ["at_cat_defensives"]                = "Defensivas (externas + personales)",
 
     ["at_section_position"]              = "Posición",
-    ["at_info_position"]                 = "Usa /tm layout para desbloquear y arrastrar el rastreador.",
+    ["at_info_position"]                 = "Usa /tmf layout para desbloquear y arrastrar el rastreador.",
     ["at_btn_reset_position"]            = "Restablecer posición",
 
     -- ═══════════════════════════════════
@@ -2439,7 +2439,7 @@ TomoMod_RegisterLocale("esES", {
     ["bt_opt_throttle_window"]           = "Ventana de fusión (seg)",
 
     ["bt_section_position"]              = "Posición",
-    ["bt_info_position"]                 = "Usa /tm layout para desbloquear y arrastrar las zonas.",
+    ["bt_info_position"]                 = "Usa /tmf layout para desbloquear y arrastrar las zonas.",
     ["bt_btn_reset_position"]            = "Restablecer posiciones",
 
     ["bt_zone_outgoing"]                 = "Saliente",
@@ -2447,7 +2447,7 @@ TomoMod_RegisterLocale("esES", {
     ["bt_zone_heal_out"]                 = "Curación saliente",
     ["bt_zone_heal_in"]                  = "Curación recibida",
 
-    ["bt_cmd_help"]                      = "/tm bt <cmd>",
+    ["bt_cmd_help"]                      = "/tmf bt <cmd>",
     ["bt_enabled"]                       = "activado",
     ["bt_disabled"]                      = "desactivado",
     ["bt_crit"]                          = "!",
@@ -2523,8 +2523,8 @@ TomoMod_RegisterLocale("esES", {
     ["info_housing_desc"]            = "M\195\179dulo Housing: mejora el editor de casas y a\195\177ade atajos de teletransportaci\195\179n. Requiere Midnight / The War Within.",
     ["info_housing_hover"]           = "En el modo 'Decoraci\195\179n base', muestra nombre, coste de colocaci\195\179n y stock restante. Tambi\195\169n permite duplicar con tecla modificadora.",
     ["info_housing_clock"]           = "Muestra un reloj y registra el tiempo en el editor de casas. Clic derecho para cambiar entre anal\195\179gico y digital.",
-    ["info_housing_teleport"]        = "Activa /tm home: te teletransporta a tu casa o sales autom\195\161ticamente si est\195\161s de visita.",
-    ["info_housing_commands"]        = "\226\128\162 /tm home \226\128\148 teletransportarte a tu casa (o salir)\n\226\128\162 /tm housing \226\128\148 abrir este panel\n\226\128\162 Clic derecho en el reloj \226\128\148 cambiar anal\195\179gico/digital",
+    ["info_housing_teleport"]        = "Activa /tmf home: te teletransporta a tu casa o sales autom\195\161ticamente si est\195\161s de visita.",
+    ["info_housing_commands"]        = "\226\128\162 /tmf home \226\128\148 teletransportarte a tu casa (o salir)\n\226\128\162 /tmf housing \226\128\148 abrir este panel\n\226\128\162 Clic derecho en el reloj \226\128\148 cambiar anal\195\179gico/digital",
 
     ["opt_housing_enable"]           = "Activar m\195\179dulo Housing",
     ["opt_housing_decorhover"]       = "Activar info decoraci\195\179n",
@@ -2532,7 +2532,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_housing_dupekey"]          = "Tecla de duplicaci\195\179n",
     ["opt_housing_clock"]            = "Activar reloj",
     ["opt_housing_clock_analog"]     = "Modo anal\195\179gico (si no, digital)",
-    ["opt_housing_teleport"]         = "Activar teletransportaci\195\179n /tm home",
+    ["opt_housing_teleport"]         = "Activar teletransportaci\195\179n /tmf home",
 
     ["btn_housing_tp_home"]          = "Teletransportar (prueba)",
     ["btn_housing_refresh"]          = "Actualizar casas",
@@ -2590,13 +2590,13 @@ TomoMod_RegisterLocale("esES", {
     ["preset_minimal_desc"]  = "Una huella ligera: mantiene UnitFrames, marcos de grupo y banda, barras de lanzamiento, barras de recursos, el minimapa y las automatizaciones esenciales — todo lo cosmético (skins, chat, bolsas, Nameplates, paneles extra) queda desactivado. Lo más parecido a una sensación vanilla.",
     ["preset_custom_name"]   = "Personalizado",
     ["preset_custom_tag"]    = "Configúralo todo tú mismo",
-    ["preset_custom_desc"]   = "Omite los presets y recorre cada categoría paso a paso para activar exactamente lo que quieras. Siempre puedes cambiar cualquier cosa después desde /tm.",
+    ["preset_custom_desc"]   = "Omite los presets y recorre cada categoría paso a paso para activar exactamente lo que quieras. Siempre puedes cambiar cualquier cosa después desde /tmf.",
     ["preset_applied"]       = "Preset aplicado: %s — escribe /reload para ver el resultado.",
     ["preset_unknown"]       = "Preset desconocido « %s ». Disponibles: complet, tank, healer, dps, minimal.",
     ["preset_usage"]         = "Uso: /tmpreset <complet|tank|healer|dps|minimal>",
-    ["ins_v3_welcome_desc"]      = "¡Bienvenido! Este asistente rápido te deja una interfaz limpia y completa en segundos.\n\nElige una configuración acorde a tu forma de jugar — podrás ajustarlo todo después desde |cffffd100/tm|r. ¿Prefieres elegir cada opción tú mismo? Elige |cffc89530Personalizado|r.",
+    ["ins_v3_welcome_desc"]      = "¡Bienvenido! Este asistente rápido te deja una interfaz limpia y completa en segundos.\n\nElige una configuración acorde a tu forma de jugar — podrás ajustarlo todo después desde |cffffd100/tmf|r. ¿Prefieres elegir cada opción tú mismo? Elige |cffc89530Personalizado|r.",
     ["ins_pick_title"]           = "Elige tu configuración",
-    ["ins_pick_subtitle"]        = "Selecciona un estilo de juego abajo. Todo queda ajustable después vía /tm.",
+    ["ins_pick_subtitle"]        = "Selecciona un estilo de juego abajo. Todo queda ajustable después vía /tmf.",
     ["ins_pick_recommended"]     = "Recomendado",
     ["ins_custom_frames_title"]  = "Marcos",
     ["ins_custom_barsskins_title"] = "Barras y Skins",
@@ -2607,7 +2607,7 @@ TomoMod_RegisterLocale("esES", {
     ["ins_recap_title"]          = "Todo listo",
     ["ins_recap_preset"]         = "Configuración aplicada: |cffffd100%s|r",
     ["ins_recap_custom"]         = "Tu configuración personalizada está lista",
-    ["ins_recap_desc"]           = "Recarga tu interfaz para aplicarlo todo. Puedes reabrir este asistente cuando quieras con |cffffd100/tm install|r, y abrir el panel de configuración completo con |cffffd100/tm|r.",
+    ["ins_recap_desc"]           = "Recarga tu interfaz para aplicarlo todo. Puedes reabrir este asistente cuando quieras con |cffffd100/tmf install|r, y abrir el panel de configuración completo con |cffffd100/tmf|r.",
     ["cat_accueil"]              = "Inicio",
     ["ui_search_placeholder"]    = "Buscar ajuste...",
     ["dash_welcome"]             = "Vista rápida de TomoMod. Activa módulos, aplica una configuración, cambia de perfil o relanza el asistente.",
@@ -2850,7 +2850,7 @@ TomoMod_RegisterLocale("esES", {
     ["tab_qol_compass"]               = "Brújula",
     ["section_compass"]               = "Barra de brújula",
     ["info_compass_desc"]             = "Una barra de rumbo en la parte superior de la pantalla que muestra N/E/S/O al girar, con un marcador que apunta hacia tu misión rastreada o el punto de ruta del mapa. Solo lectura, sin taint.",
-    ["info_compass_layout"]           = "Consejo: usa el modo Layout (/tm layout) para arrastrar la barra donde quieras.",
+    ["info_compass_layout"]           = "Consejo: usa el modo Layout (/tmf layout) para arrastrar la barra donde quieras.",
     ["opt_compass_enable"]            = "Activar barra de brújula",
     ["opt_compass_fov"]               = "Campo de visión",
     ["compass_fov_narrow"]            = "Estrecho (±45°)",
@@ -2961,7 +2961,7 @@ TomoMod_RegisterLocale("esES", {
     ["cfui_layout_button"]                = "Diseño TomoMod",
     ["cfui_left_click"]                   = "Clic izquierdo:",
     ["cfui_switch_layout"]                = "Cambiar de diseño",
-    ["cfui_no_layouts"]                   = "No hay diseños guardados. Usa /tm layout save <nombre>",
+    ["cfui_no_layouts"]                   = "No hay diseños guardados. Usa /tmf layout save <nombre>",
     ["cfui_no_professions"]               = "No tienes profesiones.",
     ["cfui_config_menu"]                  = "Configuración",
     ["cfui_profiles"]                     = "Perfiles",
@@ -2987,7 +2987,7 @@ TomoMod_RegisterLocale("esES", {
     ["cfui_btn_reputation"]               = "Reputación",
     ["cfui_btn_pvpscore"]                 = "Puntuación JcJ",
     ["cfui_btn_currency"]                 = "Moneda",
-    ["btn_abs_layout"]                    = "EditMode (/tm layout)",
+    ["btn_abs_layout"]                    = "EditMode (/tmf layout)",
     ["opt_bar_enabled"]                   = "Activada",
     ["opt_bar_orientation"]               = "Orientación",
     ["opt_bar_grow_dir"]                  = "Dirección de crecimiento",
@@ -3059,7 +3059,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_rare_alert_sound"]              = "Reproducir un sonido de alerta",
     ["opt_rare_alert_duration"]           = "Duración del cartel (s)",
     ["btn_reset_rare_alert_pos"]          = "Restablecer la posición del cartel",
-    ["rare_alert_info"]                   = "Te avisa cuando hay un PNJ raro cerca. Haz clic en el cartel para seleccionarlo, colocar el marcador de calavera y fijar un punto de ruta. Clic derecho para descartarlo. Usa /tm layout para mover el cartel.",
+    ["rare_alert_info"]                   = "Te avisa cuando hay un PNJ raro cerca. Haz clic en el cartel para seleccionarlo, colocar el marcador de calavera y fijar un punto de ruta. Clic derecho para descartarlo. Usa /tmf layout para mover el cartel.",
     ["rare_alert_tooltip"]                = "Clic izquierdo: seleccionar + calavera + punto de ruta. Clic derecho: descartar.",
 
     -- =====================
@@ -3268,10 +3268,10 @@ TomoMod_RegisterLocale("esES", {
     ["cli_mod_live"]           = "%d en caliente",
     ["cli_mod_reload"]         = "%d con /reload",
     ["cli_mod_none"]           = "%d sin conmutador",
-    ["cli_modules_hint"]       = "/tm modules <clave> para alternar",
+    ["cli_modules_hint"]       = "/tmf modules <clave> para alternar",
     ["cli_backup_created"]     = "copia de seguridad creada.",
-    ["cli_backup_usage"]       = "/tm backup save | /tm backup restore [número]",
-    ["cli_layout_usage"]       = "/tm layout export|import <cadena>",
+    ["cli_backup_usage"]       = "/tmf backup save | /tmf backup restore [número]",
+    ["cli_layout_usage"]       = "/tmf layout export|import <cadena>",
     ["cli_capture_failed"]     = "captura fallida",
     ["cli_res_counts"]         = "%d fuentes, %d anclajes",
     ["msg_help_install"]       = "Volver a abrir el asistente de configuración",

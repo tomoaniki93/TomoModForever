@@ -1,6 +1,6 @@
 ﻿-- =====================================================================
 -- Waypoint.lua — In-world waypoint system  (QOL Module)
--- Modules > QOL > Waypoint  |  /tm way [x y] | /tm way clear
+-- Modules > QOL > Waypoint  |  /tmf way [x y] | /tmf way clear
 --
 --   • MapPin   : C_Map / C_SuperTrack waypoint management
 --   • Beacon   : teal circle + beam anchored to C_Navigation.GetFrame()
@@ -601,12 +601,12 @@ end
 -- ══ Slash command handler ═════════════════════════════════════════════
 
 --[[
-    /tm way             → waypoint at player position
-    /tm way clear       → clear waypoint
-    /tm way x y         → waypoint at (x, y) on current map
-    /tm way x y name    → with label
-    /tm way mapID x y   → on specific map
-    /tm way mapID x y name → full form
+    /tmf way             → waypoint at player position
+    /tmf way clear       → clear waypoint
+    /tmf way x y         → waypoint at (x, y) on current map
+    /tmf way x y name    → with label
+    /tmf way mapID x y   → on specific map
+    /tmf way mapID x y name → full form
 ]]
 function WP.HandleSlashCommand(args)
     args = args or ""

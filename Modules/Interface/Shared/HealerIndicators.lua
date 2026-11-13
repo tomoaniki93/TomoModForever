@@ -652,7 +652,7 @@ end
 -- Settings bridge
 --
 -- The Party & Raid Studio is gone: its healer editor is now the
--- "Healer indicators" page of the /tm window.
+-- "Healer indicators" page of the /tmf window.
 -- ---------------------------------------------------------------------
 function HI.OpenStudio(mode)
     local cfg = TomoMod_Config

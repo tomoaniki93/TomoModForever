@@ -1649,7 +1649,7 @@ function RF.Initialize()
     RF.StartRangeChecker()
     C_Timer.After(0.1, function() RF.RefreshGroup() end)
 
-    -- Register with the unified mover system (/tm layout)
+    -- Register with the unified mover system (/tmf layout)
     if TomoMod_Movers and TomoMod_Movers.RegisterEntry then
         TomoMod_Movers.RegisterEntry({
             label    = (TomoMod_L and TomoMod_L["mover_raidframes"]) or "Raid Frames",

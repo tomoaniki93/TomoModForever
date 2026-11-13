@@ -23,7 +23,7 @@ TomoMod_RegisterLocale("enUS", {
     ["wn_version"]                       = "Version %s",
     ["wn_subtitle"]                      = "Here's what changed since your last update:",
     ["wn_btn_ok"]                        = "Got it!",
-    ["wn_footer"]                        = "All settings can be changed anytime via |cffffd100/tm|r.",
+    ["wn_footer"]                        = "All settings can be changed anytime via |cffffd100/tmf|r.",
 })
 
 TomoMod_RegisterLocale("frFR", {
@@ -31,7 +31,7 @@ TomoMod_RegisterLocale("frFR", {
     ["wn_version"]                       = "Version %s",
     ["wn_subtitle"]                      = "Voici les changements depuis votre derni\195\168re mise \195\160 jour :",
     ["wn_btn_ok"]                        = "Compris !",
-    ["wn_footer"]                        = "Tous les r\195\169glages peuvent \195\170tre modifi\195\169s \195\160 tout moment via |cffffd100/tm|r.",
+    ["wn_footer"]                        = "Tous les r\195\169glages peuvent \195\170tre modifi\195\169s \195\160 tout moment via |cffffd100/tmf|r.",
 })
 
 TomoMod_RegisterLocale("deDE", {
@@ -39,7 +39,7 @@ TomoMod_RegisterLocale("deDE", {
     ["wn_version"]                       = "Version %s",
     ["wn_subtitle"]                      = "Das hat sich seit deinem letzten Update ge\195\164ndert:",
     ["wn_btn_ok"]                        = "Verstanden!",
-    ["wn_footer"]                        = "Alle Einstellungen k\195\182nnen jederzeit \195\188ber |cffffd100/tm|r ge\195\164ndert werden.",
+    ["wn_footer"]                        = "Alle Einstellungen k\195\182nnen jederzeit \195\188ber |cffffd100/tmf|r ge\195\164ndert werden.",
 })
 
 TomoMod_RegisterLocale("esES", {
@@ -47,7 +47,7 @@ TomoMod_RegisterLocale("esES", {
     ["wn_version"]                       = "Versi\195\179n %s",
     ["wn_subtitle"]                      = "Esto es lo que cambi\195\179 desde tu \195\186ltima actualizaci\195\179n:",
     ["wn_btn_ok"]                        = "\194\161Entendido!",
-    ["wn_footer"]                        = "Todos los ajustes pueden cambiarse en cualquier momento con |cffffd100/tm|r.",
+    ["wn_footer"]                        = "Todos los ajustes pueden cambiarse en cualquier momento con |cffffd100/tmf|r.",
 })
 
 TomoMod_RegisterLocale("itIT", {
@@ -55,7 +55,7 @@ TomoMod_RegisterLocale("itIT", {
     ["wn_version"]                       = "Versione %s",
     ["wn_subtitle"]                      = "Ecco cosa \195\168 cambiato dal tuo ultimo aggiornamento:",
     ["wn_btn_ok"]                        = "Capito!",
-    ["wn_footer"]                        = "Tutte le impostazioni possono essere modificate in qualsiasi momento tramite |cffffd100/tm|r.",
+    ["wn_footer"]                        = "Tutte le impostazioni possono essere modificate in qualsiasi momento tramite |cffffd100/tmf|r.",
 })
 
 TomoMod_RegisterLocale("ptBR", {
@@ -63,5 +63,5 @@ TomoMod_RegisterLocale("ptBR", {
     ["wn_version"]                       = "Vers\195\163o %s",
     ["wn_subtitle"]                      = "Veja o que mudou desde sua \195\186ltima atualiza\195\167\195\163o:",
     ["wn_btn_ok"]                        = "Entendi!",
-    ["wn_footer"]                        = "Todas as configura\195\167\195\181es podem ser alteradas a qualquer momento via |cffffd100/tm|r.",
+    ["wn_footer"]                        = "Todas as configura\195\167\195\181es podem ser alteradas a qualquer momento via |cffffd100/tmf|r.",
 })

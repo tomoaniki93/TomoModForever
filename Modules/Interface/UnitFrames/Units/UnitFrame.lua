@@ -402,7 +402,7 @@ end
 --     par visage rend alpha 1 dans sa tranche et 0 ailleurs, évaluée côté C ;
 --     la valeur secrète ne touche jamais le Lua. Tranches Classic : 0-1/3
 --     malheureux, 1/3-2/3 content, 2/3-1 heureux.
---  3. Rien de lisible -> icône cachée. `/tm pethappy` dit lequel s'applique.
+--  3. Rien de lisible -> icône cachée. `/tmf pethappy` dit lequel s'applique.
 local HAPPINESS_COLORS = {
     [1] = { 0.85, 0.20, 0.15 },
     [2] = { 1.00, 0.82, 0.00 },
@@ -562,7 +562,7 @@ local function HappinessTooltip(hap)
     GameTooltip:Show()
 end
 
--- `/tm pethappy` : ce que le client expose réellement, pour savoir quel
+-- `/tmf pethappy` : ce que le client expose réellement, pour savoir quel
 -- chemin s'applique quand l'icône reste vide.
 function UF.DebugHappiness()
     local P = "|cffffd100TMF pet|r "

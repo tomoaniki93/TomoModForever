@@ -262,7 +262,7 @@ local function HookLabel()
     return false
 end
 
--- /tm maplevels : is the label hooked, and what levels does the open map get.
+-- /tmf maplevels : is the label hooked, and what levels does the open map get.
 function MR.DebugLevels()
     local function P(...) print("|cffc9a252[TMF carte]|r", ...) end
     P("label hooked:", tostring(labelHooked), "option:", tostring(DB() and DB().zoneLevels ~= false))

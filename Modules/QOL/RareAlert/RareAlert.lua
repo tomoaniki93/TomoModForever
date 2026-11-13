@@ -56,7 +56,7 @@ local FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.t
 -- Macro sécurisée : cible le rare puis pose la Tête de mort (8). Le marqueur DOIT
 -- être posé via /targetmarker (commande native, exécutée dans le contexte sécurisé
 -- du bouton) : appeler SetRaidTarget() depuis du code addon est protégé et lève
--- ADDON_ACTION_FORBIDDEN (taint). TomoMod n'intercepte que /tm, pas /targetmarker.
+-- ADDON_ACTION_FORBIDDEN (taint). TomoMod n'intercepte que /tmf, pas /targetmarker.
 local function BuildTargetMacro(name)
     return "/cleartarget\n/targetexact " .. (name or "") .. "\n/targetmarker " .. SKULL
 end

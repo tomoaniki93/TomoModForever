@@ -470,7 +470,7 @@ function RT.Initialize()
 
     RT.StartTicker()
 
-    -- Register with the unified mover system (/tm layout)
+    -- Register with the unified mover system (/tmf layout)
     if TomoMod_Movers and TomoMod_Movers.RegisterEntry then
         TomoMod_Movers.RegisterEntry({
             label    = (TomoMod_L and TomoMod_L["mover_battlerez"]) or "Battle Rez",

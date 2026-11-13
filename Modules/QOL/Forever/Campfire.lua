@@ -481,7 +481,7 @@ local function StartWatch()
     end)
 end
 
--- Last signals seen, for /tm camp.
+-- Last signals seen, for /tmf camp.
 CF.signals = {}
 local function Signal(kind, detail)
     CF.signals[kind] = { detail = detail, at = GetTime() }
@@ -636,7 +636,7 @@ function CF.Preview(on)
 end
 function CF.IsPreview() return state.preview end
 
--- /tm camp : what the module sees right now.
+-- /tmf camp : what the module sees right now.
 function CF.Debug()
     local function P(...) print("|cffc9a252[TMF camp]|r", ...) end
     local db = DB()

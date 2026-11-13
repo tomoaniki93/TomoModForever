@@ -117,7 +117,7 @@
     <Include file="Skins\TooltipInspect.lua" />
     <Include file="Skins\TooltipInfo.lua" />
     <Include file="Skins\GroupManagerSkin.lua" />
-    <!-- Modules: Waypoint (In-world navigation — /tm way) -->
+    <!-- Modules: Waypoint (In-world navigation — /tmf way) -->
     <Include file="Waypoint\Waypoint.lua" />
 
     <!-- Modules: Diagnostics (Error Capture & Report — /tmdiag) -->

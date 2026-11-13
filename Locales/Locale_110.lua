@@ -2,7 +2,7 @@
 
 TomoMod_RegisterLocale("enUS", {
     ["wn_110_gui"]       = "New - Settings window rebuilt: compact, docked to the side of the screen, and every change is applied live. It fades while you drag a slider or hold Alt so you can see your UI behind it.",
-    ["wn_110_studios"]   = "Removed - The Studios (Astral Forge, Party & Raid, Resource & Cast, Cooldown) are gone. Their settings are now plain pages of /tm, with a simple mode and an expert mode. Delete their four folders from Interface\\AddOns.",
+    ["wn_110_studios"]   = "Removed - The Studios (Astral Forge, Party & Raid, Resource & Cast, Cooldown) are gone. Their settings are now plain pages of /tmf, with a simple mode and an expert mode. Delete their four folders from Interface\\AddOns.",
     ["wn_110_showme"]    = "New - \"Show me\": opening a frame page pulses the real frame on screen. Party, raid and castbar pages show a live preview even when you are solo.",
     ["wn_110_search"]    = "New - Search finds any setting, opens its page and highlights it. The Home page guides new players step by step.",
     ["wn_110_power"]     = "Changed - Player frame: the mana / energy bar is now 10 px high (was 2 px), with readable text.",
@@ -13,7 +13,7 @@ TomoMod_RegisterLocale("enUS", {
 
 TomoMod_RegisterLocale("frFR", {
     ["wn_110_gui"]       = "Nouveau - Fenêtre de réglages refaite : compacte, ancrée au bord de l'écran, et chaque changement s'applique en direct. Elle s'efface quand tu tires un curseur ou maintiens Alt pour voir ton interface derrière.",
-    ["wn_110_studios"]   = "Retiré - Les Studios (Astral Forge, Groupe & Raid, Ressources & Incantation, Recharges) disparaissent. Leurs réglages sont maintenant des pages simples de /tm, avec un mode simple et un mode expert. Supprime leurs quatre dossiers de Interface\\AddOns.",
+    ["wn_110_studios"]   = "Retiré - Les Studios (Astral Forge, Groupe & Raid, Ressources & Incantation, Recharges) disparaissent. Leurs réglages sont maintenant des pages simples de /tmf, avec un mode simple et un mode expert. Supprime leurs quatre dossiers de Interface\\AddOns.",
     ["wn_110_showme"]    = "Nouveau - « Montre-moi » : ouvrir la page d'un cadre le fait clignoter à l'écran. Les pages Groupe, Raid et Incantation affichent un aperçu même en solo.",
     ["wn_110_search"]    = "Nouveau - La recherche trouve n'importe quel réglage, ouvre sa page et le met en évidence. L'Accueil guide les nouveaux joueurs pas à pas.",
     ["wn_110_power"]     = "Modifié - Cadre joueur : la barre de mana / énergie passe à 10 px (au lieu de 2 px), avec un texte lisible.",
@@ -24,7 +24,7 @@ TomoMod_RegisterLocale("frFR", {
 
 TomoMod_RegisterLocale("deDE", {
     ["wn_110_gui"]       = "Neu - Einstellungsfenster neu gebaut: kompakt, am Bildschirmrand angedockt, jede Änderung wird sofort übernommen. Beim Ziehen eines Schiebereglers oder mit gedrückter Alt-Taste wird es durchsichtig, damit du dein Interface dahinter siehst.",
-    ["wn_110_studios"]   = "Entfernt - Die Studios (Astral Forge, Gruppe & Schlachtzug, Ressourcen & Zauber, Abklingzeiten) gibt es nicht mehr. Ihre Einstellungen sind jetzt normale Seiten von /tm, mit einfachem und Experten-Modus. Lösche ihre vier Ordner aus Interface\\AddOns.",
+    ["wn_110_studios"]   = "Entfernt - Die Studios (Astral Forge, Gruppe & Schlachtzug, Ressourcen & Zauber, Abklingzeiten) gibt es nicht mehr. Ihre Einstellungen sind jetzt normale Seiten von /tmf, mit einfachem und Experten-Modus. Lösche ihre vier Ordner aus Interface\\AddOns.",
     ["wn_110_showme"]    = "Neu - \"Zeig es mir\": Beim Öffnen einer Rahmenseite blinkt der echte Rahmen auf dem Bildschirm. Gruppen-, Schlachtzugs- und Zauberleisten-Seiten zeigen auch solo eine Live-Vorschau.",
     ["wn_110_search"]    = "Neu - Die Suche findet jede Einstellung, öffnet ihre Seite und hebt sie hervor. Die Startseite führt neue Spieler Schritt für Schritt.",
     ["wn_110_power"]     = "Geändert - Spielerrahmen: die Mana-/Energieleiste ist jetzt 10 px hoch (vorher 2 px), mit gut lesbarem Text.",
@@ -35,7 +35,7 @@ TomoMod_RegisterLocale("deDE", {
 
 TomoMod_RegisterLocale("esES", {
     ["wn_110_gui"]       = "Nuevo - Ventana de ajustes rehecha: compacta, anclada al borde de la pantalla y cada cambio se aplica al instante. Se vuelve transparente al arrastrar un control deslizante o mantener Alt para ver tu interfaz detrás.",
-    ["wn_110_studios"]   = "Eliminado - Los Studios (Astral Forge, Grupo y banda, Recursos y lanzamiento, Tiempos de reutilización) desaparecen. Sus ajustes son ahora páginas normales de /tm, con modo simple y modo experto. Borra sus cuatro carpetas de Interface\\AddOns.",
+    ["wn_110_studios"]   = "Eliminado - Los Studios (Astral Forge, Grupo y banda, Recursos y lanzamiento, Tiempos de reutilización) desaparecen. Sus ajustes son ahora páginas normales de /tmf, con modo simple y modo experto. Borra sus cuatro carpetas de Interface\\AddOns.",
     ["wn_110_showme"]    = "Nuevo - \"Muéstramelo\": al abrir la página de un marco, el marco real parpadea en pantalla. Las páginas de grupo, banda y barra de lanzamiento muestran una vista previa incluso en solitario.",
     ["wn_110_search"]    = "Nuevo - La búsqueda encuentra cualquier ajuste, abre su página y lo resalta. La página de Inicio guía paso a paso a los nuevos jugadores.",
     ["wn_110_power"]     = "Cambiado - Marco del jugador: la barra de maná / energía mide ahora 10 px (antes 2 px), con un texto legible.",
@@ -46,7 +46,7 @@ TomoMod_RegisterLocale("esES", {
 
 TomoMod_RegisterLocale("itIT", {
     ["wn_110_gui"]       = "Nuovo - Finestra delle impostazioni rifatta: compatta, ancorata al bordo dello schermo, ogni modifica si applica subito. Diventa trasparente mentre trascini un cursore o tieni premuto Alt, così vedi l'interfaccia dietro.",
-    ["wn_110_studios"]   = "Rimosso - Gli Studio (Astral Forge, Gruppo e incursione, Risorse e lancio, Recuperi) non ci sono più. Le loro impostazioni sono ora pagine normali di /tm, con modalità semplice ed esperta. Elimina le loro quattro cartelle da Interface\\AddOns.",
+    ["wn_110_studios"]   = "Rimosso - Gli Studio (Astral Forge, Gruppo e incursione, Risorse e lancio, Recuperi) non ci sono più. Le loro impostazioni sono ora pagine normali di /tmf, con modalità semplice ed esperta. Elimina le loro quattro cartelle da Interface\\AddOns.",
     ["wn_110_showme"]    = "Nuovo - \"Mostrami\": aprendo la pagina di un riquadro, il riquadro reale lampeggia sullo schermo. Le pagine gruppo, incursione e barra di lancio mostrano un'anteprima anche in solitario.",
     ["wn_110_search"]    = "Nuovo - La ricerca trova qualsiasi impostazione, apre la sua pagina e la evidenzia. La pagina Home guida i nuovi giocatori passo dopo passo.",
     ["wn_110_power"]     = "Modificato - Riquadro del giocatore: la barra di mana / energia ora è alta 10 px (prima 2 px), con un testo leggibile.",
@@ -57,7 +57,7 @@ TomoMod_RegisterLocale("itIT", {
 
 TomoMod_RegisterLocale("ptBR", {
     ["wn_110_gui"]       = "Novo - Janela de configurações refeita: compacta, ancorada na borda da tela e cada alteração é aplicada na hora. Ela fica transparente ao arrastar um controle deslizante ou segurar Alt, para você ver a interface por trás.",
-    ["wn_110_studios"]   = "Removido - Os Studios (Astral Forge, Grupo e raide, Recursos e conjuração, Recargas) deixaram de existir. Suas configurações agora são páginas normais do /tm, com modo simples e modo avançado. Apague as quatro pastas deles em Interface\\AddOns.",
+    ["wn_110_studios"]   = "Removido - Os Studios (Astral Forge, Grupo e raide, Recursos e conjuração, Recargas) deixaram de existir. Suas configurações agora são páginas normais do /tmf, com modo simples e modo avançado. Apague as quatro pastas deles em Interface\\AddOns.",
     ["wn_110_showme"]    = "Novo - \"Mostre-me\": abrir a página de um quadro faz o quadro real piscar na tela. As páginas de grupo, raide e barra de conjuração mostram uma prévia mesmo jogando sozinho.",
     ["wn_110_search"]    = "Novo - A busca encontra qualquer configuração, abre a página e a destaca. A página Início guia os novos jogadores passo a passo.",
     ["wn_110_power"]     = "Alterado - Quadro do jogador: a barra de mana / energia agora tem 10 px de altura (antes 2 px), com texto legível.",

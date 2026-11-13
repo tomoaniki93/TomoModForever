@@ -231,8 +231,8 @@ K.RegisterPage({
                 get = function() return K.Animated() end,
                 set = function(v) K.GuiDB().animations = v and true or false end,
             }, nil)
-            c:Info(T("Commandes : /tm (cette fenêtre), /tm layout (déplacer), /rl (recharger).",
-                     "Commands: /tm (this window), /tm layout (move), /rl (reload)."))
+            c:Info(T("Commandes : /tmf (cette fenêtre), /tmf layout (déplacer), /rl (recharger).",
+                     "Commands: /tmf (this window), /tmf layout (move), /rl (reload)."))
             c:Done()
         end)
     end,

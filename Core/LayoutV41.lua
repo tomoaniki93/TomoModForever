@@ -723,7 +723,7 @@ local function SelectionRoute()
     end
 end
 
--- The Studios are gone: every layout anchor opens its page in the /tm
+-- The Studios are gone: every layout anchor opens its page in the /tmf
 -- window, which stays open beside the frames while they are edited.
 local PAGE_BY_ANCHOR = {
     ["unitFrames.player"]       = "uf_player",

@@ -293,7 +293,7 @@ end
 -- DIAGNOSTICS
 -- ---------------------------------------------------------------------
 
---- One line for /tm flavor and for the Diagnostics report.
+--- One line for /tmf flavor and for the Diagnostics report.
 function Compat.Summary()
     local names = {}
     for name in pairs(blockedFeature) do names[#names + 1] = name end

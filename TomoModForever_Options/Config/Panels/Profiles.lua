@@ -860,7 +860,7 @@ local function BuildResetsTab(parent)
 
     local _, backupY = W.CreateSectionHeader(c, W.Loc("prof_backup_section", "Recovery backups"), y)
     y = backupY
-    local _, infoY = W.CreateInfoText(c, W.Loc("prof_backup_info", "The five latest backups are kept. /tm backup lists them."), y)
+    local _, infoY = W.CreateInfoText(c, W.Loc("prof_backup_info", "The five latest backups are kept. /tmf backup lists them."), y)
     y = infoY
     local _, saveY = W.CreateButton(c, W.Loc("prof_backup_now", "Back up now"), 260, y, function()
         local entry, err = TomoMod_ProfileSafety.CreateBackup("manuelle", true)
@@ -1058,7 +1058,7 @@ StaticPopupDialogs["TOMOMOD_DUPLICATE_PROFILE"] = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
--- Le partage de disposition (/tm layout export) produit une chaîne à
+-- Le partage de disposition (/tmf layout export) produit une chaîne à
 -- copier, exactement comme l'export de profil. Plutôt qu'un second popup,
 -- on expose celui-ci. TomoMod_Options étant LoadOnDemand, Core/Init.lua
 -- garde l'appel et retombe sur un print si le panneau n'est pas chargé.

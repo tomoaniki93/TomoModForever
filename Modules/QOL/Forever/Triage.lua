@@ -420,7 +420,7 @@ function TR.Initialize()
     end
 end
 
--- For tests and /tm triage.
+-- For tests and /tmf triage.
 function TR.Debug()
     local s = Fresh()
     local function P(...) print("|cffc9a252[TMF tri]|r", ...) end

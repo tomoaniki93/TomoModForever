@@ -62,8 +62,10 @@ StaticPopupDialogs["TOMOMOD_MODULE_RELOAD"] = {
 -- SLASH COMMANDS
 -- =====================================
 
-SLASH_TOMOMOD1 = "/tm"
-SLASH_TOMOMOD2 = "/tomomod"
+-- /tmf since 1.2.6 (the addon's initials); /tm and /tomomod still work.
+SLASH_TOMOMOD1 = "/tmf"
+SLASH_TOMOMOD2 = "/tm"
+SLASH_TOMOMOD3 = "/tomomod"
 SlashCmdList["TOMOMOD"] = function(msg)
     -- Keep payloads and user labels intact; only command matching is folded.
     local rawMsg = (msg or ""):match("^%s*(.-)%s*$")
@@ -220,7 +222,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
                 print(("  %-12s %-6s -> |cffffcc00%s|r"):format(r.context, r.spec, r.profile))
             end
         end
-        print("|cff888888/tm context on|off|r")
+        print("|cff888888/tmf context on|off|r")
 
     elseif msg == "layout" or msg:match("^layout%s+") then
         -- [v4] Partage de disposition. Une chaîne ne contient que les
@@ -312,7 +314,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
                 d.uiHeight,
                 RES.HasCapture(t.key) and "|cff00ff00[capture]|r" or ""))
         end
-        print("|cff888888/tm resolution 1080p|1440p|2160p|capture|r")
+        print("|cff888888/tmf resolution 1080p|1440p|2160p|capture|r")
 
     elseif msg:match("^import%s+") then
         -- [v4 lot 6] Inspection d'une chaîne d'import AVANT de l'accepter.
@@ -487,7 +489,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
 
         -- Step 6: Enable debug
         UF_Elements._debugEnemyBuffs = true
-        print("  [6] Debug ON — target a hostile mob, check chat. /tm debugbuffs to disable")
+        print("  [6] Debug ON — target a hostile mob, check chat. /tmf debugbuffs to disable")
 
         print("|cffffd100=== End Diagnostic ===|r")
     elseif msg == "np" or msg == "nameplates" then
@@ -504,30 +506,30 @@ SlashCmdList["TOMOMOD"] = function(msg)
         end
     elseif msg == "help" or msg == "?" then
         print("|cffffd100TomoModForever|r " .. L["msg_help_title"])
-        print("  |cffffd100/tm install|r — " .. L["msg_help_install"])
-        print("  |cffffd100/tm layout|r — " .. L["msg_help_layout"])
-        print("  |cffffd100/tm|r — " .. L["msg_help_open"])
-        print("  |cffffd100/tm reset|r — " .. L["msg_help_reset"])
-        print("  |cffffd100/tm uf|r — " .. L["msg_help_uf"])
-        print("  |cffffd100/tm uf reset|r — " .. L["msg_help_uf_reset"])
-        print("  |cffffd100/tm rb|r — " .. L["msg_help_rb"])
-        print("  |cffffd100/tm rb sync|r — " .. L["msg_help_rb_sync"])
-        print("  |cffffd100/tm np|r — " .. L["msg_help_np"])
-        print("  |cffffd100/tm minimap|r — " .. L["msg_help_minimap"])
-        print("  |cffffd100/tm panel|r — " .. L["msg_help_panel"])
-        print("  |cffffd100/tm cursor|r — " .. L["msg_help_cursor"])
-        print("  |cffffd100/tm clearcinema|r — " .. L["msg_help_clearcinema"])
-        print("  |cffffd100/tm sr|r — " .. L["msg_help_sr"])
-        print("  |cffffd100/tm way|r — " .. L["msg_help_way"])
-        print("  |cffffd100/tm way x y [name]|r — " .. L["msg_help_way_coords"])
-        print("  |cffffd100/tm way clear|r — " .. L["msg_help_way_clear"])
-        print("  |cffffd100/tm cr|r — " .. L["msg_help_cr"])
-        print("  |cffffd100/tm help|r — " .. L["msg_help_help"])
+        print("  |cffffd100/tmf install|r — " .. L["msg_help_install"])
+        print("  |cffffd100/tmf layout|r — " .. L["msg_help_layout"])
+        print("  |cffffd100/tmf|r — " .. L["msg_help_open"])
+        print("  |cffffd100/tmf reset|r — " .. L["msg_help_reset"])
+        print("  |cffffd100/tmf uf|r — " .. L["msg_help_uf"])
+        print("  |cffffd100/tmf uf reset|r — " .. L["msg_help_uf_reset"])
+        print("  |cffffd100/tmf rb|r — " .. L["msg_help_rb"])
+        print("  |cffffd100/tmf rb sync|r — " .. L["msg_help_rb_sync"])
+        print("  |cffffd100/tmf np|r — " .. L["msg_help_np"])
+        print("  |cffffd100/tmf minimap|r — " .. L["msg_help_minimap"])
+        print("  |cffffd100/tmf panel|r — " .. L["msg_help_panel"])
+        print("  |cffffd100/tmf cursor|r — " .. L["msg_help_cursor"])
+        print("  |cffffd100/tmf clearcinema|r — " .. L["msg_help_clearcinema"])
+        print("  |cffffd100/tmf sr|r — " .. L["msg_help_sr"])
+        print("  |cffffd100/tmf way|r — " .. L["msg_help_way"])
+        print("  |cffffd100/tmf way x y [name]|r — " .. L["msg_help_way_coords"])
+        print("  |cffffd100/tmf way clear|r — " .. L["msg_help_way_clear"])
+        print("  |cffffd100/tmf cr|r — " .. L["msg_help_cr"])
+        print("  |cffffd100/tmf help|r — " .. L["msg_help_help"])
     else
         -- Argument purement numérique : soit une macro tierce (ex : RareScanner
-        -- « marqueur sur la cible » → « /tm <1-8> »), soit une tentative d'utiliser
-        -- la commande native « /tm <0-8> » (marqueur de raid) que TomoMod masque en
-        -- possédant « /tm ».
+        -- « marqueur sur la cible » → « /tmf <1-8> »), soit une tentative d'utiliser
+        -- la commande native « /tmf <0-8> » (marqueur de raid) que TomoMod masque en
+        -- possédant « /tmf ».
         -- IMPORTANT : on ne peut PAS poser le marqueur ici — SetRaidTarget() est une
         -- fonction protégée et lève ADDON_ACTION_FORBIDDEN (taint) depuis du code
         -- addon. On ignore donc l'argument pour ne pas ouvrir la config par erreur.
@@ -536,7 +538,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
         if msg:match("^%s*%d+%s*$") then
             return
         end
-        -- Open config (/tm seul, ou argument inconnu non numérique)
+        -- Open config (/tmf seul, ou argument inconnu non numérique)
         if TomoMod_Config and TomoMod_Config.Toggle then
             TomoMod_Config.Toggle()
         end
@@ -678,7 +680,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
 
         -- Welcome
         local r, g, b = TomoMod_Utils.GetClassColor()
-        print("|cffffd100TomoModForever|r " .. string.format(L["msg_loaded"], TomoMod_Utils.ColorText("/tm", r, g, b)))
+        print("|cffffd100TomoModForever|r " .. string.format(L["msg_loaded"], TomoMod_Utils.ColorText("/tmf", r, g, b)))
         print("|cffffd100TomoModForever|r |cffff3333" .. L["msg_report_issue"] .. "|r")
 
         -- TomoMod and TomoModForever share their Lua globals: running both

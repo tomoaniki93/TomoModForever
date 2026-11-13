@@ -1,6 +1,6 @@
 ﻿-- =====================================
 -- FrameAnchors.lua — Movable anchors for AlertFrame & LootFrame
--- Invisible in normal play, blue border when unlocked via /tm sr
+-- Invisible in normal play, blue border when unlocked via /tmf sr
 -- =====================================
 
 TomoMod_FrameAnchors = TomoMod_FrameAnchors or {}

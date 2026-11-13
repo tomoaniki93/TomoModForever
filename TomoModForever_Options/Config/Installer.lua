@@ -33,9 +33,9 @@ local WHITE     = "Interface\\Buttons\\WHITE8x8"
 -- ------------------------------------------------------------
 if TomoMod_RegisterLocale then
     TomoMod_RegisterLocale("enUS", {
-        ["ins_v3_welcome_desc"]      = "Welcome! This quick setup gets you a clean, complete interface in seconds.\n\nPick a setup that matches how you play — you can fine-tune everything afterwards from |cffffd100/tm|r. Prefer to choose every option yourself? Pick |cffc89530Custom|r.",
+        ["ins_v3_welcome_desc"]      = "Welcome! This quick setup gets you a clean, complete interface in seconds.\n\nPick a setup that matches how you play — you can fine-tune everything afterwards from |cffffd100/tmf|r. Prefer to choose every option yourself? Pick |cffc89530Custom|r.",
         ["ins_pick_title"]           = "Choose your setup",
-        ["ins_pick_subtitle"]        = "Select a play style below. Everything stays adjustable later via /tm.",
+        ["ins_pick_subtitle"]        = "Select a play style below. Everything stays adjustable later via /tmf.",
         ["ins_pick_recommended"]     = "Recommended",
         ["ins_custom_frames_title"]  = "Frames",
         ["ins_custom_barsskins_title"] = "Bars & Skins",
@@ -46,12 +46,12 @@ if TomoMod_RegisterLocale then
         ["ins_recap_title"]          = "All set",
         ["ins_recap_preset"]         = "Setup applied: |cffffd100%s|r",
         ["ins_recap_custom"]         = "Your custom setup is ready",
-        ["ins_recap_desc"]           = "Reload your interface to apply everything. You can reopen this assistant anytime with |cffffd100/tm install|r, and open the full configuration panel with |cffffd100/tm|r.",
+        ["ins_recap_desc"]           = "Reload your interface to apply everything. You can reopen this assistant anytime with |cffffd100/tmf install|r, and open the full configuration panel with |cffffd100/tmf|r.",
     })
     TomoMod_RegisterLocale("frFR", {
-        ["ins_v3_welcome_desc"]      = "Bienvenue ! Cet assistant rapide te prépare une interface propre et complète en quelques secondes.\n\nChoisis une configuration qui correspond à ta façon de jouer — tu pourras tout ajuster ensuite via |cffffd100/tm|r. Tu préfères choisir chaque option toi-même ? Prends |cffc89530Personnalisé|r.",
+        ["ins_v3_welcome_desc"]      = "Bienvenue ! Cet assistant rapide te prépare une interface propre et complète en quelques secondes.\n\nChoisis une configuration qui correspond à ta façon de jouer — tu pourras tout ajuster ensuite via |cffffd100/tmf|r. Tu préfères choisir chaque option toi-même ? Prends |cffc89530Personnalisé|r.",
         ["ins_pick_title"]           = "Choisis ta configuration",
-        ["ins_pick_subtitle"]        = "Sélectionne un style de jeu ci-dessous. Tout reste ajustable ensuite via /tm.",
+        ["ins_pick_subtitle"]        = "Sélectionne un style de jeu ci-dessous. Tout reste ajustable ensuite via /tmf.",
         ["ins_pick_recommended"]     = "Recommandé",
         ["ins_custom_frames_title"]  = "Cadres",
         ["ins_custom_barsskins_title"] = "Barres & Skins",
@@ -62,7 +62,7 @@ if TomoMod_RegisterLocale then
         ["ins_recap_title"]          = "Tout est prêt",
         ["ins_recap_preset"]         = "Configuration appliquée : |cffffd100%s|r",
         ["ins_recap_custom"]         = "Ta configuration personnalisée est prête",
-        ["ins_recap_desc"]           = "Recharge ton interface pour tout appliquer. Tu peux rouvrir cet assistant à tout moment avec |cffffd100/tm install|r, et ouvrir le panneau de configuration complet avec |cffffd100/tm|r.",
+        ["ins_recap_desc"]           = "Recharge ton interface pour tout appliquer. Tu peux rouvrir cet assistant à tout moment avec |cffffd100/tmf install|r, et ouvrir le panneau de configuration complet avec |cffffd100/tmf|r.",
     })
 end
 
@@ -267,7 +267,7 @@ pages.welcome = {
 
 -- ── Résolution ─────────────────────────────────────────────
 -- Core/ResolutionPresets.lua existait depuis le lot 5 sans autre porte
--- d'entrée que /tm resolution. C'est la première décision de l'installeur
+-- d'entrée que /tmf resolution. C'est la première décision de l'installeur
 -- après la bienvenue, parce qu'elle fixe les tailles de police sur
 -- lesquelles les presets d'archétype viennent ensuite s'appuyer.
 pages.resolution = {

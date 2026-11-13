@@ -1459,7 +1459,7 @@ function CB.RefreshAll()
         end
 
         -- RefreshAll can be triggered by settings that do not involve the
-        -- config window. Keep the /tm layout player preview alive explicitly.
+        -- config window. Keep the /tmf layout player preview alive explicitly.
         if CB._layoutPreview then
             local cb = EnsurePlayerCastbar()
             if cb then

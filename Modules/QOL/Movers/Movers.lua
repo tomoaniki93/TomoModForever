@@ -1,6 +1,6 @@
 -- =====================================
 -- Movers.lua — Unified Layout Manager
--- Remplace tous les /tm uf, /tm sr, /tm rb, etc.
+-- Remplace tous les /tmf uf, /tmf sr, /tmf rb, etc.
 -- Un seul toggle pour déplacer tous les éléments de l'interface.
 -- Bouton "Layout" dans le GUI + header bar flottant en mode déplacement.
 -- Grille d'alignement avec effet flashlight curseur (inspiré d'EllesmereUI).

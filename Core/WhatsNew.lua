@@ -67,6 +67,7 @@ CHANGELOG = {
         highlights = {
             L["wn_126_dquests"],
             L["wn_126_levels"],
+            L["wn_126_slash"],
         },
     },
     {
@@ -555,7 +556,7 @@ local function PopulateContent(entry)
 
     y = y - 8
 
-    -- Reminder: /tm
+    -- Reminder: /tmf
     local remind = parent:CreateFontString(nil, "ARTWORK")
     remind:SetFont(FONT, 11)
     remind:SetPoint("TOPLEFT", 0, y)

@@ -1,7 +1,7 @@
 -- Panels/CooldownManager.lua — Blizzard Cooldown Manager skin (viewers + bars)
 -- The resource bar tabs that used to live here belong to Resource & Cast
 -- Studio; only the Cooldown Manager settings, which no Studio edits, stay
--- in /tm (Interface > Cooldown Manager).
+-- in /tmf (Interface > Cooldown Manager).
 local W = TomoMod_Widgets
 local L = TomoMod_L
 

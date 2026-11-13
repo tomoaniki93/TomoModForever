@@ -70,10 +70,10 @@ if TomoMod_RegisterLocale then
 
         ["preset_custom_name"]   = "Custom",
         ["preset_custom_tag"]    = "Configure everything yourself",
-        ["preset_custom_desc"]   = "Skip the presets and walk through every category step by step to enable exactly what you want. You can always change anything later from /tm.",
+        ["preset_custom_desc"]   = "Skip the presets and walk through every category step by step to enable exactly what you want. You can always change anything later from /tmf.",
         ["preset_custom_h1"]     = "Step-by-step walkthrough",
         ["preset_custom_h2"]     = "Nothing is written until you choose",
-        ["preset_custom_h3"]     = "Everything stays editable from /tm",
+        ["preset_custom_h3"]     = "Everything stays editable from /tmf",
 
         ["preset_badge_recommended"] = "Recommended",
         ["preset_badge_active"]      = "Active",
@@ -120,10 +120,10 @@ if TomoMod_RegisterLocale then
 
         ["preset_custom_name"]   = "Personnalisé",
         ["preset_custom_tag"]    = "Tout configurer soi-même",
-        ["preset_custom_desc"]   = "Passez les presets et parcourez chaque catégorie étape par étape pour activer exactement ce que vous voulez. Tout reste modifiable ensuite via /tm.",
+        ["preset_custom_desc"]   = "Passez les presets et parcourez chaque catégorie étape par étape pour activer exactement ce que vous voulez. Tout reste modifiable ensuite via /tmf.",
         ["preset_custom_h1"]     = "Parcours étape par étape",
         ["preset_custom_h2"]     = "Rien n'est écrit avant votre choix",
-        ["preset_custom_h3"]     = "Tout reste modifiable via /tm",
+        ["preset_custom_h3"]     = "Tout reste modifiable via /tmf",
 
         ["preset_badge_recommended"] = "Recommandé",
         ["preset_badge_active"]      = "Actif",
@@ -170,10 +170,10 @@ if TomoMod_RegisterLocale then
 
         ["preset_custom_name"]   = "Benutzerdefiniert",
         ["preset_custom_tag"]    = "Alles selbst einrichten",
-        ["preset_custom_desc"]   = "Überspringe die Presets und gehe jede Kategorie Schritt für Schritt durch, um genau das zu aktivieren, was du möchtest. Alles lässt sich später über /tm ändern.",
+        ["preset_custom_desc"]   = "Überspringe die Presets und gehe jede Kategorie Schritt für Schritt durch, um genau das zu aktivieren, was du möchtest. Alles lässt sich später über /tmf ändern.",
         ["preset_custom_h1"]     = "Schritt-für-Schritt-Durchlauf",
         ["preset_custom_h2"]     = "Nichts wird vor deiner Wahl geschrieben",
-        ["preset_custom_h3"]     = "Alles bleibt über /tm änderbar",
+        ["preset_custom_h3"]     = "Alles bleibt über /tmf änderbar",
 
         ["preset_badge_recommended"] = "Empfohlen",
         ["preset_badge_active"]      = "Aktiv",
@@ -220,10 +220,10 @@ if TomoMod_RegisterLocale then
 
         ["preset_custom_name"]   = "Personalizado",
         ["preset_custom_tag"]    = "Configurarlo todo tú mismo",
-        ["preset_custom_desc"]   = "Omite los presets y recorre cada categoría paso a paso para activar exactamente lo que quieras. Siempre podrás cambiarlo después desde /tm.",
+        ["preset_custom_desc"]   = "Omite los presets y recorre cada categoría paso a paso para activar exactamente lo que quieras. Siempre podrás cambiarlo después desde /tmf.",
         ["preset_custom_h1"]     = "Recorrido paso a paso",
         ["preset_custom_h2"]     = "No se escribe nada hasta que elijas",
-        ["preset_custom_h3"]     = "Todo sigue siendo editable desde /tm",
+        ["preset_custom_h3"]     = "Todo sigue siendo editable desde /tmf",
 
         ["preset_badge_recommended"] = "Recomendado",
         ["preset_badge_active"]      = "Activo",
@@ -270,10 +270,10 @@ if TomoMod_RegisterLocale then
 
         ["preset_custom_name"]   = "Personalizzato",
         ["preset_custom_tag"]    = "Configurare tutto da sé",
-        ["preset_custom_desc"]   = "Salta i preset e percorri ogni categoria passo dopo passo per attivare esattamente ciò che vuoi. Potrai sempre cambiare tutto in seguito da /tm.",
+        ["preset_custom_desc"]   = "Salta i preset e percorri ogni categoria passo dopo passo per attivare esattamente ciò che vuoi. Potrai sempre cambiare tutto in seguito da /tmf.",
         ["preset_custom_h1"]     = "Percorso passo dopo passo",
         ["preset_custom_h2"]     = "Nulla viene scritto prima della scelta",
-        ["preset_custom_h3"]     = "Tutto resta modificabile da /tm",
+        ["preset_custom_h3"]     = "Tutto resta modificabile da /tmf",
 
         ["preset_badge_recommended"] = "Consigliato",
         ["preset_badge_active"]      = "Attivo",
@@ -320,10 +320,10 @@ if TomoMod_RegisterLocale then
 
         ["preset_custom_name"]   = "Personalizado",
         ["preset_custom_tag"]    = "Configurar tudo você mesmo",
-        ["preset_custom_desc"]   = "Pule os presets e percorra cada categoria passo a passo para ativar exatamente o que quiser. Você sempre poderá mudar tudo depois em /tm.",
+        ["preset_custom_desc"]   = "Pule os presets e percorra cada categoria passo a passo para ativar exatamente o que quiser. Você sempre poderá mudar tudo depois em /tmf.",
         ["preset_custom_h1"]     = "Percurso passo a passo",
         ["preset_custom_h2"]     = "Nada é escrito antes da sua escolha",
-        ["preset_custom_h3"]     = "Tudo continua editável via /tm",
+        ["preset_custom_h3"]     = "Tudo continua editável via /tmf",
 
         ["preset_badge_recommended"] = "Recomendado",
         ["preset_badge_active"]      = "Ativo",

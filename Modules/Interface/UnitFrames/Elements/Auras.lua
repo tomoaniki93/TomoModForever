@@ -404,7 +404,7 @@ end
 -- Shows all HELPFUL auras on ANY target (enemy, friendly, neutral).
 -- =====================================
 
--- Debug: toggle with /tm debugbuffs
+-- Debug: toggle with /tmf debugbuffs
 UF_Elements._debugEnemyBuffs = false
 
 function UF_Elements.UpdateEnemyBuffs(frame)
