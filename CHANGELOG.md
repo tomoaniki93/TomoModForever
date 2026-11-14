@@ -12,6 +12,16 @@
 - **Fixed** - Guild letter headers broke on names starting with an accented letter.
 - **New** - `/tml alts`: what the module sees for this character and the saved character list.
 
+#### Adventure comforts: quest items
+
+- **New** - Lootable quest items sparkle (inspired by ForeverLootSparkles). Sets `outlineModeShowLootEffectWhenDisabled` to 1 through the comfort CVars of `CVarOptimizer.lua` (`cameraFx.lootSparkles`, on by default). The value found before is kept in `cameraFx.orig` and put back when unticked.
+- **New** - Graphics presets reset that CVar: `CVAR_UPDATE` on `graphicsQuality`, `raidGraphicsQuality` or the CVar itself re-applies the comfort CVars one second later, and a second pass runs 5 seconds after entering the world (account-synced settings can arrive late). In combat it waits for the fight to end, as before.
+- **Note** - The outline mode (`graphicsOutlineMode`, and with it the Self Highlight outline) is not touched. Unticking only takes effect after restarting the game (`/reload` is not enough); a chat line says so.
+
+#### Quest tracker
+
+- **Fixed** - Not every quest showed, even with "Max quests displayed" at 0 (player report). Blizzard's tracker only builds the blocks that fit in `ObjectiveTrackerFrame`'s own height (`CanFitBlock` against `GetAvailableHeight`); that height is the space down to the bottom of the screen in the default Edit Mode place, else the Edit Mode "Height" slider (400 to 1000). Blocks that did not fit were never created, so the bucket layout had nothing to place. The container now gets 4000 of room after every `UpdateHeight` and on each layout pass, out of combat. It is not mouse-enabled and TomoMod draws its own panel, so nothing changes on screen.
+
 ## ####################################
 
 ## CHANGELOG 1.2.6

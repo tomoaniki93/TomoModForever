@@ -218,12 +218,12 @@ K.RegisterPage({
     key = "adventuretweaks",
     section = SECTION,
     label = T("Confort d'aventure", "Adventure comforts"),
-    kw = "resurrection rez res erreur error rouge red message entraineur trainer apprendre train camera zoom ivresse drunk mort death effet effect ecran screen cvar carte map reveler reveal brouillard fog inexplore unexplored decouvrir",
+    kw = "resurrection rez res erreur error rouge red message entraineur trainer apprendre train camera zoom ivresse drunk mort death effet effect ecran screen cvar carte map reveler reveal brouillard fog inexplore unexplored decouvrir scintillement sparkle quete quest objet item loot butin surbrillance highlight",
     build = function(parent)
         return K.Page(parent, function(page)
             page:Hero(T("Confort d'aventure", "Adventure comforts"),
-                T("Petits réglages du quotidien : résurrections acceptées seules, erreurs rouges masquées, bouton « Tout apprendre » chez les maîtres, caméra plus éloignée, carte entièrement visible.",
-                  "Everyday tweaks: resurrections accepted for you, red errors hidden, a \"Train all\" button at trainers, a farther camera, a fully visible map."))
+                T("Petits réglages du quotidien : résurrections acceptées seules, erreurs rouges masquées, bouton « Tout apprendre » chez les maîtres, caméra plus éloignée, objets de quête qui scintillent, carte entièrement visible.",
+                  "Everyday tweaks: resurrections accepted for you, red errors hidden, a \"Train all\" button at trainers, a farther camera, sparkling quest items, a fully visible map."))
 
             local c = page:Card(T("Résurrection", "Resurrection"))
             c:Toggle(T("Accepter les résurrections automatiquement", "Accept resurrections automatically"), "adventureTweaks.autoRes", ATApply)
@@ -258,6 +258,14 @@ K.RegisterPage({
                 T("Coupe aussi le léger halo lumineux plein écran.", "Also turns off the soft full-screen glow."))
             c:Toggle(T("Désactiver l'écran gris à la mort", "Disable the grey death screen"), "cameraFx.noDeathFx", FXApply)
             c:Info(T("Décocher remet la valeur que tu avais avant.", "Unticking puts back the value you had before."))
+            c:Done()
+
+            c = page:Card(T("Objets de quête", "Quest items"))
+            c:Toggle(T("Faire scintiller les objets de quête à ramasser", "Make lootable quest items sparkle"), "cameraFx.lootSparkles", FXApply,
+                T("Garde l'effet de scintillement du jeu sur les objets de quête au sol, même après un préréglage graphique qui le coupe. Ton mode contour n'est pas modifié.",
+                  "Keeps the game's sparkle on quest items on the ground, even after a graphics preset turns it off. Your outline mode is left as you set it."))
+            c:Info(T("Décocher ne prend effet qu'après un redémarrage complet du jeu (/reload ne suffit pas). Le jeu ne laisse pas choisir quels objets scintillent : c'est son propre effet.",
+                  "Unticking only takes effect after restarting the game (/reload is not enough). The game decides which objects sparkle: it is its own effect."))
             c:Done()
 
             c = page:Card(T("Carte du monde", "World map"))

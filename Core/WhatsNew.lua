@@ -68,6 +68,8 @@ CHANGELOG = {
             L["wn_127_alts"],
             L["wn_127_guild"],
             L["wn_127_recent"],
+            L["wn_127_sparkles"],
+            L["wn_127_tracker"],
         },
     },
     {

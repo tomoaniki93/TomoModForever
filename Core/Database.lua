@@ -737,6 +737,7 @@ TomoMod_Defaults = {
         maxZoom = false,          -- cameraDistanceMaxZoomFactor at its cap
         noDrunkHaze = false,      -- ffxGlow off
         noDeathFx = false,        -- ffxDeath + ffxNether off
+        lootSparkles = true,      -- sparkle on lootable quest items (1.2.7)
         orig = {},                -- values found before the first change
     },
 

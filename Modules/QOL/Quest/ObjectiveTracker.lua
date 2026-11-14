@@ -1955,6 +1955,32 @@ end
 -- MASTER UPDATE
 -- =====================================
 
+-- =====================================
+-- TRACKER ROOM (1.2.7)
+-- =====================================
+-- Blizzard only builds the quest blocks that fit in ObjectiveTrackerFrame's
+-- own height (ObjectiveTrackerModuleMixin:CanFitBlock against the container's
+-- GetAvailableHeight). That height comes from UpdateHeight: the space down to
+-- the bottom of the screen while Edit Mode thinks the tracker is in its default
+-- place, else the Edit Mode "Height" slider (400 to 1000). Blocks that do not
+-- fit are never created, so the bucket layout cannot place them and
+-- maxQuestsShown = 0 ("no limit") still showed only the first ten or so quests
+-- (player report). The container is not mouse-enabled and our panel draws its
+-- own background, so giving it a lot of room changes nothing on screen; it only
+-- lets Blizzard build every watched quest.
+local TRACKER_ROOM = 4000
+
+local function LiftTrackerRoom()
+    local tracker = ObjectiveTrackerFrame
+    if not tracker or not IsEnabled() then return end
+    if (tracker:GetHeight() or 0) >= TRACKER_ROOM then return end
+    -- Resizing makes Blizzard rebuild the tracker next frame; keep that out
+    -- of combat like the rest of the layout work.
+    if InCombatLockdown() then MarkLayoutPending(); return end
+    tracker:SetHeight(TRACKER_ROOM)
+end
+OT.LiftTrackerRoom = LiftTrackerRoom
+
 local function OnTrackerUpdate()
     if not IsEnabled() then return end
     if _tmInLayout then return end
@@ -1991,6 +2017,9 @@ local function OnTrackerUpdate()
         MarkLayoutPending()
         return
     end
+
+    -- Also owed after a fight: UpdateHeight may have run during it.
+    LiftTrackerRoom()
 
     if bucketEnabled then
         LayoutBuckets()
@@ -2036,6 +2065,12 @@ local function InstallHooks()
                 PumpUpdateSoon()
             end)
         end
+    end
+
+    -- Blizzard recomputes the tracker height on show and on every Edit Mode
+    -- change; give the room back each time (see LiftTrackerRoom).
+    if tracker.UpdateHeight then
+        hooksecurefunc(tracker, "UpdateHeight", LiftTrackerRoom)
     end
 
     -- Sync visibility: skinFrame is parented to UIParent, not tracker
@@ -2220,6 +2255,7 @@ local function ApplyPosition()
         tracker:SetPoint(point, UIParent, relativePoint, x / ratio, y / ratio)
     end
     positionApplied = true
+    LiftTrackerRoom()
 end
 OT.ApplyPosition = ApplyPosition
 

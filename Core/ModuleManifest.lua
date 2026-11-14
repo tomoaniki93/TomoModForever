@@ -512,6 +512,7 @@ R.Define{
         { path = "cameraFx.maxZoom",     label = "mod_cameraFx_maxZoom"     },
         { path = "cameraFx.noDrunkHaze", label = "mod_cameraFx_noDrunkHaze" },
         { path = "cameraFx.noDeathFx",   label = "mod_cameraFx_noDeathFx"   },
+        { path = "cameraFx.lootSparkles", label = "mod_cameraFx_lootSparkles" },
     },
     global = "TomoMod_CVarOptimizer", applyMode = "gate", apply = "ApplyComfort",
     combatSafe = true,

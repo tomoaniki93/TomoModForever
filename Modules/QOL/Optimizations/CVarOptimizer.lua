@@ -300,6 +300,13 @@ OPT.COMFORT = {
     -- Écran gris à la mort et teinte violette du Néant.
     { key = "noDeathFx",   cvar = "ffxDeath",  on = "0" },
     { key = "noDeathFx",   cvar = "ffxNether", on = "0" },
+    -- Scintillement sur les objets de quête à ramasser (1.2.7, inspiré de
+    -- ForeverLootSparkles). Les préréglages graphiques le recoupent : il est
+    -- réappliqué après chaque changement de qualité (voir WATCHED plus bas).
+    -- Le mode contour du joueur (graphicsOutlineMode) n'est pas touché.
+    -- Le retrait ne prend effet qu'après un redémarrage du jeu (/reload ne
+    -- suffit pas) : restartOff affiche un rappel dans le chat.
+    { key = "lootSparkles", cvar = "outlineModeShowLootEffectWhenDisabled", on = "1", restartOff = true },
 }
 
 -- Graphismes plus jolis (1.2.2), même principe, réglages dans
@@ -344,6 +351,10 @@ local function ApplyGroup(db, list)
             elseif db.orig[e.cvar] ~= nil then
                 pcall(SetCVar, e.cvar, db.orig[e.cvar])
                 db.orig[e.cvar] = nil
+                if e.restartOff then
+                    print("|cffffd100TomoModForever|r " .. (TomoMod_L and TomoMod_L["sparkles_restart"]
+                        or "Restart the game to remove the quest item sparkles (/reload is not enough)."))
+                end
             end
         end
     end
@@ -381,13 +392,43 @@ function OPT.Initialize()
     RegisterDialog()
 
     -- Le jeu remet parfois le zoom max par défaut au chargement : on
-    -- réapplique à chaque entrée dans le monde.
+    -- réapplique à chaque entrée dans le monde, puis 5 s plus tard (les
+    -- réglages synchronisés du compte peuvent arriver en retard).
+    -- Un préréglage graphique recoupe le scintillement des objets de quête :
+    -- on réapplique 1 s après tout changement de qualité.
+    local WATCHED = {
+        graphicsquality = true,
+        raidgraphicsquality = true,
+        outlinemodeshowlooteffectwhendisabled = true,
+    }
+    local applyAt
+    local timer = CreateFrame("Frame")
+    timer:Hide()
+    timer:SetScript("OnUpdate", function(self)
+        if GetTime() >= applyAt then
+            self:Hide()
+            OPT.ApplyComfort()
+        end
+    end)
+    local function Schedule(delay)
+        applyAt = GetTime() + delay
+        timer:Show()
+    end
+
     local f = CreateFrame("Frame")
     f:RegisterEvent("PLAYER_ENTERING_WORLD")
     f:RegisterEvent("PLAYER_REGEN_ENABLED")
-    f:SetScript("OnEvent", function(_, event)
+    pcall(f.RegisterEvent, f, "CVAR_UPDATE")
+    f:SetScript("OnEvent", function(_, event, arg1)
+        if event == "CVAR_UPDATE" then
+            -- Notre propre SetCVar repasse ici : ApplyComfort ne fait rien
+            -- quand la valeur est déjà la bonne, donc pas de boucle.
+            if type(arg1) == "string" and WATCHED[string.lower(arg1)] then Schedule(1) end
+            return
+        end
         if event == "PLAYER_REGEN_ENABLED" and not comfortPending then return end
         OPT.ApplyComfort()
+        if event == "PLAYER_ENTERING_WORLD" then Schedule(5) end
     end)
     OPT.ApplyComfort()
 end
