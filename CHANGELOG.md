@@ -21,6 +21,7 @@
 #### Quest tracker
 
 - **Fixed** - Not every quest showed, even with "Max quests displayed" at 0 (player report). Blizzard's tracker only builds the blocks that fit in `ObjectiveTrackerFrame`'s own height (`CanFitBlock` against `GetAvailableHeight`); that height is the space down to the bottom of the screen in the default Edit Mode place, else the Edit Mode "Height" slider (400 to 1000). Blocks that did not fit were never created, so the bucket layout had nothing to place. The container now gets 4000 of room after every `UpdateHeight` and on each layout pass, out of combat. It is not mouse-enabled and TomoMod draws its own panel, so nothing changes on screen.
+- **Fixed** - The tracker disappeared with that change: it grew around its saved anchor (often `RIGHT` or `CENTER`), which pushed its top edge, and the panel attached to it, above the screen. The top edge is now pinned (re-anchored by `TOPLEFT`) before the room is added, and positions are applied and saved at Blizzard's own height, as before. A position saved while the tracker was broken may need "Reset position".
 
 ## ####################################
 

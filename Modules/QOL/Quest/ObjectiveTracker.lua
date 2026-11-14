@@ -1969,14 +1969,48 @@ end
 -- own background, so giving it a lot of room changes nothing on screen; it only
 -- lets Blizzard build every watched quest.
 local TRACKER_ROOM = 4000
+-- Height Blizzard last gave the tracker (before our lift). Saved positions are
+-- measured and applied at this height, as they were before 1.2.7.
+local naturalTrackerH
+
+-- The tracker is anchored by whatever point the saved position (or Edit Mode)
+-- uses: RIGHT, CENTER, BOTTOMLEFT... Growing it to 4000 around such a point
+-- pushed its top edge, and the skin anchored to it, far above the screen: the
+-- whole tracker vanished. Re-anchor by TOPLEFT at the current spot first so
+-- the extra room only grows downwards. GetLeft/GetTop and the SetPoint offsets
+-- are both in the tracker's own scale, from the screen's bottom-left corner.
+local function PinTrackerTop(tracker)
+    local left, top = tracker:GetLeft(), tracker:GetTop()
+    if not left or not top then return false end
+    local wasApplying = _tmApplyingPosition
+    _tmApplyingPosition = true
+    tracker:ClearAllPoints()
+    tracker:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+    _tmApplyingPosition = wasApplying
+    return true
+end
+
+local function IsTrackerLifted(tracker)
+    return (tracker:GetHeight() or 0) >= TRACKER_ROOM
+end
+
+-- Puts Blizzard's height back (anchor untouched), so a saved anchor resolves
+-- against the frame it was saved from.
+local function DropTrackerRoom(tracker)
+    if not IsTrackerLifted(tracker) or not naturalTrackerH then return end
+    if InCombatLockdown() then return end
+    tracker:SetHeight(naturalTrackerH)
+end
 
 local function LiftTrackerRoom()
     local tracker = ObjectiveTrackerFrame
     if not tracker or not IsEnabled() then return end
-    if (tracker:GetHeight() or 0) >= TRACKER_ROOM then return end
+    if IsTrackerLifted(tracker) then return end
     -- Resizing makes Blizzard rebuild the tracker next frame; keep that out
     -- of combat like the rest of the layout work.
     if InCombatLockdown() then MarkLayoutPending(); return end
+    naturalTrackerH = tracker:GetHeight()
+    if not PinTrackerTop(tracker) then return end
     tracker:SetHeight(TRACKER_ROOM)
 end
 OT.LiftTrackerRoom = LiftTrackerRoom
@@ -2221,6 +2255,10 @@ local function ApplyPosition()
     if tracker.SetClampedToScreen then tracker:SetClampedToScreen(false) end
     tracker.IsUserPlaced = function() return true end
 
+    -- Resolve the anchor at Blizzard's height, then LiftTrackerRoom pins the
+    -- top edge and adds the room (see PinTrackerTop).
+    DropTrackerRoom(tracker)
+
     -- Scale BEFORE the anchor: SetPoint offsets are read in the frame's own
     -- coordinate space, so scaling afterwards silently shifts a frame that was
     -- just placed. Anchoring first and scaling second moved the tracker a
@@ -2264,8 +2302,16 @@ local function SavePosition()
     if not tracker then return end
     local db = S()
     db.position = db.position or {}
+    -- Measure the frame at Blizzard's height: at 4000 its centre is far below
+    -- the screen and Layout.Save would pick a wrong anchor from it. Pin the top
+    -- first (a drag can leave any anchor) so shrinking keeps the top in place.
+    if IsTrackerLifted(tracker) and naturalTrackerH and not InCombatLockdown() then
+        PinTrackerTop(tracker)
+        DropTrackerRoom(tracker)
+    end
     if TomoMod_Layout and TomoMod_Layout.Save then
         TomoMod_Layout.Save(db.position, tracker)
+        LiftTrackerRoom()
         return
     end
 
