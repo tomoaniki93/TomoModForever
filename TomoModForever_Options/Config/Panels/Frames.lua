@@ -319,6 +319,12 @@ K.RegisterPage({
                 T("Texture et police utilisées par tous les cadres d'unité.", "Texture and font used by every unit frame."),
                 "TomoMod_UF_player", T("Joueur", "Player"))
             local c = page:Card(T("Apparence", "Look"))
+            c:Seg(T("Style des cadres", "Frame style"), "unitFrames.style", {
+                { text = "TMF", value = "tmf" },
+                { text = "Forever", value = "forever" },
+            }, "ufall", 2)
+            c:Info(T("TMF : le style par défaut. Forever : bandeau de nom aux couleurs de la classe (ou de la réaction pour les PNJ), vie et ressource centrées, cadre bronze et or, médaillon de niveau. S'applique au joueur, à la cible, à la cible de la cible, au familier et au focus.",
+                     "TMF: the default look. Forever: name strip in the class colour (reaction colour for NPCs), centred health and power, bronze and gold border, level medallion. Applies to the player, target, target of target, pet and focus."))
             c:Select(T("Texture des barres", "Bar texture"), "unitFrames.texture", K.TEXTURES, "ufall")
             c:Select(T("Police", "Font"), {
                 get = function() return TomoModForeverDB.unitFrames.fontFamily or TomoModForeverDB.unitFrames.font end,

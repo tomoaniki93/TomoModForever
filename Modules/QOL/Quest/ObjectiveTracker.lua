@@ -322,6 +322,37 @@ local function GetBlockQuestID(frame)
     return nil
 end
 
+-- [1.2.9] Zone of every quest in the log. On Forever the quest log is grouped
+-- by zone headers (as in Classic): a quest belongs to the header above it.
+-- Returns map[questID] = { zone = header text, order = header position }.
+local function QuestZoneMap()
+    local map, zone, order = {}, nil, 0
+    if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo then
+        local n = C_QuestLog.GetNumQuestLogEntries() or 0
+        for i = 1, n do
+            local info = C_QuestLog.GetInfo(i)
+            if info then
+                if info.isHeader then
+                    zone, order = info.title, order + 1
+                elseif info.questID and info.questID > 0 then
+                    map[info.questID] = { zone = zone, order = order }
+                end
+            end
+        end
+    elseif GetNumQuestLogEntries and GetQuestLogTitle then
+        local n = GetNumQuestLogEntries() or 0
+        for i = 1, n do
+            local title, _, _, isHeader, _, _, _, questID = GetQuestLogTitle(i)
+            if isHeader then
+                zone, order = title, order + 1
+            elseif questID and questID > 0 then
+                map[questID] = { zone = zone, order = order }
+            end
+        end
+    end
+    return map
+end
+
 -- =====================================
 -- QUEST BASE CATEGORY (inspired by HorizonSuite)
 -- Uses C_QuestInfoSystem.GetQuestClassification + tag info fallbacks
@@ -964,6 +995,27 @@ local function IsBucketCollapsed(key)
     return t and t[key] == true
 end
 
+-- [1.2.9] Zones folded inside the "Quests" bucket, by zone name.
+local function ZonesCollapsedTable()
+    local db = S()
+    if not db then return nil end
+    db.zonesCollapsed = db.zonesCollapsed or {}
+    return db.zonesCollapsed
+end
+
+local function IsZoneCollapsed(zone)
+    local t = zone and ZonesCollapsedTable()
+    return t and t[zone] == true or false
+end
+
+-- A block stays hidden when its bucket, or its zone, is folded.
+local function IsBlockCollapsed(block)
+    if not block then return false end
+    local k = block._tmBucketKey
+    if k and IsBucketCollapsed(k) then return true end
+    return block._tmZoneKey ~= nil and IsZoneCollapsed(block._tmZoneKey)
+end
+
 -- =====================================
 -- [fix 3.6.1] COMBAT DEFERRAL
 -- =====================================
@@ -1088,9 +1140,7 @@ local function HideBlockButtons(block)
             btn._tmShowHooked = true
             hooksecurefunc(btn, "Show", function(self)
                 if not bucketEnabled then return end
-                local b = self._tmBucketBlock
-                local k = b and b._tmBucketKey
-                if not (k and IsBucketCollapsed(k)) then return end
+                if not IsBlockCollapsed(self._tmBucketBlock) then return end
                 -- [COMBAT] This is the secure QuestObjectiveItem button: Hide()
                 -- on it under lockdown is a blocked action. Alpha only, and the
                 -- deferred pass hides it properly after combat. Mouse state is
@@ -1164,6 +1214,14 @@ local function PumpUpdateSoon()
     C_Timer.After(0, RunPendingPump)
 end
 
+local function ToggleZone(zone)
+    local t = ZonesCollapsedTable(); if not (t and zone) then return end
+    t[zone] = not t[zone] or nil
+    LayoutBuckets()
+    C_Timer.After(0,    function() if LayoutBuckets then LayoutBuckets() end end)
+    C_Timer.After(0.05, function() if LayoutBuckets then LayoutBuckets() end end)
+end
+
 local function ToggleBucket(key)
     local t = BucketsCollapsedTable(); if not t then return end
     t[key] = not t[key]
@@ -1202,6 +1260,52 @@ ToggleMinimized = function()
             end
         end
     end
+end
+
+-- [1.2.9] Zone sub-headers inside the "Quests" bucket (pooled, never collected
+-- as quest blocks: flagged _tmBucket like the bucket headers).
+local zoneLabels = {}
+local function HideZoneLabels(from)
+    for i = from or 1, #zoneLabels do zoneLabels[i]:Hide() end
+end
+local function GetZoneLabel(i)
+    if zoneLabels[i] then return zoneLabels[i] end
+    if not skinFrame then return nil end
+    -- Click folds / unfolds the zone (ToggleZone). Plus / minus drawn with
+    -- Blizzard's textures, not typed glyphs.
+    local f = CreateFrame("Button", nil, skinFrame)
+    f:SetHeight(16)
+    f:SetFrameStrata("MEDIUM")
+    f:SetFrameLevel(skinFrame:GetFrameLevel() + 20)
+    f._tmBucket = true
+    f:RegisterForClicks("LeftButtonUp")
+    f:SetScript("OnClick", function(self) if self.zone then ToggleZone(self.zone) end end)
+    local icon = f:CreateTexture(nil, "OVERLAY")
+    icon:SetSize(12, 12)
+    icon:SetPoint("LEFT", f, "LEFT", 0, 0)
+    icon:SetVertexColor(0.95, 0.85, 0.60, 1)
+    f.icon = icon
+    local label = f:CreateFontString(nil, "OVERLAY")
+    label:SetFont(ADDON_FONT, 11, "OUTLINE")
+    label:SetPoint("LEFT", icon, "RIGHT", 4, 0)
+    label:SetTextColor(0.788, 0.635, 0.322, 1)
+    label:SetJustifyH("LEFT")
+    local count = f:CreateFontString(nil, "OVERLAY")
+    count:SetFont(ADDON_FONT, 10, "OUTLINE")
+    count:SetPoint("RIGHT", f, "RIGHT", -6, 0)
+    count:SetTextColor(0.65, 0.65, 0.70, 0.95)
+    label:SetPoint("RIGHT", count, "LEFT", -6, 0)
+    label:SetWordWrap(false)
+    local line = f:CreateTexture(nil, "ARTWORK")
+    line:SetColorTexture(0.545, 0.420, 0.247, 0.45)
+    line:SetHeight(1)
+    line:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 0, 0)
+    line:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 0)
+    f:SetScript("OnEnter", function() line:SetColorTexture(0.788, 0.635, 0.322, 0.85) end)
+    f:SetScript("OnLeave", function() line:SetColorTexture(0.545, 0.420, 0.247, 0.45) end)
+    f.label, f.count = label, count
+    zoneLabels[i] = f
+    return f
 end
 
 local function GetOrCreateBucket(key)
@@ -1345,6 +1449,7 @@ LayoutBuckets = function()
     if not bucketEnabled then
         -- Re-show any blocks we may have hidden, hide bucket headers
         for _, bf in pairs(bucketFrames) do bf.frame:Hide() end
+        HideZoneLabels()
         _tmInLayout = false
         return
     end
@@ -1661,6 +1766,7 @@ LayoutBuckets = function()
 
     if #blocks == 0 then
         for _, bf in pairs(bucketFrames) do bf.frame:Hide() end
+        HideZoneLabels()
         if hasSpecial then
             -- A delve or a scenario with no quest tracked alongside it: the
             -- panel keeps only what STEP 1 placed. Sweeping stray bars here
@@ -1695,6 +1801,13 @@ LayoutBuckets = function()
         yOffset = yOffset - BUCKET_GAP   -- extra gap between delve and first bucket
     end
 
+    -- [1.2.9] Unfinished quests ("Quests" bucket) grouped by zone, in the
+    -- order of the quest log, each zone under a small gold sub-header.
+    -- Quests ready to turn in keep their own bucket.
+    local zoneMap = (S().groupByZone ~= false) and QuestZoneMap() or nil
+    local zoneUsed = 0
+    local ZONE_H = 18
+
     for _, key in ipairs(BUCKET_ORDER) do
         local group = groups[key]
         if group and #group > 0 then
@@ -1702,6 +1815,26 @@ LayoutBuckets = function()
             if bf then
                 local color = QUEST_TITLE_COLORS[key] or QUEST_TITLE_COLORS.DEFAULT
                 local collapsed = IsBucketCollapsed(key)
+
+                -- Zone of each block, then a stable sort by log order.
+                local zoned = zoneMap and key == "DEFAULT" and not collapsed and not IsMinimized()
+                local zoneOf, zoneCount = {}, {}
+                if zoned then
+                    local pos = {}
+                    for i, block in ipairs(group) do
+                        local qid = block.id or block.questID or GetBlockQuestID(block)
+                        local z = qid and zoneMap[qid]
+                        zoneOf[block] = z or { zone = nil, order = 9999 }
+                        pos[block] = i
+                        local name = zoneOf[block].zone or ""
+                        zoneCount[name] = (zoneCount[name] or 0) + 1
+                    end
+                    table.sort(group, function(a, b)
+                        local oa, ob = zoneOf[a].order, zoneOf[b].order
+                        if oa ~= ob then return oa < ob end
+                        return pos[a] < pos[b]
+                    end)
+                end
 
                 bf.chev:SetText(collapsed and "+" or "-")
                 bf.chev:SetTextColor(color[1], color[2], color[3], 1)
@@ -1729,8 +1862,7 @@ LayoutBuckets = function()
                             block._tmShowHooked = true
                             hooksecurefunc(block, "Show", function(self)
                                 if not bucketEnabled then return end
-                                local k = self._tmBucketKey
-                                if not (k and IsBucketCollapsed(k)) then return end
+                                if not IsBlockCollapsed(self) then return end
                                 -- [COMBAT] Blizzard can re-Show this block during an
                                 -- in-combat quest update; self:Hide() on a protected
                                 -- tracker block would taint. Alpha is not protected,
@@ -1751,14 +1883,55 @@ LayoutBuckets = function()
                         HideBlockButtons(block)
                     end
                 else
+                    local lastZone = false
                     for _, block in ipairs(group) do
                         block._tmBucketKey = key
+                        -- Zone sub-header when the zone changes.
+                        if zoned then
+                            local z = zoneOf[block].zone or ""
+                            if z ~= lastZone then
+                                lastZone = z
+                                zoneUsed = zoneUsed + 1
+                                local zl = GetZoneLabel(zoneUsed)
+                                if zl then
+                                    zl.zone = z
+                                    zl.icon:SetTexture(IsZoneCollapsed(z) and "Interface\\Buttons\\UI-PlusButton-Up" or "Interface\\Buttons\\UI-MinusButton-Up")
+                                    zl.label:SetText(z ~= "" and z or BL("ot_zone_other", "Other"))
+                                    zl.count:SetText(tostring(zoneCount[z] or 0))
+                                    zl:ClearAllPoints()
+                                    zl:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  PAD_LEFT_HEADER + 18, yOffset)
+                                    zl:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -PAD_RIGHT,           yOffset)
+                                    zl:Show()
+                                    yOffset = yOffset - ZONE_H
+                                end
+                            end
+                        end
+                        block._tmZoneKey = zoned and (zoneOf[block].zone or "") or nil
+                        -- One pass through the block; "break" skips it when its
+                        -- zone is folded (Lua 5.1 has no continue).
+                        repeat
+                        if block._tmZoneKey and IsZoneCollapsed(block._tmZoneKey) then
+                            if not block._tmShowHooked then
+                                block._tmShowHooked = true
+                                hooksecurefunc(block, "Show", function(self)
+                                    if not bucketEnabled then return end
+                                    if not IsBlockCollapsed(self) then return end
+                                    if InCombatLockdown() then
+                                        CombatSuppressAlpha(self)
+                                        return
+                                    end
+                                    self:Hide()
+                                end)
+                            end
+                            block:Hide()
+                            HideBlockButtons(block)
+                            break
+                        end
                         if not block._tmShowHooked then
                             block._tmShowHooked = true
                             hooksecurefunc(block, "Show", function(self)
                                 if not bucketEnabled then return end
-                                local k = self._tmBucketKey
-                                if not (k and IsBucketCollapsed(k)) then return end
+                                if not IsBlockCollapsed(self) then return end
                                 -- [COMBAT] Blizzard can re-Show this block during an
                                 -- in-combat quest update; self:Hide() on a protected
                                 -- tracker block would taint. Alpha is not protected,
@@ -1848,6 +2021,7 @@ LayoutBuckets = function()
                         if bh < 30 then bh = 30 end
 
                         yOffset = yOffset - bh - BLOCK_GAP
+                        until true
                     end
                 end
                 yOffset = yOffset - BUCKET_GAP
@@ -1859,6 +2033,7 @@ LayoutBuckets = function()
     for k, bf in pairs(bucketFrames) do
         if not groups[k] then bf.frame:Hide() end
     end
+    HideZoneLabels(zoneUsed + 1)
 
     -- ── STEP 3: Suppress WorldQuest module containers (now empty after re-parenting) ──
     -- WQ module frames are nested inside BlocksFrame (not direct children of tracker),
@@ -1917,6 +2092,7 @@ end
 local function DisableBuckets()
     bucketEnabled = false
     for _, bf in pairs(bucketFrames) do bf.frame:Hide() end
+    HideZoneLabels()
     -- Restore any re-parented quest blocks to their original parent so Blizzard regains control
     if InCombatLockdown() then MarkLayoutPending(); return end
     RestoreCombatSuppressedAlpha()

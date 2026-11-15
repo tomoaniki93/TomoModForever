@@ -8,6 +8,7 @@
     <Include file="Elements\Power.lua" />
     <Include file="Elements\Auras.lua" />
     <Include file="Units\UnitFrame.lua" />
+    <Include file="Units\ForeverStyle.lua" />
     <Include file="Units\BossFrames.lua" />
 
 </Ui>

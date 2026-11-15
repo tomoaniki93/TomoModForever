@@ -72,6 +72,7 @@
     <Include file="Forever\DungeonQuestData.lua" />
     <Include file="Forever\DungeonQuestPlaces.lua" />
     <Include file="Forever\EliteQuestData.lua" />
+    <Include file="Forever\DungeonLootData.lua" />
     <Include file="Forever\DungeonCodex.lua" />
 
     <!-- Modules: Mail (TomoMail port) -->

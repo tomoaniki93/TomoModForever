@@ -218,7 +218,13 @@ local function UpdateName(frame)
         nameFS:SetNonSpaceWrap(false)
     end
 
-    if settings.showLevel then
+    if UF.IsForeverStyle and UF.IsForeverStyle() then
+        -- Look "Forever": name alone in the strip, level on the medallion.
+        nameFS:SetWidth(settings.width - 8)
+        frame.health.nameText:SetFormattedText("%s", name)
+        if frame.health.levelText then frame.health.levelText:SetText("") end
+        UF.ForeverUpdate(frame)
+    elseif settings.showLevel then
         local level = UnitLevel(frame.unit)
         frame.health.nameText:SetFormattedText("%d - %s", level, name)
         if frame.health.levelText then
@@ -244,6 +250,13 @@ local function UpdateLevel(frame)
     local settings = TomoModForeverDB.unitFrames[frame.unit]
     if not settings or not settings.showLevel then
         frame.health.levelText:SetText("")
+        return
+    end
+
+    -- Look "Forever": the level lives on the medallion.
+    if UF.IsForeverStyle and UF.IsForeverStyle() then
+        frame.health.levelText:SetText("")
+        UF.ForeverUpdate(frame)
         return
     end
 
@@ -1154,7 +1167,9 @@ function UF.ApplyVisuals(frame, unitKey, settings)
     -- La hauteur de ressource ne compte que si la barre existe (sinon, barre
     -- centrée ou désactivée, le cadre gardait un trou vide).
     local powerH = frame.power and (settings.powerHeight or 0) or 0
-    frame:SetSize(settings.width, settings.healthHeight + powerH + (settings.infoBarHeight or 0))
+    -- Look "Forever" (ForeverStyle.lua): a name strip above the health bar.
+    local nameH = UF.ForeverPre and UF.ForeverPre(frame, unitKey, settings) or 0
+    frame:SetSize(settings.width, nameH + settings.healthHeight + powerH + (settings.infoBarHeight or 0))
     frame.health:SetSize(settings.width, settings.healthHeight)
 
     if E.SetHealthTrail then E.SetHealthTrail(frame.health, globalDB.healthTrail ~= false) end
@@ -1219,6 +1234,9 @@ function UF.ApplyVisuals(frame, unitKey, settings)
         UFE.RefreshCustomTexts(frame, settings.elements)
         UFE.RefreshCustomBars(frame, settings.elements, false)
     end
+
+    -- Look "Forever": after the registry, which has just placed the texts.
+    if UF.ForeverPost then UF.ForeverPost(frame, unitKey, settings) end
 
     -- Les deux conteneurs d'auras sont desormais des elements du registre
     -- comme les autres : plus de branche dediee ici, et le drag en jeu ecrit

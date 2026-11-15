@@ -26,6 +26,14 @@
 -- (EliteQuestData.lua), by level; each zone lists its elite quests with
 -- their level, minimum level and state, and opens the zone map.
 --
+-- Loot tab (1.2.9): what each boss of the selected dungeon (or wing) drops,
+-- from DungeonLootData.lua -- loot data from ForeverLoot by Ethan Elliott,
+-- used with the author's permission. Names, icons and stats come from the
+-- client in its own language; the English fallback only shows until the
+-- item is known. "For me" keeps the armour and weapons your class can
+-- wear. Hover: the item tooltip; shift-click: link in chat; ctrl-click:
+-- dressing room. Item tooltips also get a "Loot: boss (dungeon)" line.
+--
 -- Quests tab (1.2.4): the quests of the selected dungeon for your faction
 -- (DungeonQuestData.lua), with their state read from the game: done,
 -- in your quest log, or still to take. Titles come from the client in
@@ -270,10 +278,152 @@ local win
 local rows, steps = {}, {}
 local list, offset, selected = {}, 0, nil
 local VISIBLE
-local detailTab = "route"         -- "route" | "quests"
+local detailTab = "route"         -- "route" | "quests" (loot: own window)
 local qrows, qlist, qoffset = {}, {}, 0
 local QROW_H, QVISIBLE = 30, 0
 local RefreshQuests
+local lrows, llist, loffset = {}, {}, 0
+local LROW_H, LVISIBLE = 20, 0
+local RefreshLoot
+
+-- ---------------------------------------------------------------------
+-- Dungeon loot (DungeonLootData.lua, from ForeverLoot by Ethan Elliott,
+-- used with the author's permission)
+-- ---------------------------------------------------------------------
+local function LootData() return TomoMod_DungeonLootData end
+
+local TAG_TEXT = {
+    event     = { fr = "boss d'événement", en = "event boss" },
+    rare      = { fr = "rare", en = "rare spawn" },
+    scourge   = { fr = "invasion du Fléau", en = "Scourge invasion" },
+    summoned  = { fr = "invoqué", en = "summoned" },
+    tribute   = { fr = "coffre du tribut", en = "tribute chest" },
+    datamined = { fr = "non confirmé", en = "unconfirmed" },
+}
+
+local function BossLabel(b)
+    if b.trash then return T("Trash et butin de zone", "Trash & zone drops") end
+    if b.u and b.n == "Boss not confirmed" then return T("Boss non confirmé", "Boss not confirmed") end
+    return b.n
+end
+
+-- "For me" (1.2.9): what is actually useful, not all a class can wear.
+-- Armour: the class's own armour type only -- a druid can wear cloth but
+-- has no use for it. Hunters and shamans wear leather, then mail from
+-- level 40; warriors and paladins mail, then plate from level 40. The
+-- level used is the higher of yours and the item's required level (the
+-- dungeon's minimum while the item is not known yet), so a mail piece of
+-- a level 45 dungeon still shows for a level 35 hunter.
+-- Subclasses: armour 1 cloth, 2 leather, 3 mail, 4 plate, 6 shield,
+-- 7 libram, 8 idol, 9 totem. Weapons: 0/1 axe, 2 bow, 3 gun, 4/5 mace,
+-- 6 polearm, 7/8 sword, 10 staff, 13 fist, 15 dagger, 16 thrown,
+-- 18 crossbow, 19 wand.
+local function Set(...) local t = {}; for _, v in ipairs({ ... }) do t[v] = true end; return t end
+local ARMOR_AT_40 = {                       -- { before 40, from 40 }
+    PRIEST = { 1, 1 }, MAGE = { 1, 1 }, WARLOCK = { 1, 1 },
+    ROGUE = { 2, 2 }, DRUID = { 2, 2 },
+    HUNTER = { 2, 3 }, SHAMAN = { 2, 3 },
+    WARRIOR = { 3, 4 }, PALADIN = { 3, 4 },
+}
+local OFFHAND_ARMOR = {                     -- shields and relics
+    WARRIOR = Set(6), PALADIN = Set(6, 7), SHAMAN = Set(6, 9), DRUID = Set(8),
+}
+local WEAPONS = {
+    WARRIOR = Set(0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 18),
+    PALADIN = Set(0, 1, 4, 5, 6, 7, 8),
+    HUNTER  = Set(0, 1, 2, 3, 6, 7, 8, 10, 13, 15, 16, 18),
+    ROGUE   = Set(2, 3, 4, 7, 13, 15, 16, 18),
+    PRIEST  = Set(4, 10, 15, 19),
+    SHAMAN  = Set(0, 1, 4, 5, 10, 13, 15),
+    MAGE    = Set(7, 10, 15, 19),
+    WARLOCK = Set(7, 10, 15, 19),
+    DRUID   = Set(4, 5, 10, 13, 15),
+}
+
+local function UsableByMe(id, d)
+    local _, class = UnitClass("player")
+    local armorBy = ARMOR_AT_40[class]
+    if not (armorBy and C_Item and C_Item.GetItemInfoInstant) then return true end
+    local _, _, _, equipLoc, _, classID, subID = C_Item.GetItemInfoInstant(id)
+    if classID == nil then return true end                  -- not known yet: keep it
+    if classID == 4 then                                    -- armour
+        if subID == 0 or equipLoc == "INVTYPE_CLOAK" then return true end   -- jewellery, cloaks
+        if subID >= 1 and subID <= 4 then
+            local reqLevel = select(5, C_Item.GetItemInfo(id))
+            local lvl = math.max(UnitLevel("player") or 1, tonumber(reqLevel) or (d and d.min) or 0)
+            return subID == armorBy[lvl >= 40 and 2 or 1]
+        end
+        local off = OFFHAND_ARMOR[class]
+        return off ~= nil and off[subID] == true
+    elseif classID == 2 then                                -- weapon
+        return WEAPONS[class][subID] == true
+    end
+    return true                                             -- recipes, bags, quest items...
+end
+
+-- name, quality, icon, "slot - type", link (nil until the client knows it)
+local function LootItem(id)
+    local name, link, quality, _, _, _, subType, _, equipLoc, icon = C_Item.GetItemInfo(id)
+    if name then
+        local slot = equipLoc and equipLoc ~= "" and _G[equipLoc]
+        local kind = slot
+        if slot and subType and subType ~= "" and equipLoc ~= "INVTYPE_FINGER" and equipLoc ~= "INVTYPE_NECK"
+           and equipLoc ~= "INVTYPE_TRINKET" and equipLoc ~= "INVTYPE_CLOAK" then
+            kind = slot .. " - " .. subType
+        end
+        return name, quality, icon, kind or subType, link
+    end
+    if C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, id) end
+    local f = LootData() and LootData().items[id]
+    if f then return f[3], f[1], "Interface\\Icons\\" .. f[2], f[4], nil end
+    return "#" .. id, 1, "Interface\\Icons\\INV_Misc_QuestionMark", nil, nil
+end
+
+-- Flat list for the loot tab: boss headers, then their items.
+local function DungeonLoot(d, mineOnly)
+    local out, total = {}, 0
+    local data = LootData()
+    local bosses = data and data.loot[d.key]
+    if not bosses then return out, 0, false end
+    for _, b in ipairs(bosses) do
+        local items = {}
+        for _, id in ipairs(b.i) do
+            total = total + 1
+            if not mineOnly or UsableByMe(id, d) then items[#items + 1] = { id = id, boss = b } end
+        end
+        if #items > 0 then
+            out[#out + 1] = { header = true, boss = b, count = #items }
+            for _, it in ipairs(items) do out[#out + 1] = it end
+        end
+    end
+    return out, total, true
+end
+
+-- itemID -> "Boss (Dungeon)", for the item tooltips (built once).
+local lootIndex
+local function LootSource(id)
+    if not lootIndex then
+        lootIndex = {}
+        local data, codex = LootData(), TomoMod_DungeonCodexData
+        if data and codex then
+            local names = {}
+            for _, d in ipairs(codex.dungeons or {}) do names[d.key] = IS_FR and d.fr or d.en end
+            for key, bosses in pairs(data.loot) do
+                for _, b in ipairs(bosses) do
+                    for _, iid in ipairs(b.i) do
+                        local cur = lootIndex[iid]
+                        -- A boss beats trash; the first boss found is kept.
+                        if not cur or (cur.trash and not b.trash) then
+                            lootIndex[iid] = { text = string.format("%s (%s)", BossLabel(b), names[key] or key), trash = b.trash }
+                        end
+                    end
+                end
+            end
+        end
+    end
+    local e = lootIndex[id]
+    return e and e.text
+end
 
 -- ---------------------------------------------------------------------
 -- Dungeon quests
@@ -448,7 +598,7 @@ local function Line(parent, layer)
     return t
 end
 
-local RefreshList, ShowDetail
+local RefreshList, ShowDetail, OpenLoot
 
 local function FS(parent, font, size, color, justify)
     local f = parent:CreateFontString(nil, "OVERLAY")
@@ -623,11 +773,13 @@ local function CreateWindow()
     det.map:SetPoint("LEFT", det.wp, "RIGHT", 8, 0)
 
     -- Route / Quests tabs, under the tags line.
-    local TAB_W = 120
+    local TAB_W = 100
     det.tabRoute = Flat(det, TAB_W, 20, T("Itinéraire", "Route"), function() detailTab = "route"; ShowDetail(selected) end)
     det.tabRoute:SetPoint("TOPLEFT", det.tags, "BOTTOMLEFT", 0, -8)
-    det.tabQuests = Flat(det, TAB_W + 30, 20, T("Quêtes", "Quests"), function() detailTab = "quests"; ShowDetail(selected) end)
+    det.tabQuests = Flat(det, TAB_W + 20, 20, T("Quêtes", "Quests"), function() detailTab = "quests"; ShowDetail(selected) end)
     det.tabQuests:SetPoint("LEFT", det.tabRoute, "RIGHT", 6, 0)
+    det.tabLoot = Flat(det, TAB_W + 10, 20, T("Butin", "Loot"), function() if selected then OpenLoot(selected) end end)
+    det.tabLoot:SetPoint("LEFT", det.tabQuests, "RIGHT", 6, 0)
 
     -- Quest list (scrollable), between the tabs and the position line.
     local qf = CreateFrame("Frame", nil, det)
@@ -865,6 +1017,364 @@ RefreshQuests = function()
     end
 end
 
+-- ---------------------------------------------------------------------
+-- Loot window (1.2.9): opens in place of the codex, "Back" returns to it.
+-- ---------------------------------------------------------------------
+local lootWin, lootDungeon
+local LW, LH = 440, 500
+
+local function LootScrollMax() return math.max(0, #llist - LVISIBLE) end
+
+RefreshLoot = function()
+    if not lootWin then return end
+    for i = 1, LVISIBLE do
+        local r, e = lrows[i], llist[i + loffset]
+        r.e = e
+        if e and e.header then
+            r.icon:Hide()
+            local tag = e.boss.t and not e.boss.trash and TAG_TEXT[e.boss.t]
+            r.name:SetText(BossLabel(e.boss) .. (tag and ("  |cffa89e8a(" .. L(tag) .. ")|r") or ""))
+            r.name:SetFont(FONT_BOLD, 11)
+            r.name:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+            r.name:ClearAllPoints(); r.name:SetPoint("LEFT", r, "LEFT", 2, 0); r.name:SetPoint("RIGHT", r.kind, "LEFT", -6, 0)
+            r.kind:SetText(e.count)
+            r.sep:Show()
+            r:EnableMouse(false)
+            r:Show()
+        elseif e then
+            local name, quality, icon, kind = LootItem(e.id)
+            r.icon:SetTexture(icon); r.icon:Show()
+            r.name:SetFont(FONT, 11)
+            r.name:ClearAllPoints(); r.name:SetPoint("LEFT", r.icon, "RIGHT", 6, 0); r.name:SetPoint("RIGHT", r.kind, "LEFT", -6, 0)
+            r.name:SetText(name)
+            local c = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
+            if c then r.name:SetTextColor(c.r, c.g, c.b) else r.name:SetTextColor(TEXT[1], TEXT[2], TEXT[3]) end
+            r.kind:SetText(kind or "")
+            r.sep:Hide()
+            r:EnableMouse(true)
+            r:Show()
+        else
+            r:Hide()
+        end
+    end
+    lootWin.scroll:Sync()
+end
+
+local function FillLoot()
+    local d = lootDungeon
+    if not (lootWin and d) then return end
+    local db = DB()
+    local mine = db and db.lootMine
+    local loot, total, known = DungeonLoot(d, mine)
+    if llist.key ~= d.key or llist.mine ~= mine then loffset = 0 end
+    llist = loot
+    llist.key, llist.mine = d.key, mine
+    loffset = math.min(loffset, LootScrollMax())
+    lootWin.title:SetText(DungeonName(d))
+    lootWin.sub:SetText(string.format(T("Butin  -  niveaux %d-%d  -  %d objet(s)", "Loot  -  levels %d-%d  -  %d item(s)"), d.min, d.max, total))
+    lootWin.mine.text:SetText(mine and T("Pour moi : oui", "For me: on") or T("Pour moi : non", "For me: off"))
+    lootWin.mine.bg:SetVertexColor(mine and 0.24 or 0.11, mine and 0.18 or 0.09, mine and 0.10 or 0.07, 1)
+    if total == 0 then
+        lootWin.empty:SetText(known and T("Butin pas encore connu pour ce donjon.", "Loot not known yet for this dungeon.")
+            or T("Pas de données de butin.", "No loot data."))
+        lootWin.empty:Show()
+    elseif #loot == 0 then
+        lootWin.empty:SetText(T("Rien ici pour ta classe. Clique sur « Pour moi » pour tout voir.",
+                                "Nothing here for your class. Click \"For me\" to see everything."))
+        lootWin.empty:Show()
+    else
+        lootWin.empty:Hide()
+    end
+    RefreshLoot()
+end
+
+-- Back to the codex, where the loot window was (it may have been dragged).
+local function BackToCodex()
+    if not lootWin then return end
+    local left, top = lootWin:GetLeft(), lootWin:GetTop()
+    lootWin:Hide()
+    if win then
+        if left and top then
+            win:ClearAllPoints()
+            win:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+            local db, U = DB(), TomoMod_Utils
+            if db and U and U.SaveFramePosition then db.position = db.position or {}; U.SaveFramePosition(win, db.position) end
+        end
+        win:Show()
+        if selected then ShowDetail(selected) end
+    end
+end
+
+local function CreateLootWindow()
+    if lootWin then return lootWin end
+    local lw = CreateFrame("Frame", "TomoMod_DungeonCodexLootFrame", UIParent)
+    lw:SetSize(LW, LH)
+    lw:SetFrameStrata("HIGH")
+    lw:SetClampedToScreen(true)
+    lw:SetMovable(true)
+    lw:EnableMouse(true)
+    lw:Hide()
+    tinsert(UISpecialFrames, "TomoMod_DungeonCodexLootFrame")
+    lootWin = lw
+
+    local bg = lw:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints(); bg:SetTexture(SOLID)
+    bg:SetVertexColor(0.07, 0.06, 0.045, 0.97)
+    for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local t = lw:CreateTexture(nil, "BORDER")
+        t:SetTexture(SOLID)
+        t:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 1)
+        if side == "TOP" or side == "BOTTOM" then
+            t:SetPoint(side .. "LEFT"); t:SetPoint(side .. "RIGHT"); t:SetHeight(1)
+        else
+            t:SetPoint("TOP" .. side); t:SetPoint("BOTTOM" .. side); t:SetWidth(1)
+        end
+    end
+
+    -- Title bar (drag handle): Back, dungeon name, close.
+    local bar = CreateFrame("Frame", nil, lw)
+    bar:SetPoint("TOPLEFT", 1, -1); bar:SetPoint("TOPRIGHT", -1, -1); bar:SetHeight(30)
+    bar:EnableMouse(true)
+    bar:RegisterForDrag("LeftButton")
+    bar:SetScript("OnDragStart", function() lw:StartMoving() end)
+    bar:SetScript("OnDragStop", function() lw:StopMovingOrSizing() end)
+    local barBg = bar:CreateTexture(nil, "BACKGROUND")
+    barBg:SetAllPoints(); barBg:SetTexture(SOLID)
+    barBg:SetVertexColor(0.12, 0.09, 0.06, 1)
+    local back = Flat(bar, 78, 20, T("Retour", "Back"), BackToCodex)
+    back:SetPoint("LEFT", 5, 0)
+    lw.back = back
+    back:SetScript("OnEnter", function(self)
+        self.bg:SetVertexColor(0.20, 0.15, 0.09, 1)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(T("Revenir au codex", "Back to the codex"), YELLOW[1], YELLOW[2], YELLOW[3])
+        GameTooltip:Show()
+    end)
+    back:SetScript("OnLeave", function(self) self.bg:SetVertexColor(0.11, 0.09, 0.07, 1); GameTooltip:Hide() end)
+    lw.title = FS(bar, FONT_BOLD, 13, YELLOW)
+    lw.title:SetPoint("LEFT", back, "RIGHT", 10, 0)
+    lw.title:SetPoint("RIGHT", bar, "RIGHT", -34, 0)
+    lw.title:SetWordWrap(false)
+    local close = Flat(bar, 22, 20, "x", function() lw:Hide() end)
+    close:SetPoint("RIGHT", -5, 0)
+    local sep = Line(lw); sep:SetPoint("TOPLEFT", 1, -31); sep:SetPoint("TOPRIGHT", -1, -31); sep:SetHeight(1)
+
+    -- Second line: levels and count, "For me" switch.
+    lw.mine = Flat(lw, 120, 20, T("Pour moi", "For me"), function()
+        local db = DB()
+        if db then db.lootMine = not db.lootMine end
+        loffset = 0
+        FillLoot()
+    end)
+    lw.mine:SetPoint("TOPRIGHT", -12, -38)
+    lw.mine:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(T("Pour moi", "For me"), YELLOW[1], YELLOW[2], YELLOW[3])
+        GameTooltip:AddLine(T("Ne garder que ce qui sert à ta classe : ton type d'armure (chasseur et chaman : cuir puis maille au niveau 40 ; guerrier et paladin : maille puis plaque au niveau 40), tes armes, boucliers et reliques. Bijoux et capes restent toujours.",
+                              "Only keep what your class uses: your armour type (hunter and shaman: leather, then mail at level 40; warrior and paladin: mail, then plate at level 40), your weapons, shields and relics. Jewellery and cloaks always stay."), TEXT[1], TEXT[2], TEXT[3], true)
+        GameTooltip:Show()
+    end)
+    lw.mine:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    lw.sub = FS(lw, FONT, 11, TEXT)
+    lw.sub:SetPoint("LEFT", lw, "TOPLEFT", 12, -48)
+    lw.sub:SetPoint("RIGHT", lw.mine, "LEFT", -8, 0)
+    lw.sub:SetWordWrap(false)
+    local sep2 = Line(lw); sep2:SetPoint("TOPLEFT", 10, -64); sep2:SetPoint("TOPRIGHT", -10, -64); sep2:SetHeight(1)
+
+    -- Credit line at the bottom.
+    local data = LootData()
+    lw.src = FS(lw, FONT, 9, DIM)
+    lw.src:SetPoint("BOTTOMLEFT", 12, 10); lw.src:SetPoint("BOTTOMRIGHT", -12, 10)
+    lw.src:SetWordWrap(false)
+    lw.src:SetText(data and string.format(T("Données : %s, %s. Merci !", "Data: %s, %s. Thank you!"), data.source, data.date) or "")
+
+    -- List + scroll bar.
+    local list = CreateFrame("Frame", nil, lw)
+    list:SetPoint("TOPLEFT", 10, -70)
+    list:SetPoint("BOTTOMRIGHT", -28, 28)
+    list:EnableMouseWheel(true)
+    lw.list = list
+    LVISIBLE = math.max(1, math.floor((LH - 70 - 28) / LROW_H))
+    for i = 1, LVISIBLE do
+        local r = CreateFrame("Button", nil, list)
+        r:SetHeight(LROW_H - 2)
+        r:SetPoint("TOPLEFT", 0, -(i - 1) * LROW_H)
+        r:SetPoint("RIGHT", list, "RIGHT", 0, 0)
+        r:RegisterForClicks("LeftButtonUp")
+        local hl = r:CreateTexture(nil, "BACKGROUND")
+        hl:SetAllPoints(); hl:SetTexture(SOLID); hl:SetVertexColor(1, 1, 1, 0)
+        r.hl = hl
+        r.sep = r:CreateTexture(nil, "BORDER")
+        r.sep:SetTexture(SOLID); r.sep:SetVertexColor(BRONZE[1], BRONZE[2], BRONZE[3], 0.5)
+        r.sep:SetPoint("BOTTOMLEFT", 0, -1); r.sep:SetPoint("BOTTOMRIGHT", 0, -1); r.sep:SetHeight(1)
+        r.icon = r:CreateTexture(nil, "ARTWORK")
+        r.icon:SetSize(16, 16); r.icon:SetPoint("LEFT", 2, 0)
+        r.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        r.kind = FS(r, FONT, 9, DIM, "RIGHT"); r.kind:SetPoint("RIGHT", r, "RIGHT", -4, 0); r.kind:SetWordWrap(false)
+        r.name = FS(r, FONT, 11, TEXT); r.name:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
+        r.name:SetPoint("RIGHT", r.kind, "LEFT", -6, 0); r.name:SetWordWrap(false)
+        r:SetScript("OnEnter", function(self)
+            local e = self.e
+            if not (e and e.id) then return end
+            self.hl:SetVertexColor(1, 1, 1, 0.05)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetItemByID(e.id)
+            GameTooltip:Show()
+        end)
+        r:SetScript("OnLeave", function(self) self.hl:SetVertexColor(1, 1, 1, 0); GameTooltip:Hide() end)
+        r:SetScript("OnClick", function(self)
+            local e = self.e
+            if not (e and e.id) then return end
+            local link = select(2, C_Item.GetItemInfo(e.id))
+            if link and HandleModifiedItemClick then HandleModifiedItemClick(link) end
+        end)
+        lrows[i] = r
+    end
+    lw.empty = FS(list, FONT, 11, DIM); lw.empty:SetPoint("TOPLEFT", 2, -4); lw.empty:SetWidth(LW - 40)
+    lw.empty:SetWordWrap(true)
+
+    -- Vertical scroll bar, all of it usable with the mouse (for players
+    -- whose wheel is missing or broken): arrow buttons (hold to repeat),
+    -- click on the track to jump a page, drag the gold thumb. The wheel
+    -- still works on the list and on the bar.
+    local SB_W, ARROW = 14, 14
+    local function SetOffset(v)
+        v = math.min(LootScrollMax(), math.max(0, math.floor(v + 0.5)))
+        if v ~= loffset then loffset = v; RefreshLoot() end
+    end
+    local bar = CreateFrame("Frame", nil, lw)
+    bar:SetPoint("TOPRIGHT", -8, -70)
+    bar:SetPoint("BOTTOMRIGHT", -8, 28)
+    bar:SetWidth(SB_W)
+    bar:EnableMouseWheel(true)
+
+    local function Arrow(point, dir)
+        local b = CreateFrame("Button", nil, bar)
+        b:SetSize(SB_W, ARROW)
+        b:SetPoint(point)
+        local bgT = b:CreateTexture(nil, "BACKGROUND")
+        bgT:SetAllPoints(); bgT:SetTexture(SOLID); bgT:SetVertexColor(0.16, 0.12, 0.08, 1)
+        local tri = b:CreateTexture(nil, "ARTWORK")
+        tri:SetSize(10, 10); tri:SetPoint("CENTER")
+        if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("minimal-scrollbar-small-arrow-top") then
+            tri:SetAtlas(dir < 0 and "minimal-scrollbar-small-arrow-top" or "minimal-scrollbar-small-arrow-bottom")
+        else
+            tri:SetTexture("Interface\\Buttons\\UI-ScrollBar-Scroll" .. (dir < 0 and "Up" or "Down") .. "Button-Up")
+            tri:SetTexCoord(0.25, 0.75, 0.25, 0.75)
+        end
+        tri:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 1)
+        b:SetScript("OnEnter", function() bgT:SetVertexColor(0.26, 0.19, 0.11, 1) end)
+        b:SetScript("OnLeave", function() bgT:SetVertexColor(0.16, 0.12, 0.08, 1) end)
+        -- One row per click; held down, it keeps scrolling.
+        b:SetScript("OnMouseDown", function(self)
+            SetOffset(loffset + dir)
+            self.wait, self.held = 0.35, true
+        end)
+        b:SetScript("OnMouseUp", function(self) self.held = false end)
+        b:SetScript("OnHide", function(self) self.held = false end)
+        b:SetScript("OnUpdate", function(self, elapsed)
+            if not self.held then return end
+            self.wait = self.wait - elapsed
+            if self.wait <= 0 then self.wait = 0.06; SetOffset(loffset + dir) end
+        end)
+        return b
+    end
+    bar.up = Arrow("TOP", -1)
+    bar.down = Arrow("BOTTOM", 1)
+
+    local track = CreateFrame("Button", nil, bar)
+    track:SetPoint("TOPLEFT", bar.up, "BOTTOMLEFT", 0, -2)
+    track:SetPoint("BOTTOMRIGHT", bar.down, "TOPRIGHT", 0, 2)
+    local trackT = track:CreateTexture(nil, "BACKGROUND")
+    trackT:SetPoint("TOP"); trackT:SetPoint("BOTTOM"); trackT:SetWidth(6)
+    trackT:SetTexture(SOLID); trackT:SetVertexColor(BRONZE[1], BRONZE[2], BRONZE[3], 0.35)
+    bar.track = track
+
+    local thumb = CreateFrame("Button", nil, track)
+    thumb:SetWidth(SB_W)
+    thumb:SetHeight(40)
+    thumb:SetPoint("TOP", track, "TOP", 0, 0)
+    local thumbT = thumb:CreateTexture(nil, "ARTWORK")
+    thumbT:SetPoint("TOPLEFT", 2, 0); thumbT:SetPoint("BOTTOMRIGHT", -2, 0)
+    thumbT:SetTexture(SOLID); thumbT:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 0.9)
+    thumb:SetScript("OnEnter", function() thumbT:SetVertexColor(YELLOW[1], YELLOW[2], YELLOW[3], 1) end)
+    thumb:SetScript("OnLeave", function(self) if not self.dragging then thumbT:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 0.9) end end)
+    bar.thumb = thumb
+
+    local function CursorY()
+        local _, y = GetCursorPosition()
+        return y / track:GetEffectiveScale()
+    end
+    -- Drag: the offset follows the cursor along the free part of the track.
+    thumb:SetScript("OnMouseDown", function(self, button)
+        if button ~= "LeftButton" then return end
+        self.dragging, self.startY, self.startOff = true, CursorY(), loffset
+    end)
+    thumb:SetScript("OnMouseUp", function(self)
+        self.dragging = false
+        if not self:IsMouseOver() then thumbT:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 0.9) end
+    end)
+    thumb:SetScript("OnHide", function(self) self.dragging = false end)
+    thumb:SetScript("OnUpdate", function(self)
+        if not self.dragging then return end
+        if not IsMouseButtonDown("LeftButton") then self.dragging = false; return end
+        local free = track:GetHeight() - self:GetHeight()
+        if free <= 0 then return end
+        local dy = self.startY - CursorY()               -- down = positive
+        SetOffset(self.startOff + dy / free * LootScrollMax())
+    end)
+    -- Click on the track above / below the thumb: one page.
+    track:SetScript("OnMouseDown", function(_, button)
+        if button ~= "LeftButton" then return end
+        local y, top = CursorY(), thumb:GetTop()
+        local bottom = thumb:GetBottom()
+        if top and y > top then SetOffset(loffset - (LVISIBLE - 1))
+        elseif bottom and y < bottom then SetOffset(loffset + (LVISIBLE - 1)) end
+    end)
+
+    -- Called by RefreshLoot: size and place the thumb, hide the bar when
+    -- everything fits.
+    function bar:Sync()
+        local max = LootScrollMax()
+        if max <= 0 then self:Hide(); return end
+        self:Show()
+        local h = track:GetHeight()
+        if not h or h <= 0 then return end
+        local th = math.max(24, h * LVISIBLE / #llist)
+        thumb:SetHeight(th)
+        thumb:ClearAllPoints()
+        thumb:SetPoint("TOP", track, "TOP", 0, -((h - th) * loffset / max))
+        bar.up:SetAlpha(loffset > 0 and 1 or 0.4)
+        bar.down:SetAlpha(loffset < max and 1 or 0.4)
+    end
+    lw.scroll = bar
+
+    local function Wheel(_, delta) SetOffset(loffset - delta * 3) end
+    list:SetScript("OnMouseWheel", Wheel)
+    bar:SetScript("OnMouseWheel", Wheel)
+
+    lw:SetScale(win and win:GetScale() or 1)
+    return lw
+end
+
+-- Opens the loot of a dungeon where the codex is, and hides the codex.
+OpenLoot = function(d)
+    CreateLootWindow()
+    lootDungeon = d
+    lootWin:SetScale(win and win:GetScale() or 1)
+    if win and win:IsShown() then
+        lootWin:ClearAllPoints()
+        local left, top = win:GetLeft(), win:GetTop()
+        if left and top then lootWin:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+        else lootWin:SetPoint("CENTER") end
+        win:Hide()
+    elseif not lootWin:GetPoint() then
+        lootWin:SetPoint("CENTER", 0, 40)
+    end
+    lootWin:Show()
+    FillLoot()
+end
+
 local SRC_TEXT = {
     override = { fr = "Position : enregistrée par toi", en = "Position: recorded by you" },
     guide    = { fr = "Position : relevée par les guides Forever", en = "Position: from Forever guides" },
@@ -874,7 +1384,7 @@ local SRC_TEXT = {
 ShowDetail = function(d)
     local det = win.det
     local show = d ~= nil
-    for _, k in ipairs({ "name", "sub", "tags", "routeHead", "rline", "note", "pos", "wp", "map", "tabRoute", "tabQuests" }) do
+    for _, k in ipairs({ "name", "sub", "tags", "routeHead", "rline", "note", "pos", "wp", "map", "tabRoute", "tabQuests", "tabLoot" }) do
         if show then det[k]:Show() else det[k]:Hide() end
     end
     for _, s in ipairs(steps) do s.num:Hide(); s.txt:Hide() end
@@ -898,7 +1408,7 @@ ShowDetail = function(d)
                                         "Elite quests  -  levels |cff%02x%02x%02x%d-%d|r  -  %d to do of %d"),
             c[1] * 255, c[2] * 255, c[3] * 255, d.min, d.max, todo, #quests))
         det.tags:SetText(T("Quêtes de groupe : prévois des alliés.", "Group quests: bring friends."))
-        for _, k in ipairs({ "routeHead", "rline", "note", "tabRoute", "tabQuests", "wp" }) do det[k]:Hide() end
+        for _, k in ipairs({ "routeHead", "rline", "note", "tabRoute", "tabQuests", "tabLoot", "wp" }) do det[k]:Hide() end
         if qlist.key ~= d.key then qoffset = 0 end
         qlist = quests
         qlist.key = d.key
@@ -936,6 +1446,8 @@ ShowDetail = function(d)
     -- Tabs: the quest count says what is left to do.
     local quests, todo = DungeonQuests(d, fac)
     det.tabQuests.text:SetText(string.format(T("Quêtes (%d)", "Quests (%d)"), todo))
+    local _, lootTotal = DungeonLoot(d, false)
+    det.tabLoot.text:SetText(string.format(T("Butin (%d)", "Loot (%d)"), lootTotal))
     local onQuests = detailTab == "quests"
     det.tabRoute.bg:SetVertexColor(onQuests and 0.11 or 0.24, onQuests and 0.09 or 0.18, onQuests and 0.07 or 0.10, 1)
     det.tabQuests.bg:SetVertexColor(onQuests and 0.24 or 0.11, onQuests and 0.18 or 0.09, onQuests and 0.10 or 0.07, 1)
@@ -950,7 +1462,7 @@ ShowDetail = function(d)
 
     det.routeHead:SetText(string.format(T("Itinéraire (%s)", "Route (%s)"), fac == "A" and "Alliance" or "Horde"))
     local r = d.routes and (d.routes[fac] or d.routes.both)
-    local lines = (not onQuests and r) and L(r) or {}
+    local lines = (detailTab == "route" and r) and L(r) or {}
     local prev = det.rline
     for i, s in ipairs(steps) do
         local text = lines[i]
@@ -967,7 +1479,7 @@ ShowDetail = function(d)
 
     det.note:ClearAllPoints()
     det.note:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", prev == det.rline and 0 or -22, -10)
-    det.note:SetText(onQuests and "" or (L(d.note) or ""))
+    det.note:SetText(detailTab == "route" and (L(d.note) or "") or "")
 
     local map, x, y, src = Entrance(d)
     det.pos:ClearAllPoints()
@@ -994,6 +1506,11 @@ function DC.Toggle(show)
         return
     end
     CreateWindow()
+    -- /codex while the loot window is open: it counts as the codex being shown.
+    if lootWin and lootWin:IsShown() then
+        lootWin:Hide()
+        if show == nil then return end
+    end
     if show == nil then show = not win:IsShown() end
     if show then
         SetMode((db.mode == "all" or db.mode == "elite") and db.mode or "mine")
@@ -1007,6 +1524,10 @@ function DC.ApplySettings()
     local db = DB()
     if not (db and win) then return end
     win:SetScale(db.scale or 1)
+    if lootWin then
+        lootWin:SetScale(db.scale or 1)
+        if lootWin:IsShown() then FillLoot() end   -- "For me" may have changed in the options
+    end
 end
 
 function DC.SetEnabled(v)
@@ -1094,6 +1615,39 @@ function DC.Initialize()
             if win and win:IsShown() and selected then ShowDetail(selected) end
         end)
     end)
+
+    -- Item names and icons arrive from the server: refresh the loot tab.
+    local it = CreateFrame("Frame")
+    pcall(it.RegisterEvent, it, "GET_ITEM_INFO_RECEIVED")
+    pcall(it.RegisterEvent, it, "ITEM_DATA_LOAD_RESULT")
+    local itPending = false
+    it:SetScript("OnEvent", function()
+        if itPending or not (lootWin and lootWin:IsShown()) then return end
+        itPending = true
+        C_Timer.After(0.2, function()
+            itPending = false
+            if lootWin and lootWin:IsShown() then RefreshLoot() end
+        end)
+    end)
+
+    -- "Loot: boss (dungeon)" on item tooltips. ForeverLoot adds its own
+    -- line when it is installed, so this one stands down then.
+    local function ForeverLootLoaded()
+        if C_AddOns and C_AddOns.IsAddOnLoaded then return C_AddOns.IsAddOnLoaded("ForeverLoot") end
+        return IsAddOnLoaded and IsAddOnLoaded("ForeverLoot")
+    end
+    if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall and Enum and Enum.TooltipDataType then
+        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tip, data)
+            local db = DB()
+            if not (db and db.enabled and db.lootTooltip ~= false) or ForeverLootLoaded() then return end
+            local id = data and data.id
+            if not id or (issecretvalue and issecretvalue(id)) then return end
+            local src = LootSource(id)
+            if src and tip.AddLine then
+                tip:AddLine(string.format(T("Butin : %s", "Loot: %s"), src), GOLD[1], GOLD[2], GOLD[3], true)
+            end
+        end)
+    end
 
     -- One chat line at login (not after a /reload) about the codex.
     local login = CreateFrame("Frame")

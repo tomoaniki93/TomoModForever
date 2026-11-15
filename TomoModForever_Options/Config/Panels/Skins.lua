@@ -464,6 +464,12 @@ local function BuildObjectiveTrackerTab(parent)
     end)
     y = ny
 
+    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_group_zone"], TomoModForeverDB.objectiveTracker.groupByZone ~= false, y, function(v)
+        TomoModForeverDB.objectiveTracker.groupByZone = v
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end)
+    y = ny
+
     local _, ny = W.CreateSeparator(c, y)
     y = ny
 

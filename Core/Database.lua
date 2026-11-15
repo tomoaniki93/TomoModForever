@@ -108,6 +108,7 @@ TomoMod_Defaults = {
         objectiveFontSize = 11,
         maxQuestsShown = 0,
         buckets = true,
+        groupByZone = true,       -- "Quests" bucket: unfinished quests under zone sub-headers
         bucketsCollapsed = {},
         scale = 1.0,
         position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 },
@@ -714,6 +715,8 @@ TomoMod_Defaults = {
         mode = "mine",            -- mine | all
         levelUpHint = true,       -- chat line when a dungeon comes within reach
         loginHint = true,         -- chat line at login about /codex
+        lootMine = false,         -- loot tab: only what your class can wear
+        lootTooltip = true,       -- "Loot: boss (dungeon)" on item tooltips
         scale = 1.0,
         overrides = {},           -- [key] = { map, x, y } set with /codex set
         position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 40 },
@@ -998,6 +1001,7 @@ TomoMod_Defaults = {
     -- =====================
     unitFrames = {
         enabled = true,
+        style = "tmf",            -- "tmf" (default look) | "forever" (ForeverStyle.lua)
         hideBlizzardFrames = true,
         texture = ADDON_TEXTURE,
         font = ADDON_FONT,

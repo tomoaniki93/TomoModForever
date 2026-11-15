@@ -63,6 +63,15 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.9",
+        highlights = {
+            L["wn_129_forever"],
+            L["wn_129_loot"],
+            L["wn_129_zones"],
+            L["wn_129_triage"],
+        },
+    },
+    {
         version = "1.2.8",
         highlights = {
             L["wn_128_ranks"],
