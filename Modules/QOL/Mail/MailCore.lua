@@ -49,8 +49,9 @@ TM.version = AddonVersion()
 TomoMod_MailDB_Defaults = {
     -- Shared by every character of the account
     global = {
-        -- "Name|Realm|Faction|Level|Class"
+        -- "Full Name|Ruleset|Faction|Level|Class|GUID" (see RegisterCurrentChar)
         alts = {},
+        altsVersion = 0,
         window = { point = "TOP", x = -160, y = -100 },
     },
     -- Per character
@@ -139,21 +140,44 @@ local function InitDB()
     if type(db.profiles) ~= "table" then db.profiles = {} end
     MergeDefaults(db.global, TomoMod_MailDB_Defaults.global)
 
-    -- Profiles are keyed by the character name alone. The realm string
-    -- Forever reports can change between sessions (the cluster part of
-    -- "CAMWOW EU4 Realm 7 PvE"), and a "Name-Realm" key then gave the
-    -- character a fresh, empty profile (no recents) on the next login.
-    -- An older "Name-Realm" profile is taken over the first time.
-    local name = UnitName("player") or "?"
-    local key = name
-    if type(db.profiles[key]) ~= "table" then
-        local prefix = name .. "-"
-        for k, v in pairs(db.profiles) do
-            if type(v) == "table" and k:sub(1, #prefix) == prefix then
-                if type(db.profiles[key]) ~= "table" or #(v.recent or {}) > #(db.profiles[key].recent or {}) then
-                    db.profiles[key] = v
+    -- Alt list v2 (1.2.8). Up to 1.2.7 a character was saved under its
+    -- first name only: an address Forever's mail does not take, and the
+    -- key that made alts sharing a first name erase each other. Those
+    -- half names are dropped; each character is saved again, with its
+    -- full name and GUID, the next time it logs in.
+    if (tonumber(db.global.altsVersion) or 0) < 2 then
+        if TM:TwoPartNames() then
+            local sep = TM:NameSeparator()
+            for i = #db.global.alts, 1, -1 do
+                local p = strsplit("|", db.global.alts[i] or "")
+                if not p or p == "" or not p:find(sep, 1, true) then
+                    table.remove(db.global.alts, i)
                 end
             end
+        end
+        db.global.altsVersion = 2
+    end
+
+    -- Profiles are keyed by the character's FULL name ("Abla Stone").
+    -- The realm text is not stable on Forever (the cluster part of
+    -- "CAMWOW EU4 Realm 7 PvE" changes), and the first name alone is
+    -- not unique: Forever lets every alt keep the same first name, only
+    -- first name + surname is unique. An older profile keyed "Name" or
+    -- "Name-Realm" is taken over (moved) the first time.
+    local first = UnitName("player") or "?"
+    if TM.IsSecret(first) then first = "?" end
+    local key = TM:PlayerName() or first
+    if type(db.profiles[key]) ~= "table" then
+        local best, bestKey
+        for k, v in pairs(db.profiles) do
+            if type(v) == "table" and type(k) == "string"
+               and (k == first or k:sub(1, #first + 1) == first .. "-") then
+                if not best or #(v.recent or {}) > #(best.recent or {}) then best, bestKey = v, k end
+            end
+        end
+        if best then
+            db.profiles[key] = best
+            if bestKey ~= key then db.profiles[bestKey] = nil end
         end
     end
     if type(db.profiles[key]) ~= "table" then db.profiles[key] = {} end
@@ -168,14 +192,136 @@ end
 -- ============================================================
 --  Names
 -- ============================================================
--- Trims a typed name and drops a "-Realm" suffix: mail between
--- characters of the same server only needs the name.
+-- World of Warcraft: Forever gives every character two names, a first
+-- name and a surname ("Abla Stone"). Only the pair is unique in the
+-- region: a player may call all of their alts "Abla". The full name is
+-- also the only address the mail takes there, and it never carries a
+-- realm. UnitName("player") hands the two halves back as TWO values,
+-- which is why the first one alone is never used as an identity here.
+-- (Same reading as Postbox and BlazeMail, the two Forever mail addons.)
+
+function TM.IsSecret(v)
+    return type(issecretvalue) == "function" and issecretvalue(v) == true
+end
+
+local twoPart
+function TM:TwoPartNames()
+    if twoPart ~= nil then return twoPart end
+    local on = false
+    if type(WOW_PROJECT_CAMELOT) == "number" and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT then on = true end
+    if not on then
+        local interface = select(4, GetBuildInfo())
+        on = type(interface) == "number" and interface >= 16000 and interface < 20000
+    end
+    if not on and type(RegionalUniqueNamesEnabled) == "function" then
+        local ok, v = pcall(RegionalUniqueNamesEnabled)
+        on = ok and v == true
+    end
+    twoPart = on
+    return on
+end
+
+local separator
+function TM:NameSeparator()
+    if separator then return separator end
+    local consts = type(Constants) == "table" and Constants.CharacterNameSeparatorConsts or nil
+    local sep = type(consts) == "table" and consts.CHARACTERNAME_SURNAME_SEPARATOR or nil
+    separator = (type(sep) == "string" and sep ~= "") and sep or " "
+    return separator
+end
+
+-- name, surname -> "Name Surname" (name alone when there is no surname,
+-- or when the first value already ends with it).
+local function JoinSurname(name, surname)
+    if type(name) ~= "string" or name == "" or TM.IsSecret(name) then return nil end
+    if type(surname) ~= "string" or surname == "" or TM.IsSecret(surname) then return name end
+    local tail = TM:NameSeparator() .. surname
+    if #name > #tail and name:sub(-#tail) == tail then return name end
+    return name .. tail
+end
+
+-- The character being played: its full name on Forever, UnitName
+-- elsewhere. Kept once complete; a half name is returned but asked
+-- again next time.
+local playerName
+function TM:PlayerName()
+    if playerName then return playerName end
+    local full
+    if type(UnitNameUnmodified) == "function" then full = JoinSurname(UnitNameUnmodified("player")) end
+    if not full or (self:TwoPartNames() and not full:find(self:NameSeparator(), 1, true)) then
+        local other = JoinSurname(UnitName("player"))
+        if other and (not full or other:find(self:NameSeparator(), 1, true)) then full = other end
+    end
+    if not full or full == "" or full == UNKNOWNOBJECT then return nil end
+    if not self:TwoPartNames() or full:find(self:NameSeparator(), 1, true) then playerName = full end
+    return full
+end
+
+-- Mail cannot cross Forever's rulesets, and the realm text drifts inside
+-- one, so the ruleset is the "realm" kept with each character:
+-- Hardcore, RPPvP, RP, PvP or PvE. "" while it is not known.
+local RULESETS = { Hardcore = true, RPPvP = true, RP = true, PvP = true, PvE = true }
+local ruleset
+function TM:Ruleset()
+    if ruleset then return ruleset end
+    local answer
+    local rules = type(Enum) == "table" and Enum.GameRule or nil
+    if type(C_GameRules) == "table" and type(C_GameRules.IsGameRuleActive) == "function" and type(rules) == "table" then
+        local function on(k)
+            if rules[k] == nil then return false end
+            local ok, v = pcall(C_GameRules.IsGameRuleActive, rules[k])
+            return ok and v == true
+        end
+        local rp, pvp = on("RPRuleset"), on("PvPRuleset")
+        if on("HardcoreRuleset") then answer = "Hardcore"
+        elseif rp and pvp then answer = "RPPvP"
+        elseif rp then answer = "RP"
+        elseif pvp then answer = "PvP"
+        else answer = "PvE" end
+    else
+        -- Suffix of the realm text: "CAMWOW EU4 Realm 7 PvE" -> PvE.
+        local realm = GetRealmName and GetRealmName() or ""
+        if type(realm) == "string" and not TM.IsSecret(realm) then
+            realm = realm:gsub("%s+$", ""):lower()
+            for _, pair in ipairs({ { "rp pvp", "RPPvP" }, { "hardcore", "Hardcore" }, { "rp", "RP" }, { "pvp", "PvP" }, { "pve", "PvE" } }) do
+                if realm == pair[1] or realm:sub(-(#pair[1] + 1)) == " " .. pair[1] then answer = pair[2] break end
+            end
+        end
+    end
+    if answer and IsLoggedIn and IsLoggedIn() then ruleset = answer end
+    return answer or ""
+end
+
+-- Text -> the recipient it names. On Forever: the first two words, cut on
+-- spaces or hyphens and joined by the game's separator ("abla-stone",
+-- "Abla  Stone" and "Abla Stone-Realm" all give "Abla Stone" with the
+-- caller's casing); a hyphen is NOT a realm separator there. Elsewhere:
+-- the name without its "-Realm".
 function TM:CleanName(name)
-    if type(name) ~= "string" then return nil end
+    if type(name) ~= "string" or self.IsSecret(name) then return nil end
     name = name:gsub("^%s+", ""):gsub("%s+$", "")
+    if name == "" then return nil end
+    if self:TwoPartNames() then
+        local first, second
+        for part in name:gmatch("[^%s%-]+") do
+            if not first then first = part else second = part break end
+        end
+        if not first then return nil end
+        return second and (first .. self:NameSeparator() .. second) or first
+    end
     name = strsplit("-", name)
     if not name or name == "" then return nil end
     return name
+end
+
+function TM:SameName(a, b)
+    a, b = self:CleanName(a), self:CleanName(b)
+    return a ~= nil and b ~= nil and a:lower() == b:lower()
+end
+
+function TM:IsMe(name)
+    local me = self:PlayerName()
+    return me ~= nil and self:SameName(name, me)
 end
 
 -- The faction of the character being played, or nil while the client
@@ -187,15 +333,18 @@ local function PlayerFaction()
 end
 
 -- Can this stored alt be written to from the current character?
--- The realm is not compared (its text is not stable on Forever, see
--- InitDB), only the name (not ourselves) and the faction, when both
--- sides know it.
-function TM:IsMailableAlt(p, f)
+-- Not ourselves (GUID, then full name), same faction and same ruleset
+-- when both sides know them. Old entries hold realm text in the ruleset
+-- field: anything that is not a ruleset name is not compared.
+function TM:IsMailableAlt(p, f, r, guid)
     if not p or p == "" then return false end
-    local me = UnitName("player")
-    if me and p:lower() == me:lower() then return false end
+    local myGuid = UnitGUID and UnitGUID("player")
+    if guid and guid ~= "" and myGuid and not self.IsSecret(myGuid) and guid == myGuid then return false end
+    if self:IsMe(p) then return false end
     local mine = PlayerFaction()
     if mine and (f == "Alliance" or f == "Horde") and f ~= mine then return false end
+    local myRules = self:Ruleset()
+    if RULESETS[myRules] and RULESETS[r] and r ~= myRules then return false end
     return true
 end
 
@@ -205,9 +354,8 @@ end
 function TM:AddRecent(name)
     name = self:CleanName(name)
     if not name or not self.db then return end
-    local realm   = GetRealmName() or ""
     local faction = PlayerFaction() or "Neutral"
-    local entry   = name .. "|" .. realm .. "|" .. faction
+    local entry   = name .. "|" .. self:Ruleset() .. "|" .. faction
 
     local recent = self.db.profile.recent
     local lname = name:lower()
@@ -230,11 +378,14 @@ end
 local retries = 0
 function TM:RegisterCurrentChar()
     if not self.db then return end
-    local player  = UnitName("player")
+    local player  = self:PlayerName()
     local level   = UnitLevel("player")
     local _, class = UnitClass("player")
     local faction = PlayerFaction()
-    if not player or player == "" or player == UNKNOWNOBJECT or not class or not faction or not level or level <= 0 then
+    local guid    = UnitGUID and UnitGUID("player")
+    if guid and self.IsSecret(guid) then guid = nil end
+    local complete = player and (not self:TwoPartNames() or player:find(self:NameSeparator(), 1, true))
+    if not complete or not class or not faction or not level or level <= 0 then
         if retries < 10 and C_Timer and C_Timer.After then
             retries = retries + 1
             C_Timer.After(2, function() TM:RegisterCurrentChar() end)
@@ -242,15 +393,16 @@ function TM:RegisterCurrentChar()
         return
     end
 
-    local realm = GetRealmName() or ""
-    local entry = table.concat({ player, realm, faction, level, class }, "|")
+    local entry = table.concat({ player, self:Ruleset(), faction, level, class, guid or "" }, "|")
     local alts  = self.db.global.alts
     local lname = player:lower()
-    -- One entry per name: the realm text is not compared, otherwise a
-    -- change of that text would list the same character twice.
+    -- One entry per character: same GUID, or same full name. Never the
+    -- first name alone, which several alts may share on Forever.
     for i = #alts, 1, -1 do
-        local p = strsplit("|", alts[i])
-        if not p or p:lower() == lname then table.remove(alts, i) end
+        local p, _, _, _, _, g = strsplit("|", alts[i] or "")
+        if not p or p == "" or p:lower() == lname or (guid and g == guid) then
+            table.remove(alts, i)
+        end
     end
     table.insert(alts, entry)
 end
@@ -259,14 +411,15 @@ end
 function TM:PrintAlts()
     if not self.db then return end
     local _, class = UnitClass("player")
-    self:Print(string.format("player=%s realm=%s faction=%s level=%s class=%s",
-        tostring(UnitName("player")), tostring(GetRealmName()), tostring(UnitFactionGroup("player")),
-        tostring(UnitLevel("player")), tostring(class)))
+    local n, sn = UnitName("player")
+    self:Print(string.format("player=%s (UnitName=%s / %s) ruleset=%s realm=%s faction=%s level=%s class=%s twoPart=%s",
+        tostring(self:PlayerName()), tostring(n), tostring(sn), tostring(self:Ruleset()), tostring(GetRealmName()),
+        tostring(UnitFactionGroup("player")), tostring(UnitLevel("player")), tostring(class), tostring(self:TwoPartNames())))
     local alts = self.db.global.alts
     self:Print(string.format("%d stored:", #alts))
     for _, e in ipairs(alts) do
-        local p, _, f = strsplit("|", e)
-        self:Print("  " .. e .. (self:IsMailableAlt(p, f) and "" or "  (hidden here)"))
+        local p, r, f, _, _, g = strsplit("|", e)
+        self:Print("  " .. e .. (self:IsMailableAlt(p, f, r, g) and "" or "  (hidden here)"))
     end
 end
 

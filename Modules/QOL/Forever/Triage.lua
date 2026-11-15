@@ -58,7 +58,21 @@ end
 -- ---------------------------------------------------------------------
 -- Items your quest log asks for (by name: objectives give no item ID)
 -- ---------------------------------------------------------------------
+-- questNeeds[name] = { title = quest title, have = n, need = n }
+-- Also read by the bags (gold quest border) and the bag tooltips.
 local questNeeds = {}
+
+local function ObjectiveCounts(text)
+    if type(text) ~= "string" or Secret(text) then return nil end
+    local have, need = text:match("(%d+)%s*/%s*(%d+)")
+    return tonumber(have), tonumber(need)
+end
+
+local function AddNeed(name, title, text)
+    if not name or questNeeds[name] then return end
+    local have, need = ObjectiveCounts(text)
+    questNeeds[name] = { title = Plain(title), have = have, need = need }
+end
 
 local function ObjectiveItemName(text)
     if type(text) ~= "string" or Secret(text) then return nil end
@@ -78,8 +92,7 @@ local function ScanQuestLog()
             if info and not info.isHeader and info.questID then
                 for _, o in ipairs(C_QuestLog.GetQuestObjectives(info.questID) or {}) do
                     if o.type == "item" and not o.finished then
-                        local name = ObjectiveItemName(o.text)
-                        if name then questNeeds[name] = true end
+                        AddNeed(ObjectiveItemName(o.text), info.title, o.text)
                     end
                 end
             end
@@ -88,11 +101,11 @@ local function ScanQuestLog()
         local n = GetNumQuestLogEntries() or 0
         for i = 1, n do
             local objectives = GetNumQuestLeaderBoards and GetNumQuestLeaderBoards(i) or 0
+            local title = GetQuestLogTitle and GetQuestLogTitle(i)
             for o = 1, objectives do
                 local text, kind, finished = GetQuestLogLeaderBoard(o, i)
                 if kind == "item" and not finished then
-                    local name = ObjectiveItemName(text)
-                    if name then questNeeds[name] = true end
+                    AddNeed(ObjectiveItemName(text), title, text)
                 end
             end
         end
@@ -173,6 +186,33 @@ end
 local function Fresh()
     if state.dirty then Rebuild() end
     return state
+end
+
+-- Public: what an unfinished objective of the quest log says about an
+-- item, by name: { title, have, need }, or nil.
+function TR.QuestNeed(name)
+    if type(name) ~= "string" or Secret(name) then return nil end
+    return questNeeds[name]
+end
+
+-- Public: quest status of a bag slot.
+--   "starter" : starts a quest you do not have (Blizzard's "!" mark)
+--   "quest"   : a quest item, or an item an unfinished objective asks for
+--   nil       : neither
+-- Second value: the objective entry when the quest log asks for it.
+function TR.QuestStatus(bag, slot)
+    if not C_Container then return nil end
+    local qi = C_Container.GetContainerItemQuestInfo and C_Container.GetContainerItemQuestInfo(bag, slot)
+    if qi and Plain(qi.questID) and not Plain(qi.isActive) then return "starter" end
+    local info = C_Container.GetContainerItemInfo(bag, slot)
+    if not info then return nil end
+    local name = Plain(info.itemName)
+    if not name and info.itemID and C_Item and C_Item.GetItemNameByID then name = Plain(C_Item.GetItemNameByID(info.itemID)) end
+    local need = name and questNeeds[name]
+    if need or Plain(info.isQuestItem) or (qi and (Plain(qi.isQuestItem) or Plain(qi.questID))) then
+        return "quest", need
+    end
+    return nil
 end
 
 -- Public: the rank of a bag slot (1 = cheapest), its entry.
@@ -332,7 +372,24 @@ end
 local GOLD = { 1, 0.82, 0 }
 local GREY = { 0.72, 0.72, 0.72 }
 
+local function QuestMarksOn()
+    local bags = TomoModForeverDB and TomoModForeverDB.bagsV4
+    return not (bags and bags.slots and bags.slots.questMarks == false)
+end
+
 local function AddBagLine(tip, bag, slot)
+    -- Which quest wants this item, and how far along: so it is not sold.
+    if QuestMarksOn() then
+        local status, need = TR.QuestStatus(bag, slot)
+        if need and need.title then
+            local progress = (need.have and need.need) and string.format(" (%d/%d)", need.have, need.need) or ""
+            tip:AddLine(string.format(T("Quête : %s%s", "Quest: %s%s"), need.title, progress), GOLD[1], GOLD[2], GOLD[3], true)
+            tip:Show()
+        elseif status == "quest" and MerchantFrame and MerchantFrame:IsShown() then
+            tip:AddLine(T("Objet de quête : à garder", "Quest item: keep it"), GOLD[1], GOLD[2], GOLD[3])
+            tip:Show()
+        end
+    end
     local db = DB()
     if not (db and db.enabled and db.tooltip) then return end
     local rank, e = TR.RankOf(bag, slot)
@@ -387,6 +444,7 @@ function TR.Initialize()
                 questPending = false
                 ScanQuestLog()
                 state.dirty = true
+                RefreshBags()   -- quest borders follow the log
             end)
         elseif event == "BAG_UPDATE" then
             state.dirty = true

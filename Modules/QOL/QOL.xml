@@ -67,6 +67,7 @@
     <Include file="Forever\MapReveal.lua" />
     <Include file="Forever\TrainerData.lua" />
     <Include file="Forever\TrainerReminder.lua" />
+    <Include file="Forever\SpellRanks.lua" />
     <Include file="Forever\DungeonCodexData.lua" />
     <Include file="Forever\DungeonQuestData.lua" />
     <Include file="Forever\DungeonQuestPlaces.lua" />

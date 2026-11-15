@@ -532,6 +532,53 @@ K.RegisterPage({
 })
 
 -- ---------------------------------------------------------------------
+-- New spell ranks on the bars
+-- ---------------------------------------------------------------------
+local function SRApply() Call("TomoMod_SpellRanks", "ApplySettings") end
+
+K.RegisterPage({
+    key = "spellranks",
+    section = SECTION,
+    label = T("Nouveaux rangs", "New ranks"),
+    kw = "rang rangs rank ranks sort sorts spell spells barre barres bar bars action grimoire spellbook maitre trainer mise a jour update downrank",
+    noCache = true,   -- the pending count changes after each trainer visit
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Nouveaux rangs de sorts", "New spell ranks"),
+                T("Sur Forever, un rang acheté au maître ne remplace pas l'ancien sur tes barres. TomoMod te montre les sorts concernés et les met à jour d'un clic, sans toucher aux rangs bas que tu gardes exprès.",
+                  "On Forever a rank bought at the trainer does not replace the old one on your bars. TomoMod shows the spells concerned and updates them in one click, without touching the low ranks you keep on purpose."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "spellRanks", T("Suivre les nouveaux rangs", "Track new ranks"))
+            c:Select(T("Mise à jour des barres", "Updating the bars"), "spellRanks.mode", {
+                { text = T("Me demander (flèche dans le grimoire)", "Ask me (arrow in the spellbook)"), value = "ask" },
+                { text = T("Automatique en quittant le maître", "Automatic when leaving the trainer"), value = "auto" },
+            }, SRApply, T("Automatique : dès que la fenêtre du maître se ferme (après le combat si besoin), avec les mêmes règles.",
+                          "Automatic: as soon as the trainer window closes (after combat if needed), with the same rules."))
+            c:Done()
+
+            c = page:Card(T("Affichage", "Display"))
+            c:Toggle(T("Faire briller les boutons à mettre à jour", "Make the buttons to update glow"), "spellRanks.glow", SRApply)
+            c:Toggle(T("Flèche dorée sur le nouveau rang dans le grimoire", "Gold arrow on the new rank in the spellbook"), "spellRanks.arrow", SRApply,
+                T("Clic gauche sur la flèche : mettre à jour les barres. Clic droit : garder l'ancien rang. Si AishCore est installé, sa propre flèche suffit et celle de TomoMod reste cachée.",
+                  "Left click on the arrow: update the bars. Right click: keep the old rank. If AishCore is installed, its own arrow is enough and TomoMod's stays hidden."))
+            c:Toggle(T("Ligne dans le chat en quittant le maître", "Chat line when leaving the trainer"), "spellRanks.chat", SRApply)
+            local M = TomoMod_SpellRanks
+            local n = M and M.PendingCount and M.PendingCount() or 0
+            c:Info(string.format(T("En ce moment : %d sort(s) à mettre à jour.", "Right now: %d spell(s) to update."), n))
+            c:Done()
+
+            c = page:Card(T("Règles", "Rules"))
+            c:Info(T("Seul le rang le plus haut présent sur tes barres est remplacé. Un rang plus bas placé à côté (Soins rapides rang 1 pour économiser le mana) n'est jamais touché. Un rang gardé avec le clic droit n'est plus proposé.",
+                     "Only the highest rank present on your bars is replaced. A lower rank placed next to it (Flash Heal rank 1 to save mana) is never touched. A rank kept with right click is not offered any more."))
+            c:Info(T("Rien n'est changé en combat. Les macros et le clic de soin ne sont pas mis à jour. /tmf rangs : état et liste ; /tmf rangs maj : tout mettre à jour ; /tmf rangs reset : oublier les rangs gardés.",
+                     "Nothing is changed in combat. Macros and click casting are not updated. /tmf ranks: status and list; /tmf ranks update: update everything; /tmf ranks reset: forget the kept ranks."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
 -- Dungeon codex
 -- ---------------------------------------------------------------------
 local function DCApply() Call("TomoMod_DungeonCodex", "ApplySettings") end

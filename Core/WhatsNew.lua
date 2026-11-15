@@ -63,6 +63,17 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.2.8",
+        highlights = {
+            L["wn_128_ranks"],
+            L["wn_128_questitems"],
+            L["wn_128_alts"],
+            L["wn_128_names"],
+            L["wn_128_tracker"],
+            L["wn_128_questie"],
+        },
+    },
+    {
         version = "1.2.7",
         highlights = {
             L["wn_127_alts"],

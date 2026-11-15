@@ -251,6 +251,20 @@ function Slots:CreatePhysicalSlot(bagID, slotID)
     triage:Hide()
     wrapper.triage = triage
 
+    -- Quest marks, Blizzard's own art: the gold quest border on quest items
+    -- and on items an unfinished objective asks for, the "!" on items that
+    -- start a quest (Triage.lua reads the quest log).
+    local questBorder = wrapper:CreateTexture(nil, "ARTWORK", nil, 3)
+    questBorder:SetAllPoints(itemIcon)
+    questBorder:SetTexture(TEXTURE_ITEM_QUEST_BORDER or "Interface\\ContainerFrame\\UI-Icon-QuestBorder")
+    questBorder:Hide()
+    wrapper.questBorder = questBorder
+    local questBang = wrapper:CreateTexture(nil, "ARTWORK", nil, 4)
+    questBang:SetAllPoints(itemIcon)
+    questBang:SetTexture(TEXTURE_ITEM_QUEST_BANG or "Interface\\ContainerFrame\\UI-Icon-QuestBang")
+    questBang:Hide()
+    wrapper.questBang = questBang
+
     -- TomoGear upgrade marker. This is drawn on TomoMod's visual wrapper only;
     -- no script is attached to Blizzard's secure item button.
     local upgrade = button:CreateTexture(nil, "OVERLAY", nil, 4)
@@ -408,6 +422,23 @@ function Slots:Render(wrapper, item)
     wrapper.pin:SetShown(Bags.Modules.Data:IsPinned(item.itemID))
 
     if wrapper.upgrade then wrapper.upgrade:Hide() end
+
+    -- Quest marks (see CreatePhysicalSlot).
+    if wrapper.questBorder then
+        local status
+        if db.questMarks ~= false and item.hasItem then
+            local tri = TomoMod_Triage
+            if tri and tri.QuestStatus then
+                local ok, s = pcall(tri.QuestStatus, item.bagID, item.slotID)
+                status = ok and s or nil
+            elseif item.quest then
+                status = "quest"
+            end
+        end
+        wrapper.questBorder:SetShown(status == "quest")
+        wrapper.questBang:SetShown(status == "starter")
+        if status then SetBorder(wrapper.border, 1.00, 0.82, 0.00, 0.90) end
+    end
 
     -- Throw-away rank: the N cheapest items, with a gold edge.
     if wrapper.triage then

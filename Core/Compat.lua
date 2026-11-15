@@ -290,6 +290,61 @@ function Compat.EnforceDB(db)
 end
 
 -- ---------------------------------------------------------------------
+-- QUESTIE (1.2.8)
+-- ---------------------------------------------------------------------
+-- Questie has a Forever build (Questie_Forever.toc, interface 16001) and
+-- many players will run it next to TomoMod. Two jobs overlap:
+--   * the quest tracker: Questie's own tracker hides Blizzard's
+--     ObjectiveTrackerFrame (QuestieCompat.HideWatchFrame), which TomoMod
+--     would keep skinning, resizing and anchoring underneath;
+--   * automatic questing: both would accept and turn in the same quest.
+-- TomoMod stands down on whatever Questie has switched on. Settings are
+-- read live from Questie's AceDB profile (Questie.db.profile), so
+-- changing them in Questie's options is followed without a reload where
+-- the module allows it. Before Questie's database exists its defaults
+-- are assumed: tracker on, auto accept and auto complete off.
+
+function Compat.QuestieLoaded()
+    local loaded
+    if C_AddOns and C_AddOns.IsAddOnLoaded then
+        loaded = C_AddOns.IsAddOnLoaded("Questie")
+    elseif IsAddOnLoaded then
+        loaded = IsAddOnLoaded("Questie")
+    end
+    return loaded and true or false
+end
+
+local function QuestieProfile()
+    local q = rawget(_G, "Questie")
+    local db = type(q) == "table" and rawget(q, "db") or nil
+    local ok, profile = pcall(function() return db and db.profile end)
+    if ok and type(profile) == "table" then return profile end
+    return nil
+end
+
+--- Questie's tracker replaces Blizzard's.
+function Compat.QuestieOwnsTracker()
+    if not Compat.QuestieLoaded() then return false end
+    local p = QuestieProfile()
+    if not p then return true end            -- Questie default: trackerEnabled = true
+    return p.trackerEnabled ~= false
+end
+
+--- Questie accepts quests by itself.
+function Compat.QuestieAutoAccept()
+    if not Compat.QuestieLoaded() then return false end
+    local p = QuestieProfile()
+    return p ~= nil and type(p.autoAccept) == "table" and p.autoAccept.enabled == true
+end
+
+--- Questie turns quests in by itself.
+function Compat.QuestieAutoComplete()
+    if not Compat.QuestieLoaded() then return false end
+    local p = QuestieProfile()
+    return p ~= nil and p.autocomplete == true
+end
+
+-- ---------------------------------------------------------------------
 -- DIAGNOSTICS
 -- ---------------------------------------------------------------------
 

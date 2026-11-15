@@ -147,6 +147,7 @@ local DEFAULTS = {
         qualityStyle = "tint",
         itemLevel = true,
         showEmpty = true,
+        questMarks = true,  -- gold quest border / "!" (BagSlots.lua, Triage.lua)
     },
     sidebar = {
         pinnedMax = 8,

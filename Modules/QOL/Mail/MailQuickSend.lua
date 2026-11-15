@@ -20,13 +20,12 @@ local CACHE_TTL     = 5
 
 local function BuildNameCache()
     cachedNames = {}
-    local player  = UnitName("player")
 
     -- Alts
     local alts = TM.db.global.alts
     for _, entry in ipairs(alts) do
-        local p, r, f, lvl, class = strsplit("|", entry)
-        if TM:IsMailableAlt(p, f) then
+        local p, r, f, lvl, class, guid = strsplit("|", entry)
+        if TM:IsMailableAlt(p, f, r, guid) then
             cachedNames[p:lower()] = { name = p, source = "alt", class = class }
         end
     end
@@ -37,8 +36,8 @@ local function BuildNameCache()
         for i = 1, numMembers do
             local name, _, _, _, _, _, _, _, _, _, class = GetGuildRosterInfo(i)
             if name then
-                local shortName = strsplit("-", name)
-                if shortName ~= player then
+                local shortName = TM:CleanName(name)
+                if shortName and not TM:IsMe(shortName) then
                     local key = shortName:lower()
                     if not cachedNames[key] then
                         cachedNames[key] = { name = shortName, source = "guild", class = class }
@@ -194,6 +193,9 @@ function QuickSend:OnRecipientChanged(editbox)
     end
 
     local lower   = text:lower()
+    -- "abla-stone" finds "Abla Stone": on Forever a hyphen in a name is
+    -- the separator typed by hand, not a realm.
+    if TM:TwoPartNames() then lower = lower:gsub("%-", TM:NameSeparator()) end
     local cache   = GetNameCache()
     local matches = {}
 

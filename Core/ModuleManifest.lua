@@ -535,6 +535,13 @@ R.Define{
 }
 
 R.Define{
+    key = "spellRanks", label = "mod_spellRanks", group = "qol",
+    enabledPath = "spellRanks.enabled",
+    global = "TomoMod_SpellRanks", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
     key = "dungeonCodex", label = "mod_dungeonCodex", group = "qol",
     enabledPath = "dungeonCodex.enabled",
     global = "TomoMod_DungeonCodex", applyMode = "setter", apply = "SetEnabled",

@@ -1,5 +1,43 @@
 ## ####################################
 
+## CHANGELOG 1.2.8
+
+#### Adventure: new spell ranks
+
+- **New** - `Modules/QOL/Forever/SpellRanks.lua` (inspired by AishCore's "New spell ranks", written for TomoMod). On Forever a rank bought at the trainer does not reach the action bars. Per spell name, over the 180 action slots, the highest rank present is compared with the highest rank in the spellbook (`C_SpellBook`, rank from the subtext). Only the slots holding that highest present rank are offered: a lower rank placed beside it (downranking for mana) is never touched, unlike a "replace every lower rank" pass.
+- **New** - Spellbook: a gold arrow (gentle bob) on the new rank. Left click replaces the outdated slots (`C_SpellBook.PickupSpellBookItem`, `PlaceAction`, `ClearCursor`; the slot is re-checked first, the cursor must hold a spell) and the icon flies to the button it lands on; right click keeps that rank (`TomoModForeverCharDB.spellRanksKeep`). Hooks `SpellBookItemMixin.UpdateVisuals` / `ClearSpellData` instead of polling the open book. Hidden when AishCore is loaded (its own arrow does the same).
+- **New** - Outdated buttons pulse gold on Blizzard's bars, Bartender4, Dominos and any LibActionButton bar (own overlay frames on UIParent, nothing added to the secure buttons). One chat line when the trainer window closes.
+- **New** - Mode "auto": the update runs when the trainer window closes, after combat if it closes in one. Nothing is ever replaced in combat. Macros and click casting are not handled.
+- **New** - `/tmf ranks` (`/tmf rangs`): status and list; `update` (`maj`) updates everything; `reset` forgets the kept ranks. Options under Adventure > New ranks.
+
+#### Bags: quest items
+
+- **New** - Blizzard's quest art in TomoMod's bags (player report: Blizzard outlines quest items so they are not sold). `TEXTURE_ITEM_QUEST_BORDER` on quest items (`isQuestItem`, `GetContainerItemQuestInfo`) and on any item an unfinished "item" objective of the quest log asks for, matched by name, even when the game does not flag it (cloth, meat...); `TEXTURE_ITEM_QUEST_BANG` on items that start a quest you do not have. The slot edge turns gold too. Bag settings: "Mark quest items" (`bagsV4.slots.questMarks`, on).
+- **New** - Bag tooltip: "Quest: <title> (3/8)" for an item the quest log asks for; "Quest item: keep it" on other quest items while a merchant is open.
+- **Changed** - `Triage.lua`'s quest log reading now keeps the quest title and the objective's counts (`TR.QuestNeed`, `TR.QuestStatus`) and refreshes the bags when the log changes.
+
+#### Mail
+
+- **Fixed** - Alts tab still empty in 1.2.7. Forever gives every character a first name and a surname ("Abla Stone"); only the pair is unique, and players often keep the same first name on every alt. `UnitName("player")` returns the two halves as two values and only the first was kept, so every alt sharing a first name replaced the others in `alts`, then was hidden as "ourselves": one entry, hidden, empty list. Mail to an alt also went to the first name alone, which is not an address on Forever. Same reading as Postbox and BlazeMail.
+- **Changed** - Alt entries are now `Full Name|Ruleset|Faction|Level|Class|GUID`. One entry per GUID or full name. The ruleset (`C_GameRules`: PvE, PvP, RP, RPPvP, Hardcore, or the suffix of the realm text) replaces the realm text, which drifts on Forever; alts of another ruleset or faction are not listed (mail cannot cross them).
+- **Migration** - First-name-only entries saved before 1.2.8 are dropped once (`altsVersion = 2`): each character is saved again, with its full name, at its next login. Per-character profiles move from a "Name" or "Name-Realm" key to the full name.
+- **Fixed** - "Name-Surname" was cut at the hyphen as if it were "Name-Realm" (send box, recents, guild list, sender class colours). On Forever the first two words are kept and joined by the game's separator (`Constants.CharacterNameSeparatorConsts`); the autocomplete finds "Abla Stone" from "abla-stone".
+- **Fixed** - The guild list and autocomplete hid every member sharing the player's first name.
+- **Changed** - `/tml alts` also prints both halves given by `UnitName`, the full name, the ruleset and each entry's GUID.
+
+#### Quest tracker
+
+- **Fixed** - In combat the tracker jumped between a few quests and all of them (two player reports, since 1.2.7). The 4000 of room given to `ObjectiveTrackerFrame` was refused under `InCombatLockdown()`, yet Blizzard keeps calling `UpdateHeight` during fights (`OnShow`, and `ManageFramePositions` on shapeshift, pet bar, vehicle...): the height went back to ~800, the blocks that no longer fit were released, and every quest came back after combat. A re-anchor from the `SetPoint` hook in combat could also grow the 4000-high frame around its saved anchor, as in the bug fixed in 1.2.7. The container is not protected (`ApplyPosition` already re-anchors it in combat), so lifting, dropping and pinning now also run in combat, in the same tick as Blizzard's `SetHeight`; they still wait for the end of the fight if `IsProtected()` ever says otherwise.
+- **Fixed** - "Max quests displayed" was not applied in combat (`Hide()` waits for the lockdown to lift) and a Blizzard update re-showed every block. Extra blocks are now kept at alpha 0 until the deferred layout.
+
+#### Questie
+
+- **New** - Side by side with Questie (it has a Forever build, `Questie_Forever.toc`). `Core/Compat.lua` reads Questie's AceDB profile live: `QuestieOwnsTracker()` (`trackerEnabled`, default on), `QuestieAutoAccept()` (`autoAccept.enabled`), `QuestieAutoComplete()` (`autocomplete`).
+- **New** - Quest tracker: while Questie's tracker is on (it hides `ObjectiveTrackerFrame`), TomoMod installs nothing on Blizzard's tracker: no skin, no extra room, no anchor. Switched on later, the skin and the room are undone once; switched off later, a `/reload` brings TomoMod's tracker back. One chat line.
+- **New** - Automatic questing: where Questie's auto accept or auto turn-in is on, the matching part of TomoMod's automation (gossip selection included) stands down, read on every event. One chat line per session.
+
+## ####################################
+
 ## CHANGELOG 1.2.7
 
 #### Mail

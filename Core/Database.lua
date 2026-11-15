@@ -698,6 +698,16 @@ TomoMod_Defaults = {
         position = { point = "RIGHT", relativePoint = "RIGHT", x = -40, y = 120 },
     },
 
+    -- New spell ranks on the action bars (SpellRanks.lua). Ranks kept on
+    -- purpose live per character in TomoModForeverCharDB.spellRanksKeep.
+    spellRanks = {
+        enabled = true,
+        mode    = "ask",          -- ask | auto (update when the trainer closes)
+        glow    = true,           -- outdated buttons pulse gold on the bars
+        arrow   = true,           -- gold arrow on the new rank in the spellbook
+        chat    = true,           -- one chat line when the trainer closes
+    },
+
     -- Dungeon codex (DungeonCodex.lua + DungeonCodexData.lua).
     dungeonCodex = {
         enabled = true,

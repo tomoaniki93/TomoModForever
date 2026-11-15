@@ -76,14 +76,15 @@ local function BuildGuildCache()
     ShowOfflineMembers(not onlineOnly)
     RequestRoster()
 
-    local player     = UnitName("player")
     local numMembers = GetNumGuildMembers() or 0
 
     for i = 1, numMembers do
         local name, _, _, lvl, _, _, _, _, isOnline, _, class = GetGuildRosterInfo(i)
         if name then
-            local shortName = strsplit("-", name)
-            if shortName ~= player then
+            -- Full name on Forever ("Abla Stone"), never the first name
+            -- alone: two members may share it.
+            local shortName = TM:CleanName(name)
+            if shortName and not TM:IsMe(shortName) then
                 if not onlineOnly or isOnline then
                     local letter = FirstLetter(shortName)
                     if not guildCache[letter] then
@@ -126,14 +127,14 @@ end
 
 function Contacts:ResolveClass(name)
     if not name or name == "" then return nil end
-    local short = strsplit("-", name)        -- strip realm on cross-realm senders
+    local short = TM:CleanName(name)         -- full name, no realm
     local lname = (short or name):lower()
 
     -- Same-account alts
     if TM.db and TM.db.global and TM.db.global.alts then
         for _, entry in ipairs(TM.db.global.alts) do
             local p, _, _, _, class = strsplit("|", entry)
-            if p and class and p:lower() == lname then
+            if p and class and TM:SameName(p, lname) then
                 return class
             end
         end
@@ -163,8 +164,8 @@ local function GetAltsData()
     local result  = {}
 
     for _, entry in ipairs(alts) do
-        local p, r, f, lvl, class = strsplit("|", entry)
-        if TM:IsMailableAlt(p, f) then
+        local p, r, f, lvl, class, guid = strsplit("|", entry)
+        if TM:IsMailableAlt(p, f, r, guid) then
             table.insert(result, {
                 name   = p,
                 level  = tonumber(lvl) or 0,

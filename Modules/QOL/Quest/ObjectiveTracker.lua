@@ -86,6 +86,21 @@ local function IsEnabled()
     return S().enabled
 end
 
+-- [1.2.8] Questie's tracker in use: it hides Blizzard's tracker and draws
+-- its own, so TomoMod leaves ObjectiveTrackerFrame alone (no skin, no extra
+-- room, no anchor). See Compat.QuestieOwnsTracker.
+local function QuestieOwnsTracker()
+    return TomoMod_Compat and TomoMod_Compat.QuestieOwnsTracker
+        and TomoMod_Compat.QuestieOwnsTracker() or false
+end
+
+local questieNoticeShown = false
+local function QuestieNotice()
+    if questieNoticeShown then return end
+    questieNoticeShown = true
+    print("|cffffd100TomoModForever|r " .. L["ot_questie_standdown"])
+end
+
 -- Blizzard's ObjectiveTrackerContainerTemplate owns a full-size NineSlice
 -- ("common-opacity-background"), and its header templates animate their own
 -- Background textures back to alpha 1. A one-shot SetAlpha(0) therefore only
@@ -996,6 +1011,24 @@ end
 -- pass has actually placed something under skinFrame: on a fresh /reload taken
 -- in combat nothing is placed yet, the Blizzard tracker is alone on screen and
 -- perfectly readable, so blanking it would be a regression rather than a fix.
+-- [1.2.8] "Max quests displayed" in combat. LimitDisplayedQuests hides the
+-- extra blocks with Hide(), which waits for the end of the fight; meanwhile a
+-- Blizzard update re-shows them, and with the room added in 1.2.7 that is
+-- every watched quest at once. Alpha until the deferred pass.
+local function SuppressOverLimitInCombat()
+    local maxQuests = S().maxQuestsShown or 0
+    if maxQuests <= 0 then return end
+    local tracker = ObjectiveTrackerFrame
+    if not tracker then return end
+    local blocks = {}
+    CollectQuestBlocks(tracker, 0, blocks)
+    for i, b in ipairs(blocks) do
+        if i > maxQuests and b.IsShown and b:IsShown() then
+            CombatSuppressAlpha(b)
+        end
+    end
+end
+
 local function SuppressUnplacedBlocksInCombat()
     if not bucketEnabled or not skinFrame then return end
     if _tmPlacedCount <= 0 then return end
@@ -1994,26 +2027,49 @@ local function IsTrackerLifted(tracker)
     return (tracker:GetHeight() or 0) >= TRACKER_ROOM
 end
 
+-- [1.2.8] Can the container's size and anchor be changed right now?
+-- Up to 1.2.7 the room was refused in combat. But Blizzard keeps resizing the
+-- container during a fight: UpdateHeight runs from OnShow and from
+-- ManageFramePositions (shapeshift, pet bar, vehicle...), puts the height back
+-- to ~800, and the blocks that no longer fit are released -- the tracker
+-- suddenly showed only a few quests, then all of them again after combat
+-- (player reports). ObjectiveTrackerFrame is not a protected frame (no secure
+-- template anchored to it; ApplyPosition already re-anchors it in combat from
+-- the SetPoint hook without a blocked action), so its height may be set back
+-- in combat as well. Only if the client ever reports it protected do we wait
+-- for the end of the fight, as before.
+local function CanTouchTracker(tracker)
+    if not InCombatLockdown() then return true end
+    if tracker.IsForbidden and tracker:IsForbidden() then return false end
+    if tracker.IsProtected and tracker:IsProtected() then return false end
+    return true
+end
+
 -- Puts Blizzard's height back (anchor untouched), so a saved anchor resolves
 -- against the frame it was saved from.
 local function DropTrackerRoom(tracker)
     if not IsTrackerLifted(tracker) or not naturalTrackerH then return end
-    if InCombatLockdown() then return end
+    if not CanTouchTracker(tracker) then return end
     tracker:SetHeight(naturalTrackerH)
 end
 
 local function LiftTrackerRoom()
     local tracker = ObjectiveTrackerFrame
-    if not tracker or not IsEnabled() then return end
+    if not tracker or not IsEnabled() or QuestieOwnsTracker() then return end
     if IsTrackerLifted(tracker) then return end
-    -- Resizing makes Blizzard rebuild the tracker next frame; keep that out
-    -- of combat like the rest of the layout work.
-    if InCombatLockdown() then MarkLayoutPending(); return end
+    -- Runs in combat too (see CanTouchTracker). Called from the UpdateHeight
+    -- hook, it lands in the same tick as Blizzard's SetHeight, before the
+    -- dirty Update of the next frame: Blizzard rebuilds at full room and no
+    -- block is released. A block that does get created mid-fight is kept off
+    -- screen by SuppressUnplacedBlocksInCombat until the deferred layout.
+    if not CanTouchTracker(tracker) then MarkLayoutPending(); return end
     naturalTrackerH = tracker:GetHeight()
     if not PinTrackerTop(tracker) then return end
     tracker:SetHeight(TRACKER_ROOM)
 end
 OT.LiftTrackerRoom = LiftTrackerRoom
+
+local _tmQuestieDown = false
 
 local function OnTrackerUpdate()
     if not IsEnabled() then return end
@@ -2021,6 +2077,25 @@ local function OnTrackerUpdate()
 
     local tracker = ObjectiveTrackerFrame
     if not tracker then return end
+
+    -- Questie's tracker switched on after TomoMod had skinned Blizzard's:
+    -- undo the skin and the extra room once, then stay out of the way.
+    if QuestieOwnsTracker() then
+        if not _tmQuestieDown then
+            _tmQuestieDown = true
+            if OT.Disable then OT.Disable() end
+            DropTrackerRoom(tracker)
+            QuestieNotice()
+        end
+        return
+    end
+    if _tmQuestieDown then
+        -- Questie's tracker switched back off: skin Blizzard's again.
+        _tmQuestieDown = false
+        CreateOrUpdateBackground()
+        CreateOrUpdateHeader()
+        HideBlizzardHeader()
+    end
 
     -- In M+: hide the entire skin and let Blizzard's challenge UI take over
     if IsInMythicPlus() then
@@ -2048,6 +2123,9 @@ local function OnTrackerUpdate()
     -- a verdict from a tree we are not allowed to reorganise.
     if InCombatLockdown() then
         if bucketEnabled then SuppressUnplacedBlocksInCombat() end
+        SuppressOverLimitInCombat()
+        -- Blizzard may have shrunk the container during the fight.
+        LiftTrackerRoom()
         MarkLayoutPending()
         return
     end
@@ -2242,6 +2320,7 @@ local positionApplied = false
 local function ApplyPosition()
     local tracker = ObjectiveTrackerFrame
     if not tracker then return end
+    if QuestieOwnsTracker() then return end
     local db = S()
     -- Mark as user-placed so Blizzard's UIParent_UpdateTopFramesOverObjectiveTracker
     -- and the Edit Mode manager stop repositioning it.
@@ -2305,7 +2384,7 @@ local function SavePosition()
     -- Measure the frame at Blizzard's height: at 4000 its centre is far below
     -- the screen and Layout.Save would pick a wrong anchor from it. Pin the top
     -- first (a drag can leave any anchor) so shrinking keeps the top in place.
-    if IsTrackerLifted(tracker) and naturalTrackerH and not InCombatLockdown() then
+    if IsTrackerLifted(tracker) and naturalTrackerH and CanTouchTracker(tracker) then
         PinTrackerTop(tracker)
         DropTrackerRoom(tracker)
     end
@@ -2440,6 +2519,7 @@ OT._OnTrackerUpdate = OnTrackerUpdate
 function OT.Enable()
     local tracker = ObjectiveTrackerFrame
     if not tracker then return end
+    if QuestieOwnsTracker() then QuestieNotice(); return end
 
     CreateOrUpdateBackground()
     CreateOrUpdateHeader()
@@ -2476,6 +2556,9 @@ end
 function OT.Initialize()
     if isInitialized then return end
     if not IsEnabled() then return end
+    -- Questie's tracker in use: nothing is installed on Blizzard's tracker.
+    -- If it is switched off later in Questie, a /reload brings TomoMod back.
+    if QuestieOwnsTracker() then QuestieNotice(); return end
 
     local attempts = 0
     local function TryInit()

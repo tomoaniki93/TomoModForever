@@ -389,6 +389,12 @@ local function BuildBagsTab(parent)
     end)
     y = ny
 
+    local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_quest_marks", "Mark quest items (gold border)"), slots.questMarks ~= false, y, function(v)
+        slots.questMarks = v
+        Apply()
+    end)
+    y = ny
+
     local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_show_empty", "Show empty slots"), slots.showEmpty ~= false, y, function(v)
         slots.showEmpty = v
         Apply()

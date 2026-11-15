@@ -74,6 +74,11 @@ SlashCmdList["TOMOMOD"] = function(msg)
     if msg == "maplevels" or msg == "niveaux" then
         if TomoMod_MapReveal and TomoMod_MapReveal.DebugLevels then TomoMod_MapReveal.DebugLevels() end
         return
+    elseif msg:match("^ranks") or msg:match("^rangs") then
+        if TomoMod_SpellRanks and TomoMod_SpellRanks.Slash then
+            TomoMod_SpellRanks.Slash(msg:match("^%a+%s+(.+)$"))
+        end
+        return
     elseif msg == "triage" or msg == "tri" then
         if TomoMod_Triage and TomoMod_Triage.Debug then TomoMod_Triage.Debug() end
         return
@@ -524,6 +529,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
         print("  |cffffd100/tmf way x y [name]|r — " .. L["msg_help_way_coords"])
         print("  |cffffd100/tmf way clear|r — " .. L["msg_help_way_clear"])
         print("  |cffffd100/tmf cr|r — " .. L["msg_help_cr"])
+        print("  |cffffd100/tmf rangs|r — " .. L["msg_help_ranks"])
         print("  |cffffd100/tmf help|r — " .. L["msg_help_help"])
     else
         -- Argument purement numérique : soit une macro tierce (ex : RareScanner
@@ -629,6 +635,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("FlightTimer",        TomoMod_FlightTimer)
         safeInit("BagAlert",           TomoMod_BagAlert)
         safeInit("TrainerReminder",    TomoMod_TrainerReminder)
+        safeInit("SpellRanks",         TomoMod_SpellRanks)
         safeInit("DungeonCodex",       TomoMod_DungeonCodex)
         safeInit("Mail",               TomoMod_Mail)
         safeInit("CVarOptimizer",      TomoMod_CVarOptimizer)

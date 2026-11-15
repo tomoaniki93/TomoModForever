@@ -21,9 +21,37 @@ local function GetDB()
     return TomoModForeverDB and TomoModForeverDB.autoQuest
 end
 
+-- [1.2.8] Questie can accept and turn in quests too. Where its option is
+-- on, TomoMod's matching part stands down, so a quest is never accepted or
+-- turned in twice (and a reward choice is never made by both). Read on
+-- every event: changes in Questie's options are followed live.
+local function Effective(db)
+    local C = TomoMod_Compat
+    local qAccept = C and C.QuestieAutoAccept and C.QuestieAutoAccept() or false
+    local qTurnIn = C and C.QuestieAutoComplete and C.QuestieAutoComplete() or false
+    return {
+        autoAccept = db.autoAccept and not qAccept,
+        autoTurnIn = db.autoTurnIn and not qTurnIn,
+        autoGossip = db.autoGossip,
+    }, (db.autoAccept and qAccept) or (db.autoTurnIn and qTurnIn)
+end
+
+local questieNoticeShown = false
+local function QuestieNotice()
+    if questieNoticeShown then return end
+    questieNoticeShown = true
+    local L = TomoMod_L
+    print("|cffffd100TomoModForever|r " .. (L and L["aq_questie_standdown"] or "aq_questie_standdown"))
+end
+
 frame:SetScript("OnEvent", function(self, event, ...)
     local db = GetDB()
     if not db then return end
+    if event ~= "PLAYER_LOGIN" then
+        local overlap
+        db, overlap = Effective(db)
+        if overlap then QuestieNotice() end
+    end
 
     -- ─── Initialisation ────────────────────────────────────────────────────
     if event == "PLAYER_LOGIN" then
