@@ -1004,6 +1004,7 @@ TomoMod_Defaults = {
         style = "tmf",            -- "tmf" (default look) | "forever" (ForeverStyle.lua)
         foreverPortrait = false,  -- Forever look: round portrait beside player / target / focus
         foreverSizes = {},        -- Forever look: [unit] = { width, name, health, power } over the defaults
+        totems = { enabled = true, size = 28, spacing = 4, showEmpty = false },  -- shaman totem bar (TotemBar.lua)
         hideBlizzardFrames = true,
         texture = ADDON_TEXTURE,
         font = ADDON_FONT,

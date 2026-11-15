@@ -1,5 +1,19 @@
 ## ####################################
 
+## CHANGELOG 1.3.0
+
+#### Unit frames: shaman totems
+
+- **Fixed** - Shamans did not see their totems with TomoMod's unit frames (player report). Blizzard's `TotemFrame` is a child of `PlayerFrame` (`PlayerBottomManagedFrameTemplate`, laid out by the player frame's bottom container) and disappeared when oUF hid the Blizzard player frame; moving it out is fragile, the container re-anchors it on every layout.
+- **New** - `Modules/Interface/UnitFrames/Units/TotemBar.lua`: TomoMod's own totem bar, shamans only and only while TomoMod's player frame is on. One fixed spot per element in Blizzard's shaman order (`SHAMAN_TOTEM_PRIORITIES`: earth, fire, water, air), icon, reverse cooldown sweep and time left (`GetTotemInfo`, `GetTotemTimeLeft`, secret values skipped), `GameTooltip:SetTotem` on hover. Right click dismisses the totem: `DestroyTotem` is protected, so each spot is a `SecureActionButtonTemplate` (`type2 = "destroytotem"`, `totem-slot`); an empty spot goes transparent rather than hidden (secure frames cannot be hidden in combat). Under the player frame by default, movable with `/tmf move` (position kept in `unitFrames.totems.position`). Frames > Player, shamans only: show, icon size, spacing, empty spots, back under the player frame.
+
+#### Adventure: missing buffs
+
+- **Fixed** - Druids always had an "Omen of Clarity" icon among the missing buffs. On Forever Omen of Clarity is a passive spell: it leaves no aura on the player, so the check could never be satisfied. The `druid_omen` rule is removed from `Modules/QOL/Forever/MissingBuffs.lua`; Mark of the Wild / Gift of the Wild is still checked.
+- **Fixed** - A buff refreshed in combat still showed as missing once out of combat (player report). An aura cast or refreshed in combat can keep a secret name after combat ends, and the scan skipped secret names, so the buff looked absent. The scan now falls back to the aura's spell id, then asks the client by name (`C_UnitAuras.GetAuraDataBySpellName`, `AuraUtil.FindAuraByName` fallback), using only whether an aura is found and never one of its fields. Same for the player's own buffs.
+
+## ####################################
+
 ## CHANGELOG 1.2.9
 
 #### Unit frames: "Forever" look

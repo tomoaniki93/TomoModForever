@@ -45,7 +45,7 @@ local RULES = {
     },
     DRUID = {
         { key = "druid_motw",  cast = { 1126 }, match = { 21849 } },                  -- Mark / Gift of the Wild
-        { key = "druid_omen",  cast = { 16864 } },                                    -- Omen of Clarity
+        -- Omen of Clarity (16864) is a passive here: no aura to check.
     },
     WARLOCK = {
         { key = "lock_armor", cast = { 706, 687 } },                                  -- Demon Armor / Skin
@@ -100,13 +100,22 @@ local function Known(id)
 end
 
 -- Readable names of every helpful aura on the player.
+-- An aura cast or refreshed in combat can keep a secret name after combat
+-- ends (player report: buff refreshed in combat, still "missing" once out
+-- of combat). Its spell id is tried next; HasBuff() then asks the client by
+-- name, which needs no field of the aura to be readable.
 local function BuffNames()
     local names = {}
     if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
         for i = 1, 40 do
             local ok, a = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
             if not ok or not a then break end
-            if not Secret(a.name) and type(a.name) == "string" then names[a.name] = true end
+            if not Secret(a.name) and type(a.name) == "string" then
+                names[a.name] = true
+            elseif not Secret(a.spellId) and type(a.spellId) == "number" then
+                local n = SpellName(a.spellId)
+                if n then names[n] = true end
+            end
         end
     elseif UnitBuff then
         for i = 1, 40 do
@@ -116,6 +125,23 @@ local function BuffNames()
         end
     end
     return names
+end
+
+-- True when the player has a helpful aura of that name (any rank). Only
+-- whether the client finds one is used, never a field of it, so a secret
+-- aura still counts.
+local function HasBuff(names, name)
+    if not name then return false end
+    if names[name] then return true end
+    if C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName then
+        local ok, a = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", name, "HELPFUL")
+        if ok and a ~= nil then return true end
+    end
+    if AuraUtil and AuraUtil.FindAuraByName then
+        local ok, found = pcall(AuraUtil.FindAuraByName, name, "player", "HELPFUL")
+        if ok and found ~= nil then return true end
+    end
+    return false
 end
 
 local function HasWeaponEnchant()
@@ -159,8 +185,7 @@ function MB.Missing()
                     ok = false
                     for _, list in ipairs({ rule.cast or {}, rule.match or {} }) do
                         for _, id in ipairs(list) do
-                            local n = SpellName(id)
-                            if n and names[n] then ok = true break end
+                            if HasBuff(names, SpellName(id)) then ok = true break end
                         end
                         if ok then break end
                     end
@@ -182,7 +207,7 @@ function MB.Missing()
 
     -- Player-defined buffs, by name.
     for _, name in ipairs(db.custom or {}) do
-        if type(name) == "string" and name ~= "" and not names[name] then
+        if type(name) == "string" and name ~= "" and not HasBuff(names, name) then
             local castable = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(name)
             out[#out + 1] = {
                 key = "custom:" .. name,

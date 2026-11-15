@@ -199,6 +199,24 @@ local function BuildUnitPage(page, u)
     end
     c:Done()
 
+    -- ---- Totems (shamans only) -----------------------------------------
+    local _, playerClass = UnitClass("player")
+    if unit == "player" and playerClass == "SHAMAN" then
+        local function TBApply() if TomoMod_TotemBar and TomoMod_TotemBar.ApplySettings then TomoMod_TotemBar.ApplySettings() end end
+        c = page:Card(T("Totems", "Totems"))
+        c:Info(T("Tes totems sous le cadre joueur : une place par élément, minuteur, infobulle. Clic droit sur un totem pour le retirer. Déplaçable avec /tmf move.",
+                 "Your totems under the player frame: one spot per element, timer, tooltip. Right click a totem to dismiss it. Movable with /tmf move."))
+        c:Toggle(T("Afficher les totems", "Show the totems"), "unitFrames.totems.enabled", TBApply)
+        c:Slider(T("Taille des icônes", "Icon size"), "unitFrames.totems.size", 18, 48, 1, TBApply)
+        c:Slider(T("Espacement", "Spacing"), "unitFrames.totems.spacing", 0, 16, 1, TBApply)
+        c:Toggle(T("Montrer les places vides", "Show empty spots"), "unitFrames.totems.showEmpty", TBApply,
+            T("Une case discrète à la couleur de l'élément quand aucun totem n'est posé.", "A faint box in the element colour when no totem is down."))
+        c:Button(T("Remettre sous le cadre joueur", "Back under the player frame"), function()
+            if TomoMod_TotemBar and TomoMod_TotemBar.ResetPosition then TomoMod_TotemBar.ResetPosition() end
+        end)
+        c:Done()
+    end
+
     -- ---- Auras --------------------------------------------------------------
     if type(s.auras) == "table" then
         c = page:Card(T("Buffs et débuffs", "Buffs and debuffs"))

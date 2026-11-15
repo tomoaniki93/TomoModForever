@@ -1470,6 +1470,10 @@ function UF.Initialize()
         -- ── Appliquer tailles, polices et offsets ───────────────────
         UF.RefreshAllUnits()
 
+        -- ── Totems du chaman (TotemBar.lua) : Blizzard's TotemFrame
+        -- vanishes with the Blizzard player frame oUF hides.
+        if TomoMod_TotemBar and TomoMod_TotemBar.Initialize then TomoMod_TotemBar.Initialize() end
+
     end)
     initialized = true
 end

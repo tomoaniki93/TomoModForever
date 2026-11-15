@@ -9,6 +9,7 @@
     <Include file="Elements\Auras.lua" />
     <Include file="Units\UnitFrame.lua" />
     <Include file="Units\ForeverStyle.lua" />
+    <Include file="Units\TotemBar.lua" />
     <Include file="Units\BossFrames.lua" />
 
 </Ui>
