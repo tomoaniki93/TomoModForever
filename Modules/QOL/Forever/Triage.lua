@@ -62,6 +62,28 @@ end
 -- Also read by the bags (gold quest border) and the bag tooltips.
 local questNeeds = {}
 
+-- Names are compared through this key. The quest log and the item do not
+-- always spell a name the same way: "Chair croustillante d'araignée" came
+-- with a typographic apostrophe on one side and a straight one on the
+-- other, so the item was neither marked nor kept out of the throw-away
+-- list (player report). Apostrophes, (narrow) no-break spaces, repeated
+-- spaces and ASCII case are folded.
+local function NameKey(name)
+    if type(name) ~= "string" or Secret(name) then return nil end
+    local k = name
+        :gsub("\226\128\153", "'")    -- right single quotation mark
+        :gsub("\226\128\152", "'")    -- left single quotation mark
+        :gsub("\202\188", "'")         -- modifier letter apostrophe
+        :gsub("[`\180]", "'")
+        :gsub("\194\160", " ")         -- no-break space
+        :gsub("\226\128\175", " ")    -- narrow no-break space (French " : ")
+        :gsub("%s+", " ")
+        :lower()
+    k = k:match("^%s*(.-)%s*$")
+    if k == "" then return nil end
+    return k
+end
+
 local function ObjectiveCounts(text)
     if type(text) ~= "string" or Secret(text) then return nil end
     local have, need = text:match("(%d+)%s*/%s*(%d+)")
@@ -69,15 +91,18 @@ local function ObjectiveCounts(text)
 end
 
 local function AddNeed(name, title, text)
-    if not name or questNeeds[name] then return end
+    local key = NameKey(name)
+    if not key or questNeeds[key] then return end
     local have, need = ObjectiveCounts(text)
-    questNeeds[name] = { title = Plain(title), have = have, need = need }
+    questNeeds[key] = { title = Plain(title), have = have, need = need }
 end
 
 local function ObjectiveItemName(text)
     if type(text) ~= "string" or Secret(text) then return nil end
     -- "Wolf Meat: 3/8", "Viande de loup : 3/8" (French puts a space before
-    -- the colon) or "3/8 Wolf Meat". Spaces around the name are dropped.
+    -- the colon, sometimes a no-break one) or "3/8 Wolf Meat". Spaces around
+    -- the name are dropped.
+    text = text:gsub("\194\160", " "):gsub("\226\128\175", " ")
     local name = text:match("^(.-)%s*:%s*%d+%s*/%s*%d+") or text:match("^%d+%s*/%s*%d+%s+(.+)$")
     name = name and name:match("^%s*(.-)%s*$")
     if name and name ~= "" then return name end
@@ -163,7 +188,7 @@ local function Rebuild()
                         local questInfo = C_Container.GetContainerItemQuestInfo and C_Container.GetContainerItemQuestInfo(bag, slot)
                         local isQuest = Plain(info.isQuestItem) or (questInfo and (Plain(questInfo.isQuestItem) or Plain(questInfo.questID)))
                         local keep = isQuest or quality > MAX_QUALITY or price <= 0 or Plain(info.hasNoValue)
-                            or classID == CLASS_PROJECTILE or IsPinned(itemID) or (name and questNeeds[name])
+                            or classID == CLASS_PROJECTILE or IsPinned(itemID) or (name and questNeeds[NameKey(name) or ""])
                         if not keep then
                             state.ranked[#state.ranked + 1] = {
                                 bag = bag, slot = slot, link = link, itemID = itemID,
@@ -191,8 +216,8 @@ end
 -- Public: what an unfinished objective of the quest log says about an
 -- item, by name: { title, have, need }, or nil.
 function TR.QuestNeed(name)
-    if type(name) ~= "string" or Secret(name) then return nil end
-    return questNeeds[name]
+    local key = NameKey(name)
+    return key and questNeeds[key] or nil
 end
 
 -- Public: quest status of a bag slot.
@@ -208,7 +233,8 @@ function TR.QuestStatus(bag, slot)
     if not info then return nil end
     local name = Plain(info.itemName)
     if not name and info.itemID and C_Item and C_Item.GetItemNameByID then name = Plain(C_Item.GetItemNameByID(info.itemID)) end
-    local need = name and questNeeds[name]
+    local key = NameKey(name)
+    local need = key and questNeeds[key]
     if need or Plain(info.isQuestItem) or (qi and (Plain(qi.isQuestItem) or Plain(qi.questID))) then
         return "quest", need
     end
