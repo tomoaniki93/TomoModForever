@@ -267,14 +267,43 @@ local function CreateHUD()
     glow:SetVertexColor(1, 0.55, 0.15, 0.55)
     hud.glow = glow
 
-    local icon = hud:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("TOPLEFT", 10, -10)
-    icon:SetPoint("BOTTOMRIGHT", -10, 10)
-    icon:SetTexture(FIRE_ICON)
-    local mask = hud:CreateMaskTexture()
-    mask:SetAllPoints(icon)
-    mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    icon:AddMaskTexture(mask)
+    -- Ring and disc drawn with round textures (1.2.9): a thin gold ring
+    -- (RING_W px) around a full dark ember disc, so no square icon shows
+    -- behind the flames (the icon mask did not take on every client) and
+    -- the ring thickness is set in pixels instead of by Ring.tga.
+    local RING_IN, RING_W = 8, 2
+    local function Round(layer, sub, inset, r, g, b, a)
+        local t = hud:CreateTexture(nil, layer, nil, sub)
+        t:SetPoint("TOPLEFT", inset, -inset)
+        t:SetPoint("BOTTOMRIGHT", -inset, inset)
+        t:SetTexture(MASK)
+        t:SetVertexColor(r, g, b, a)
+        return t
+    end
+    hud.ringOuter = Round("BORDER", 0, RING_IN - 1, 0.545, 0.420, 0.247, 1)          -- bronze edge
+    hud.ringGold  = Round("BORDER", 1, RING_IN, 0.788, 0.635, 0.322, 1)              -- gold ring
+    hud.disc      = Round("ARTWORK", -3, RING_IN + RING_W, 0.075, 0.045, 0.025, 1)   -- dark disc
+    local ember   = Round("ARTWORK", -2, RING_IN + RING_W + 10, 1, 0.45, 0.10, 0.22)  -- warm heart
+    ember:SetBlendMode("ADD")
+    hud.ember = ember
+
+    -- Fire icon (still shown when the animated flames are off), cut round
+    -- by the game itself when it can.
+    local inner = RING_IN + RING_W
+    local icon = hud:CreateTexture(nil, "ARTWORK", nil, -1)
+    icon:SetPoint("TOPLEFT", inner, -inner)
+    icon:SetPoint("BOTTOMRIGHT", -inner, inner)
+    hud.iconRound = false
+    if SetPortraitToTexture then
+        hud.iconRound = pcall(SetPortraitToTexture, icon, FIRE_ICON) and true or false
+    end
+    if not hud.iconRound then
+        icon:SetTexture(FIRE_ICON)
+        local mask = hud:CreateMaskTexture()
+        mask:SetAllPoints(icon)
+        mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        icon:AddMaskTexture(mask)
+    end
     hud.icon = icon
 
     local cd = CreateFrame("Cooldown", nil, hud, "CooldownFrameTemplate")
@@ -298,10 +327,6 @@ local function CreateHUD()
     hud.flames = flames
     hud.flameT = 0
 
-    local ring = hud:CreateTexture(nil, "OVERLAY")
-    ring:SetAllPoints()
-    ring:SetTexture(RING)
-    ring:SetVertexColor(0.788, 0.635, 0.322, 1)
 
     local title = hud:CreateFontString(nil, "OVERLAY")
     title:SetFont(FONT_BOLD, 12, "OUTLINE")
@@ -607,7 +632,9 @@ function CF.ApplySettings()
     hud:SetScale(db.scale or 1)
     local animated = db.animatedFlames ~= false
     hud.flames:SetShown(animated)
-    hud.icon:SetAlpha(animated and 0.35 or 1)
+    -- With the flames on, the square icon stays out of sight unless the game
+    -- cut it round; the dark disc and its warm heart carry the look.
+    hud.icon:SetAlpha(animated and (hud.iconRound and 0.30 or 0) or 1)
     local U = TomoMod_Utils
     if U and U.ApplyFramePosition and db.position then U.ApplyFramePosition(hud, db.position) end
     Render()

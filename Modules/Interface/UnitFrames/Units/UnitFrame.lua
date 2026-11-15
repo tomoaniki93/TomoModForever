@@ -166,7 +166,9 @@ local function UpdateHealth(frame)
 
     -- Texte de santé (SetFormattedText est C-side — zéro taint Lua)
     if settings.showHealthText and frame.health.text then
-        E.SetHealthText(frame.health.text, current, max, settings.healthTextFormat, unit)
+        -- Look "Forever": "current / max", as on the classic frames.
+        local fmt = (UF.IsForeverStyle and UF.IsForeverStyle()) and "current_max" or settings.healthTextFormat
+        E.SetHealthText(frame.health.text, current, max, fmt, unit)
         if frame.health.nameText then
             frame.health.nameText:Show()
         end
@@ -190,6 +192,13 @@ end
 local function UpdateName(frame)
     if not frame or not frame.health or not frame.health.nameText then return end
     if not UnitExists(frame.unit) then return end
+
+    -- Look "Forever": the strip always carries the name (even with
+    -- "show name" off in the TMF settings), level on the medallion.
+    if UF.IsForeverStyle and UF.IsForeverStyle() and frame._fv then
+        UF.ForeverUpdate(frame)
+        return
+    end
 
     local settings = TomoModForeverDB.unitFrames[frame.unit]
     if not settings or not settings.showName then
@@ -1158,6 +1167,11 @@ end
 -- =====================================
 function UF.ApplyVisuals(frame, unitKey, settings)
     if not frame or not settings then return end
+    -- Look "Forever": its own compact sizes (ForeverStyle.lua); the unit's
+    -- TMF sizes are left untouched in the saved settings.
+    if UF.IsForeverStyle and UF.IsForeverStyle() and UF.ForeverSettings then
+        settings = UF.ForeverSettings(unitKey, settings)
+    end
 
     local globalDB    = TomoModForeverDB.unitFrames
     local font        = globalDB.fontFamily or globalDB.font or "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"

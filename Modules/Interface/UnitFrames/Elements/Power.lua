@@ -101,7 +101,11 @@ function UF_Elements.UpdatePower(frame)
     end
 
     -- Show power text if enabled (AbbreviateLargeNumbers is C-side, accepts secret numbers)
-    if settings and settings.showPowerText and not settings.infoBarHeight then
+    local UFm = TomoMod_UnitFrames
+    if UFm and UFm.ForeverPowerText and UFm.ForeverPowerText(frame) then
+        -- Look "Forever": "current / max" on the bar (C-side formatting).
+        frame.power.text:SetFormattedText("%s / %s", AbbreviateLargeNumbers(current), AbbreviateLargeNumbers(max))
+    elseif settings and settings.showPowerText and not settings.infoBarHeight then
         frame.power.text:SetFormattedText("%s", AbbreviateLargeNumbers(current))
     else
         frame.power.text:SetText("")

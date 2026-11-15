@@ -1002,6 +1002,8 @@ TomoMod_Defaults = {
     unitFrames = {
         enabled = true,
         style = "tmf",            -- "tmf" (default look) | "forever" (ForeverStyle.lua)
+        foreverPortrait = false,  -- Forever look: round portrait beside player / target / focus
+        foreverSizes = {},        -- Forever look: [unit] = { width, name, health, power } over the defaults
         hideBlizzardFrames = true,
         texture = ADDON_TEXTURE,
         font = ADDON_FONT,

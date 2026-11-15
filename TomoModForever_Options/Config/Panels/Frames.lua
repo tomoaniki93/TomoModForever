@@ -105,6 +105,11 @@ local function BuildUnitPage(page, u)
 
     -- ---- Size ---------------------------------------------------------
     local c = page:Card(T("Taille", "Size"))
+    local FOREVER_UNITS = { player = true, target = true, focus = true, targettarget = true, pet = true, focustarget = true }
+    if TomoModForeverDB.unitFrames.style == "forever" and FOREVER_UNITS[unit] then
+        c:Info(T("Style Forever actif : ces tailles sont celles du style TMF. Les tailles Forever se règlent dans Cadres > Style commun > Tailles Forever.",
+                 "Forever look on: these sizes are the TMF look's. The Forever sizes are set in Frames > Shared style > Forever sizes."))
+    end
     c:Slider(T("Largeur", "Width"), p .. "width", 60, 500, 1, ap)
     c:Slider(T("Hauteur de la barre de vie", "Health bar height"), p .. "healthHeight", 8, 80, 1, ap)
     if unit == "player" then
@@ -319,12 +324,26 @@ K.RegisterPage({
                 T("Texture et police utilisées par tous les cadres d'unité.", "Texture and font used by every unit frame."),
                 "TomoMod_UF_player", T("Joueur", "Player"))
             local c = page:Card(T("Apparence", "Look"))
-            c:Seg(T("Style des cadres", "Frame style"), "unitFrames.style", {
+            -- Choosing the look rebuilds the page: the Forever sizes card only
+            -- shows with the Forever look.
+            c:Seg(T("Style des cadres", "Frame style"), {
+                get = function() return TomoModForeverDB.unitFrames.style or "tmf" end,
+                set = function(v)
+                    local changed = TomoModForeverDB.unitFrames.style ~= v
+                    TomoModForeverDB.unitFrames.style = v
+                    if changed then K.RefreshPage() end
+                end,
+                default = "tmf",
+            }, {
                 { text = "TMF", value = "tmf" },
                 { text = "Forever", value = "forever" },
             }, "ufall", 2)
             c:Info(T("TMF : le style par défaut. Forever : bandeau de nom aux couleurs de la classe (ou de la réaction pour les PNJ), vie et ressource centrées, cadre bronze et or, médaillon de niveau. S'applique au joueur, à la cible, à la cible de la cible, au familier et au focus.",
                      "TMF: the default look. Forever: name strip in the class colour (reaction colour for NPCs), centred health and power, bronze and gold border, level medallion. Applies to the player, target, target of target, pet and focus."))
+            c:Toggle(T("Forever : afficher le portrait", "Forever: show the portrait"), "unitFrames.foreverPortrait", "ufall",
+                T("Portrait rond à côté du joueur, de la cible et du focus, avec le niveau posé dessus.",
+                  "Round portrait beside the player, target and focus, with the level on it."))
+
             c:Select(T("Texture des barres", "Bar texture"), "unitFrames.texture", K.TEXTURES, "ufall")
             c:Select(T("Police", "Font"), {
                 get = function() return TomoModForeverDB.unitFrames.fontFamily or TomoModForeverDB.unitFrames.font end,
@@ -333,6 +352,62 @@ K.RegisterPage({
             c:Slider(T("Taille du texte", "Text size"), "unitFrames.fontSize", 8, 22, 1, "ufall")
             c:Seg(T("Contour du texte", "Text outline"), "unitFrames.fontOutline", K.OUTLINES, "ufall", 3)
             c:Done()
+
+            -- Forever sizes: the Forever look has its own sizes (the sliders
+            -- of the Player / Target... pages are those of the TMF look).
+            if TomoModForeverDB.unitFrames.style == "forever" then
+                c = page:Card(T("Tailles Forever", "Forever sizes"))
+                c:Info(T("Le style Forever a ses propres tailles : les curseurs des pages Joueur, Cible... règlent le style TMF. Choisis le cadre à régler.",
+                         "The Forever look has its own sizes: the sliders of the Player, Target... pages set the TMF look. Pick the frame to size."))
+                local gui = K.GuiDB()
+                local UNITS = {
+                    { text = T("Joueur", "Player"), value = "player" },
+                    { text = T("Cible", "Target"), value = "target" },
+                    { text = T("Focus", "Focus"), value = "focus" },
+                    { text = T("Cible cible", "Target target"), value = "targettarget" },
+                    { text = T("Familier", "Pet"), value = "pet" },
+                }
+                c:Seg(T("Cadre", "Frame"), {
+                    get = function() return gui.foreverSizeUnit or "player" end,
+                    set = function(v)
+                        local changed = gui.foreverSizeUnit ~= v
+                        gui.foreverSizeUnit = v
+                        if changed then K.RefreshPage() end
+                    end,
+                    default = "player",
+                }, UNITS, nil, 5)
+                local unit = gui.foreverSizeUnit or "player"
+                local UFm = TomoMod_UnitFrames
+                local def = (UFm and UFm.FOREVER_DEFAULT_SIZES and UFm.FOREVER_DEFAULT_SIZES[unit]) or {}
+                local function Size(key, fallback)
+                    return {
+                        get = function()
+                            local t = TomoModForeverDB.unitFrames.foreverSizes
+                            local u = type(t) == "table" and t[unit]
+                            return (u and u[key]) or def[key] or fallback
+                        end,
+                        set = function(v)
+                            local uf = TomoModForeverDB.unitFrames
+                            uf.foreverSizes = type(uf.foreverSizes) == "table" and uf.foreverSizes or {}
+                            uf.foreverSizes[unit] = uf.foreverSizes[unit] or {}
+                            uf.foreverSizes[unit][key] = v
+                        end,
+                        default = def[key] or fallback,
+                    }
+                end
+                c:Slider(T("Largeur", "Width"), Size("width", 170), 80, 400, 1, "ufall")
+                c:Slider(T("Hauteur du bandeau de nom", "Name strip height"), Size("name", 14), 8, 30, 1, "ufall")
+                c:Slider(T("Hauteur de la vie", "Health height"), Size("health", 16), 6, 60, 1, "ufall")
+                c:Slider(T("Hauteur de la ressource", "Power height"), Size("power", 9), 0, 30, 1, "ufall",
+                    nil, T("0 : pas de barre de ressource dans ce style.", "0: no power bar in this look."))
+                c:Button(T("Tailles par défaut pour ce cadre", "Default sizes for this frame"), function()
+                    local t = TomoModForeverDB.unitFrames.foreverSizes
+                    if type(t) == "table" then t[unit] = nil end
+                    K.Apply("ufall")
+                    K.RefreshPage()
+                end)
+                c:Done()
+            end
             c = page:Card(T("Animations", "Animations"))
             c:Toggle(T("Traînée rouge quand un cadre perd de la vie", "Red trail when a frame loses health"), "unitFrames.healthTrail", "ufall",
                 T("Le morceau de vie perdu reste affiché en rouge un instant puis s'écoule.", "The lost chunk of health stays red for a moment, then drains away."))

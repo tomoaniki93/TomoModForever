@@ -759,6 +759,15 @@ local function CreateOrUpdateBackground()
     local contentH = (trackerTop and lowestBottom) and (trackerTop - lowestBottom) or 0
     -- Add padding: 12 top (for our header offset) + 28 header bar + 16 bottom padding
     local finalH = math.max(contentH + 56, 60)
+    -- [1.2.9] In bucket mode the panel height belongs to LayoutBuckets (it
+    -- knows what it placed). This measurement walks Blizzard's tree, where,
+    -- in combat, the blocks of folded buckets / zones are re-shown at alpha 0
+    -- inside the 4000-high container: the panel then stretched down the whole
+    -- screen during every fight (player report). Keep the last layout height;
+    -- measure only when there is none yet, or with buckets off.
+    if S().buckets ~= false and skinFrame._tmLayoutH then
+        finalH = skinFrame._tmLayoutH
+    end
     skinFrame:SetHeight(finalH)
 
     -- Apply alpha
@@ -1776,6 +1785,7 @@ LayoutBuckets = function()
             local totalH = math.abs(yOffset) + 10
             if totalH < 60 then totalH = 60 end
             skinFrame:SetHeight(totalH)
+            skinFrame._tmLayoutH = totalH
         elseif skinFrame and headerBar then
             -- [fix] This early return used to leave the height computed by
             -- CreateOrUpdateBackground in place. That measurement walks
@@ -1784,6 +1794,7 @@ LayoutBuckets = function()
             -- with nothing tracked, which is why an empty tracker showed a
             -- panel spanning most of the screen. Collapse to the header.
             skinFrame:SetHeight((headerBar:GetHeight() or 28) + 16)
+            skinFrame._tmLayoutH = (headerBar:GetHeight() or 28) + 16
         end
         -- The pass completed, it just had nothing to place.
         _tmPlacedCount = 0
@@ -2068,6 +2079,7 @@ LayoutBuckets = function()
     local totalH = math.abs(yOffset) + 10
     if totalH < 60 then totalH = 60 end
     skinFrame:SetHeight(totalH)
+    skinFrame._tmLayoutH = totalH
 
     -- How many blocks this pass actually placed under skinFrame. Read by the
     -- in-combat suppression: with nothing placed there is nothing to overlap.
