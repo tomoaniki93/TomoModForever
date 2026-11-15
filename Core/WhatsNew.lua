@@ -63,6 +63,14 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.1",
+        highlights = {
+            L["wn_131_classpower"],
+            L["wn_131_combo"],
+            L["wn_131_nopower"],
+        },
+    },
+    {
         version = "1.3.0",
         highlights = {
             L["wn_130_totems"],

@@ -1,5 +1,19 @@
 ## ####################################
 
+## CHANGELOG 1.3.1
+
+#### Resource bars: class power without a specialization
+
+- **Fixed** - Rogues had no combo points in the resource bars (player report). On Forever the client often reports no specialization (low level), and `CLASS_RESOURCES` was looked up by spec index only, so nothing was built. The spec is now read with `C_SpecializationInfo.GetSpecialization` (global `GetSpecialization` fallback), and classes whose class power is the same in every spec get a `default` entry used when no spec is reported: Rogue (combo points), Paladin (Holy Power), Warlock (Soul Shards), Death Knight (runes), Evoker (Essence). Spec-specific powers (Chi, Arcane Charges, Icicles, Soul Fragments, Maelstrom Weapon, Tip of the Spear, Feral combo points) still need a spec.
+- **Fixed** - Combo points read as 0 on Forever, where they are held on the target. `ReadPointPower` falls back to `GetComboPoints("player", "target")` when `UnitPower` reports 0, and to a cap of 5 when `UnitPowerMax` reports 0 (it was forced to 1, which drew a single point). Used by the segment, bar and band displays.
+- **Fixed** - Changing target now refreshes the class power (combo points follow the target); it only refreshed the bar's alpha before.
+
+#### Resource bars: missing resources
+
+- **New** - A point-based class power whose cap is 0 for the character (a resource Forever does not have) is no longer drawn as one empty point: it is hidden. `UNIT_MAXPOWER` rebuilds the display if the resource appears later.
+
+## ####################################
+
 ## CHANGELOG 1.3.0
 
 #### Unit frames: shaman totems

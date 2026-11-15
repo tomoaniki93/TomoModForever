@@ -161,6 +161,10 @@ end
 -- CLASS / SPEC — CLASS POWER DEFINITIONS
 -- Only class-specific resources (not shown in UnitFrame info bar)
 -- =====================================
+-- `default` = used when the client reports no spec (WoW: Forever, low level).
+-- Only classes whose class power is identical across every spec get one;
+-- spec-specific powers (Chi, Arcane Charges, Icicles, Soul Fragments...) can't
+-- be guessed without a spec.
 local CLASS_RESOURCES = {
     SHAMAN = {
         -- [1] Elemental: Maelstrom in UF info bar
@@ -186,11 +190,13 @@ local CLASS_RESOURCES = {
         },
     },
     DEATHKNIGHT = {
+        default = { classPower = { display = "runes", label = "Runes" } },
         [1] = { classPower = { display = "runes", label = "Runes" } },
         [2] = { classPower = { display = "runes", label = "Runes" } },
         [3] = { classPower = { display = "runes", label = "Runes" } },
     },
     WARLOCK = {
+        default = { classPower = { display = "points", powerType = POWER_SOUL_SHARDS, label = "Soul Shards", maxPoints = 5, showPartial = true } },
         [1] = { classPower = { display = "points", powerType = POWER_SOUL_SHARDS, label = "Soul Shards", maxPoints = 5, showPartial = true } },
         [2] = { classPower = { display = "points", powerType = POWER_SOUL_SHARDS, label = "Soul Shards", maxPoints = 5, showPartial = true } },
         [3] = { classPower = { display = "points", powerType = POWER_SOUL_SHARDS, label = "Soul Shards", maxPoints = 5, showPartial = true } },
@@ -205,6 +211,7 @@ local CLASS_RESOURCES = {
         -- [4] Restoration: Mana in UF info bar
     },
     EVOKER = {
+        default = { classPower = { display = "points", powerType = POWER_ESSENCE, label = "Essence", maxPoints = 6 } },
         [1] = { classPower = { display = "points", powerType = POWER_ESSENCE, label = "Essence", maxPoints = 6 } },
         [2] = { classPower = { display = "points", powerType = POWER_ESSENCE, label = "Essence", maxPoints = 6 } },
         [3] = { classPower = { display = "points", powerType = POWER_ESSENCE, label = "Essence", maxPoints = 6 } },
@@ -229,12 +236,14 @@ local CLASS_RESOURCES = {
         },
     },
     PALADIN = {
+        default = { classPower = { display = "points", powerType = POWER_HOLY_POWER, label = "Holy Power", maxPoints = 5 } },
         [1] = { classPower = { display = "points", powerType = POWER_HOLY_POWER, label = "Holy Power", maxPoints = 5 } },
         [2] = { classPower = { display = "points", powerType = POWER_HOLY_POWER, label = "Holy Power", maxPoints = 5 } },
         [3] = { classPower = { display = "points", powerType = POWER_HOLY_POWER, label = "Holy Power", maxPoints = 5 } },
     },
     -- PRIEST: all specs — Mana/Insanity in UF info bar, no class power
     ROGUE = {
+        default = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
         [1] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
         [2] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
         [3] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
@@ -277,6 +286,39 @@ local isInitialized = false
 local smoothFrames = {}
 local BAR_SMOOTH_SPEED = 12
 local issecret = issecretvalue or function() return false end
+
+local GetSpecIndex = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) or GetSpecialization
+local function CurrentSpec()
+    return (GetSpecIndex and GetSpecIndex()) or 0
+end
+
+-- Reads a segmented power. Combo points need care on WoW: Forever: they live
+-- on the target (GetComboPoints) and UnitPower/UnitPowerMax can report 0.
+local function ReadPointPower(resDef)
+    local current = UnitPower("player", resDef.powerType)
+    local max = UnitPowerMax("player", resDef.powerType)
+    if issecret(current) or issecret(max) then return current, max end
+    if resDef.powerType == POWER_COMBO_POINTS then
+        if (current or 0) == 0 and GetComboPoints then
+            local cp = GetComboPoints("player", "target")
+            if cp and not issecret(cp) then current = cp end
+        end
+        if (max or 0) <= 0 then max = 5 end -- base cap; talents raise UnitPowerMax
+    end
+    return current or 0, max or 0
+end
+
+-- A point power the client caps at 0 does not exist for this character (e.g.
+-- a resource WoW: Forever lacks): hide it rather than draw an empty point.
+-- Combo points are exempt, ReadPointPower supplies their cap.
+local function IsClassPowerAvailable(cpDef)
+    if not cpDef or cpDef.display ~= "points" then return true end
+    if cpDef.powerType == POWER_COMBO_POINTS then return true end
+    local max = UnitPowerMax("player", cpDef.powerType)
+    if issecret(max) then return true end
+    return (max or 0) > 0
+end
+local classPowerAvailable = true
 
 -- =====================================
 -- HELPERS
@@ -1213,8 +1255,7 @@ local function UpdatePoints(pointFrame, resDef)
         max = resDef.maxStacks or #pointFrame.points
         partialFrac = 0
     else
-        current = UnitPower("player", resDef.powerType)
-        max = UnitPowerMax("player", resDef.powerType)
+        current, max = ReadPointPower(resDef)
         -- Segmented resources require Lua arithmetic and comparisons. Unlike
         -- StatusBar widgets, those operations cannot consume secret numbers;
         -- retain the last readable presentation until the values are public.
@@ -1365,8 +1406,7 @@ local function UpdateCountResourceBar(bar, resDef)
         current = aura and aura.applications or 0
         maxValue = resDef.maxStacks or 1
     else
-        current = UnitPower("player", resDef.powerType)
-        maxValue = UnitPowerMax("player", resDef.powerType)
+        current, maxValue = ReadPointPower(resDef)
         -- This display derives a plain fractional value in Lua, so a secret
         -- source must leave the previous readable presentation untouched.
         if issecret(current) or issecret(maxValue) then return end
@@ -1431,8 +1471,7 @@ local function UpdateBandDisplay(bandFrame, resDef)
     local cfg = BAND_CONFIG[texType]
     if not cfg then return end
 
-    local current = UnitPower("player", resDef.powerType)
-    local max = UnitPowerMax("player", resDef.powerType)
+    local current, max = ReadPointPower(resDef)
     -- Texture rows are selected through Lua ordering and arithmetic. Preserve
     -- the last readable row when either client value is secret.
     if issecret(current) or issecret(max) then return end
@@ -1623,10 +1662,10 @@ local function BuildResourceDisplay()
     -- rien : la barre de puissance centrée manquait, et le cadre joueur ne
     -- créait pas la sienne (primaryPowerCentered). On continue avec
     -- specIndex = 0 : pas de class power, mais la barre centrée s'affiche.
-    local specIndex = (GetSpecialization and GetSpecialization()) or 0
+    local specIndex = CurrentSpec()
 
     local classData = CLASS_RESOURCES[playerClass]
-    local resources = classData and classData[specIndex]
+    local resources = classData and (classData[specIndex] or classData.default)
 
     RefreshChargedPoints()
 
@@ -1727,7 +1766,9 @@ local function BuildResourceDisplay()
     end
 
     -- === CLASS POWER ===
-    if resources and resources.classPower then
+    classPowerAvailable = not (resources and resources.classPower)
+                          or IsClassPowerAvailable(resources.classPower)
+    if resources and resources.classPower and classPowerAvailable then
         local cpDef = resources.classPower
         if cpDef.display == "points" then
             local ck = POWER_COLOR_KEYS[cpDef.powerType] or "comboPoints"
@@ -1903,14 +1944,23 @@ local function OnEvent(self, event, arg1)
         C_Timer.After(1, function() BuildResourceDisplay(); UpdateAlpha(); if RB._refreshOnUpdate then RB._refreshOnUpdate() end end)
     elseif event == "ACTIVE_TALENT_GROUP_CHANGED" or event == "PLAYER_SPECIALIZATION_CHANGED" then
         C_Timer.After(0.5, function()
-            local newSpec = (GetSpecialization and GetSpecialization()) or 0
+            local newSpec = CurrentSpec()
             if newSpec ~= currentSpec then
                 currentSpec = newSpec
                 BuildResourceDisplay()
                 if RB._refreshOnUpdate then RB._refreshOnUpdate() end
             end
         end)
-    elseif event == "UNIT_POWER_FREQUENT" or event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" then
+    elseif event == "UNIT_MAXPOWER" then
+        if arg1 ~= "player" then return end
+        -- The class power may appear/vanish (cap 0 <-> >0): rebuild then.
+        local cpDef = currentResources and currentResources.classPower
+        if cpDef and IsClassPowerAvailable(cpDef) ~= classPowerAvailable then
+            BuildResourceDisplay()
+            if RB._refreshOnUpdate then RB._refreshOnUpdate() end
+        end
+        UpdateAll()
+    elseif event == "UNIT_POWER_FREQUENT" or event == "UNIT_POWER_UPDATE" then
         if arg1 == "player" then UpdateAll() end
     elseif event == "UNIT_POWER_POINT_CHARGE" then
         -- The unit payload can come through as nil, and RegisterUnitEvent
@@ -1929,8 +1979,11 @@ local function OnEvent(self, event, arg1)
         if arg1 == "player" then UpdateAll() end
     elseif event == "UPDATE_SHAPESHIFT_FORM" then
         if playerClass == "DRUID" then UpdateDruidMana() end
-    elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED"
-        or event == "PLAYER_TARGET_CHANGED" then
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        -- Combo points are tied to the target on WoW: Forever.
+        UpdateAlpha()
+        UpdateAll()
+    elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
         UpdateAlpha()
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         if arg1 == "player" then
