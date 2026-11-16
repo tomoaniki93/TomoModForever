@@ -79,6 +79,13 @@ local function NameKey(name)
         :gsub("\226\128\175", " ")    -- narrow no-break space (French " : ")
         :gsub("%s+", " ")
         :lower()
+    -- string.lower only folds ASCII: also fold the Latin-1 capitals
+    -- (U+00C0-U+00DE except the multiplication sign), so "Écailles" and
+    -- "écailles" give the same key.
+    k = k:gsub("\195([\128-\158])", function(c)
+        if c == "\151" then return nil end
+        return "\195" .. string.char(c:byte() + 32)
+    end)
     k = k:match("^%s*(.-)%s*$")
     if k == "" then return nil end
     return k
@@ -90,11 +97,17 @@ local function ObjectiveCounts(text)
     return tonumber(have), tonumber(need)
 end
 
-local function AddNeed(name, title, text)
+-- Finished objectives count too: the items still have to be handed in, so
+-- a "6/6" stack must keep its quest border and stay off the throw-away
+-- list until the quest is turned in (player report). When two quests ask
+-- for the same item, an unfinished objective wins over a finished one.
+local function AddNeed(name, title, text, finished)
     local key = NameKey(name)
-    if not key or questNeeds[key] then return end
+    if not key then return end
+    local old = questNeeds[key]
+    if old and not (old.finished and not finished) then return end
     local have, need = ObjectiveCounts(text)
-    questNeeds[key] = { title = Plain(title), have = have, need = need }
+    questNeeds[key] = { title = Plain(title), have = have, need = need, finished = finished and true or false }
 end
 
 local function ObjectiveItemName(text)
@@ -116,8 +129,8 @@ local function ScanQuestLog()
             local info = C_QuestLog.GetInfo(i)
             if info and not info.isHeader and info.questID then
                 for _, o in ipairs(C_QuestLog.GetQuestObjectives(info.questID) or {}) do
-                    if o.type == "item" and not o.finished then
-                        AddNeed(ObjectiveItemName(o.text), info.title, o.text)
+                    if o.type == "item" then
+                        AddNeed(ObjectiveItemName(o.text), info.title, o.text, o.finished)
                     end
                 end
             end
@@ -129,8 +142,8 @@ local function ScanQuestLog()
             local title = GetQuestLogTitle and GetQuestLogTitle(i)
             for o = 1, objectives do
                 local text, kind, finished = GetQuestLogLeaderBoard(o, i)
-                if kind == "item" and not finished then
-                    AddNeed(ObjectiveItemName(text), title, text)
+                if kind == "item" then
+                    AddNeed(ObjectiveItemName(text), title, text, finished)
                 end
             end
         end
@@ -213,8 +226,8 @@ local function Fresh()
     return state
 end
 
--- Public: what an unfinished objective of the quest log says about an
--- item, by name: { title, have, need }, or nil.
+-- Public: what an item objective of the quest log (finished or not) says
+-- about an item, by name: { title, have, need, finished }, or nil.
 function TR.QuestNeed(name)
     local key = NameKey(name)
     return key and questNeeds[key] or nil
@@ -222,7 +235,8 @@ end
 
 -- Public: quest status of a bag slot.
 --   "starter" : starts a quest you do not have (Blizzard's "!" mark)
---   "quest"   : a quest item, or an item an unfinished objective asks for
+--   "quest"   : a quest item, or an item an objective of a quest still in
+--               the log asks for (finished or not: it has to be handed in)
 --   nil       : neither
 -- Second value: the objective entry when the quest log asks for it.
 function TR.QuestStatus(bag, slot)

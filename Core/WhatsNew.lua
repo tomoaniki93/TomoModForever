@@ -74,6 +74,7 @@ CHANGELOG = {
             L["wn_133_bank"],
             L["wn_133_bagtoggle"],
             L["wn_133_questslot"],
+            L["wn_133_questdone"],
         },
     },
     {

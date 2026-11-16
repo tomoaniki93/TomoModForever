@@ -32,6 +32,8 @@
 - **Changed** - The `combinedBags` CVar is only written when its value actually changes (`SetCVarIfChanged`), instead of on every login: a CVar written by an addon is tainted for the rest of the session and Blizzard's bag code reads this one while the bank opens.
 - **Fixed** - The "Bags" switch of the Home page always read as on and did nothing: it pointed to the `bagsV4` manifest, which only owns the window position (passive, always on). It now drives the `bagSkin` module, like the Bags tab of the Skins page.
 - **Fixed** - Moving a quest item left its gold quest border on the slot it came from, until another item filled that slot. The empty-slot path of `Slots:Render` reset every mark but the quest border and the quest-starter "!"; both are now hidden there. The native `IconQuestTexture` of the Blizzard item button is also made transparent, like its other decorative regions.
+- **Fixed** - An item asked for by a quest objective lost its gold quest border, and went back on the throw-away list, as soon as the objective was complete ("Côtes de sanglier des rochers : 6/6"): `Triage.lua` only read unfinished objectives. Finished item objectives now count too, as long as the quest is in the log, since the items still have to be handed in; an unfinished objective wins when two quests ask for the same item.
+- **Changed** - Item names are compared with accented capitals folded as well (`É` = `é`, Latin-1 range), on top of the apostrophes, no-break spaces and ASCII case already folded.
 
 ## ####################################
 

@@ -10,6 +10,7 @@ TomoMod_RegisterLocale("enUS", {
     ["wn_133_bank"] = "Fixed - Opening your personal bank no longer raises a \"PurchaseBankTab\" error when the TomoMod bags are on.",
     ["wn_133_bagtoggle"] = "Fixed - The Bags switch on the Home page now really turns the TomoMod bags on and off and keeps its state after a /reload.",
     ["wn_133_questslot"] = "Fixed - Bags: moving a quest item no longer leaves its gold border on the empty slot it came from.",
+    ["wn_133_questdone"] = "Fixed - Bags: an item a quest objective asks for keeps its gold border and stays off the throw-away list once the objective is complete, until you hand in the quest.",
 })
 
 TomoMod_RegisterLocale("frFR", {
@@ -22,6 +23,7 @@ TomoMod_RegisterLocale("frFR", {
     ["wn_133_bank"] = "Corrigé - Ouvrir ta banque personnelle ne provoque plus d'erreur « PurchaseBankTab » quand les sacs TomoMod sont activés.",
     ["wn_133_bagtoggle"] = "Corrigé - L'interrupteur Sacs de la page d'accueil active et désactive vraiment les sacs TomoMod et garde son état après un /reload.",
     ["wn_133_questslot"] = "Corrigé - Sacs : déplacer un objet de quête ne laisse plus son contour doré sur la case vide qu'il a quittée.",
+    ["wn_133_questdone"] = "Corrigé - Sacs : un objet demandé par un objectif de quête garde son contour doré et ne passe plus dans la liste « à jeter » une fois l'objectif terminé, jusqu'à ce que tu rendes la quête.",
 })
 
 TomoMod_RegisterLocale("deDE", {
@@ -34,6 +36,7 @@ TomoMod_RegisterLocale("deDE", {
     ["wn_133_bank"] = "Behoben - Das Öffnen deiner persönlichen Bank löst keinen \"PurchaseBankTab\"-Fehler mehr aus, wenn die TomoMod-Taschen aktiv sind.",
     ["wn_133_bagtoggle"] = "Behoben - Der Taschen-Schalter auf der Startseite schaltet die TomoMod-Taschen jetzt wirklich ein und aus und behält seinen Zustand nach einem /reload.",
     ["wn_133_questslot"] = "Behoben - Taschen: Wenn du einen Questgegenstand verschiebst, bleibt sein goldener Rahmen nicht mehr auf dem leeren Platz zurück.",
+    ["wn_133_questdone"] = "Behoben - Taschen: ein Gegenstand, den ein Questziel verlangt, behält seinen goldenen Rahmen und kommt nicht auf die Wegwerfliste, sobald das Ziel erfüllt ist, bis du die Quest abgibst.",
 })
 
 TomoMod_RegisterLocale("esES", {
@@ -46,6 +49,7 @@ TomoMod_RegisterLocale("esES", {
     ["wn_133_bank"] = "Corregido - Abrir tu banco personal ya no provoca un error \"PurchaseBankTab\" cuando las bolsas de TomoMod están activadas.",
     ["wn_133_bagtoggle"] = "Corregido - El interruptor Bolsas de la página de inicio ahora activa y desactiva de verdad las bolsas de TomoMod y conserva su estado tras un /reload.",
     ["wn_133_questslot"] = "Corregido - Bolsas: mover un objeto de misión ya no deja su borde dorado en la casilla vacía que ocupaba.",
+    ["wn_133_questdone"] = "Corregido - Bolsas: un objeto que pide un objetivo de misión conserva su borde dorado y ya no pasa a la lista de objetos para tirar al completar el objetivo, hasta que entregues la misión.",
 })
 
 TomoMod_RegisterLocale("itIT", {
@@ -58,6 +62,7 @@ TomoMod_RegisterLocale("itIT", {
     ["wn_133_bank"] = "Corretto - Aprire la tua banca personale non provoca più un errore \"PurchaseBankTab\" quando le borse di TomoMod sono attive.",
     ["wn_133_bagtoggle"] = "Corretto - L'interruttore Borse della pagina iniziale ora attiva e disattiva davvero le borse di TomoMod e mantiene il suo stato dopo un /reload.",
     ["wn_133_questslot"] = "Corretto - Borse: spostare un oggetto della missione non lascia più il suo bordo dorato sulla casella vuota da cui proviene.",
+    ["wn_133_questdone"] = "Corretto - Borse: un oggetto richiesto da un obiettivo di missione mantiene il bordo dorato e non finisce più nella lista da buttare quando l'obiettivo è completato, finché non consegni la missione.",
 })
 
 TomoMod_RegisterLocale("ptBR", {
@@ -70,4 +75,5 @@ TomoMod_RegisterLocale("ptBR", {
     ["wn_133_bank"] = "Corrigido - Abrir seu banco pessoal não causa mais um erro \"PurchaseBankTab\" quando as bolsas do TomoMod estão ativadas.",
     ["wn_133_bagtoggle"] = "Corrigido - O interruptor Bolsas da página inicial agora liga e desliga de verdade as bolsas do TomoMod e mantém o estado após um /reload.",
     ["wn_133_questslot"] = "Corrigido - Bolsas: mover um item de missão não deixa mais a borda dourada no espaço vazio de onde ele saiu.",
+    ["wn_133_questdone"] = "Corrigido - Bolsas: um item pedido por um objetivo de missão mantém a borda dourada e não vai mais para a lista de descarte quando o objetivo é concluído, até você entregar a missão.",
 })
