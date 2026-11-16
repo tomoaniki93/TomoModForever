@@ -192,9 +192,12 @@ local function Build(spec)
     if wrap then pcall(wrap, container, spec.perRow * step) end
 
     -- The unit goes last: assigning it makes the engine register its
-    -- events, which it only does for a container that has groups.
-    pcall(container.SetUnit, container, spec.unit)
+    -- events, which it only does for a container that has groups. Same
+    -- sequence as TomoMod_AuraContainer: unit, enable, full update.
     block.container = container
+    block.unitOK = pcall(container.SetUnit, container, spec.unit)
+    if container.SetEnabled then pcall(container.SetEnabled, container, true) end
+    pcall(container.UpdateAllAuras, container)
 
     B.Movable(spec.key, T(spec.fr, spec.en), function(h)
         h:SetAllPoints(block.host)
@@ -204,15 +207,43 @@ local function Build(spec)
     return block
 end
 
+--- Hand the unit to the engine again, enable, full update. TMF's unit
+--- frames do this on every target change and on entering the world
+--- (UF_Elements.UpdateAuras -> TomoMod_AuraContainer.SetUnit): the engine
+--- does not always pick the new unit up on its own.
+local function Rebind(block)
+    local c = block.container
+    block.unitOK = pcall(c.SetUnit, c, block.spec.unit)
+    if c.SetEnabled then pcall(c.SetEnabled, c, true) end
+    pcall(c.UpdateAllAuras, c)
+end
+
 local function Apply()
     for _, block in ipairs(blocks) do
         local on = (B.active and B.db[block.spec.option]) and true or false
         if block.on ~= on then
             block.on = on
             block.host:SetShown(on)
-            if block.container.SetEnabled then pcall(block.container.SetEnabled, block.container, on) end
-            if on then pcall(block.container.UpdateAllAuras, block.container) end
+            block.container:SetShown(on)
+            if not on and block.container.SetEnabled then
+                pcall(block.container.SetEnabled, block.container, false)
+            end
         end
+        if on then Rebind(block) end
+    end
+end
+
+--- /tmf anim debug: what the aura blocks look like right now.
+function Auras:Debug(out)
+    out("auras: engine " .. tostring(Available()) .. ", blocks " .. #blocks)
+    for _, block in ipairs(blocks) do
+        local h, c = block.host, block.container
+        local w, ht = c:GetSize()
+        out(string.format("  %s (%s %s): option %s, host %s/%s, container %s/%s %dx%d, unit %s, buttons %d",
+            block.spec.key, block.spec.unit, block.spec.filter,
+            tostring(B.db[block.spec.option]), tostring(h:IsShown()), tostring(h:IsVisible()),
+            tostring(c:IsShown()), tostring(c:IsVisible()), math.floor((w or 0) + 0.5), math.floor((ht or 0) + 0.5),
+            tostring(block.unitOK), c.GetNumChildren and c:GetNumChildren() or -1))
     end
 end
 
@@ -221,7 +252,19 @@ end
 -- ---------------------------------------------------------------------
 function Auras:Init()
     if not Available() then return end
-    for _, spec in ipairs(SPECS) do Build(spec) end
+    for _, spec in ipairs(SPECS) do
+        local ok, err = pcall(Build, spec)
+        if not ok then Auras.buildError = tostring(err) end
+    end
+    -- The target's blocks follow the target, like TMF's frames do.
+    local ev = CreateFrame("Frame")
+    ev:RegisterEvent("PLAYER_TARGET_CHANGED")
+    ev:SetScript("OnEvent", function()
+        if not B.active then return end
+        for _, block in ipairs(blocks) do
+            if block.on and block.spec.unit == "target" then Rebind(block) end
+        end
+    end)
 end
 
 function Auras:Refresh()

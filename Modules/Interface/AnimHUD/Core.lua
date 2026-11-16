@@ -331,6 +331,7 @@ function B.Call(method, ...)
         local fn = m[method]
         if fn then
             local ok, err = pcall(fn, m, ...)
+            if not ok then B.lastError = method .. " : " .. tostring(err) end
             if not ok and TomoModForeverDB and TomoModForeverDB.diagnostics and TomoModForeverDB.diagnostics.debug then
                 print("|cffffd100TomoModForever|r AnimHUD " .. method .. " : " .. tostring(err))
             end
@@ -428,9 +429,11 @@ function B.Sync()
 
     if want then
         B.db = B.DB()
+        -- Shown before the build: the aura engine lays out from an OnUpdate
+        -- and registers its unit on a container that can be drawn.
+        anchor:Show()
         if not B.built then B.Build() end
         B.active = true
-        anchor:Show()
         B.ApplyAnchor()
         B.Call("Refresh")
     elseif B.active then
@@ -465,6 +468,19 @@ function B.ToggleMover()
         return
     end
     if B.Halo and B.Halo.ToggleMover then B.Halo:ToggleMover() end
+end
+
+--- /tmf anim debug
+function B.Debug()
+    local function out(msg) print("|cffffd100TMF anim|r " .. msg) end
+    local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+    out(string.format("style %s, unit frames %s, Braise %s, wanted %s, built %s, active %s",
+        tostring(uf and uf.style), tostring(uf and uf.enabled), tostring(B.BraiseLoaded()),
+        tostring(B.IsWanted()), tostring(B.built), tostring(B.active)))
+    out("anchor shown " .. tostring(anchor:IsShown()) .. ", visible " .. tostring(anchor:IsVisible()))
+    if B.lastError then out("|cffff5555last error|r " .. B.lastError) end
+    if B.Auras and B.Auras.buildError then out("|cffff5555aura build error|r " .. B.Auras.buildError) end
+    if B.Auras and B.Auras.Debug and B.built then B.Auras:Debug(out) end
 end
 
 function B.IsMoving()

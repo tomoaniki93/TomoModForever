@@ -15,6 +15,8 @@
 - **New** - Options: Frames > Animation HUD (theme, size, idle opacity, values; target, pet, target of target, clicks, keep the TMF pet / ToT frames; cast arcs, threat, tank mode, combo points, auras; rings, embers, amount, class motion, shockwave and blades, timer; reset). Frames > Shared style explains the look.
 - **Changed** - If the Braise addon itself is loaded, the Animation look stands down (two halos would overlap) and the options page says so.
 - Textures in `Assets/Textures/Animation/` (from Braise), font Poppins already shipped by TMF.
+- **Fixed** - First in-game test: no buffs or debuffs around the halo. The aura blocks were given their unit once, at build time, under a parent that was still hidden. They now follow the TMF pattern (`TomoMod_AuraContainer.SetUnit`): unit, `SetEnabled(true)`, `UpdateAllAuras`, again on every refresh, target change and entering the world; the HUD anchor is shown before the build.
+- **New** - `/tmf anim debug`: state of the look (style, Braise, active), last module error, and per aura block: option, host and container shown / visible, container size, unit accepted, button count.
 
 ## ####################################
 

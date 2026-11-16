@@ -514,7 +514,9 @@ SlashCmdList["TOMOMOD"] = function(msg)
         local AH = TomoMod_AnimHUD
         local arg = msg:match("^anim%s+(.+)$")
         if not AH then return end
-        if arg == "test" or arg == "demo" then
+        if arg == "debug" or arg == "diag" then
+            AH.Debug()
+        elseif arg == "test" or arg == "demo" then
             if AH.active then AH.Demo()
             else print("|cffffd100TomoModForever|r " .. L["msg_anim_off"]) end
         else
