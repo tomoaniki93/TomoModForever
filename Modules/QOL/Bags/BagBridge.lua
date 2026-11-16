@@ -23,26 +23,21 @@ local function DisplayMode()
     return db and db.layout and db.layout.mode == "separate" and "separate" or "combined"
 end
 
--- Blizzard dynamically limits "Show in Backpack" currencies from the width
--- of its native BackpackTokenFrame. In TomoMod combined mode that native bag is
--- intentionally suppressed, so Blizzard can mis-detect a capacity of 1. Keep
--- the normal Blizzard result everywhere else, but preserve the traditional
--- three tracked-currency slots while TomoMod owns the combined bag.
-local TRACKED_CURRENCY_CAP = 3
-local function EnsureBackpackTokenCapacity()
-    local tokenFrame = _G.BackpackTokenFrame
-    if not tokenFrame or tokenFrame._TomoModOriginalGetMaxTokensWatched then return end
-    if type(tokenFrame.GetMaxTokensWatched) ~= "function" then return end
+-- [taint] BackpackTokenFrame.GetMaxTokensWatched used to be replaced here
+-- to keep three tracked currencies while the native bag is suppressed. An
+-- addon function installed as a method of a Blizzard frame taints every
+-- execution path that calls it: opening the bank runs OpenAllBags (which
+-- updates the token frame) and then, in the same path, the protected
+-- PurchaseBankTab() -> ADDON_ACTION_FORBIDDEN. Blizzard's own value is kept.
 
-    local original = tokenFrame.GetMaxTokensWatched
-    tokenFrame._TomoModOriginalGetMaxTokensWatched = original
-    tokenFrame.GetMaxTokensWatched = function(self, ...)
-        local maxWatched = tonumber(original(self, ...)) or 1
-        if Bags.IsEnabled() and DisplayMode() == "combined" then
-            return math.max(maxWatched, TRACKED_CURRENCY_CAP)
-        end
-        return maxWatched
-    end
+--- Write a CVar only when it actually changes: a CVar written by an addon
+--- is tainted for the rest of the session, and Blizzard's bag code reads
+--- combinedBags while the bank opens.
+local function SetCVarIfChanged(name, value)
+    if not SetCVar then return end
+    local current = GetCVar and GetCVar(name)
+    if current ~= nil and tostring(current) == value then return end
+    pcall(SetCVar, name, value)
 end
 
 -- ---------------------------------------------------------------------
@@ -460,7 +455,7 @@ function Bridge:ApplyMode(mode)
         -- Force the native system to use individual bags when this mode is
         -- explicitly selected. It is a normal client CVar, not a protected
         -- action. Failure is harmless on clients where the CVar is absent.
-        if SetCVar then pcall(SetCVar, "combinedBags", "0") end
+        SetCVarIfChanged("combinedBags", "0")
 
         if customWasOpen and not nativeWasOpen and OpenAllBags then
             OpenAllBags()
@@ -468,7 +463,7 @@ function Bridge:ApplyMode(mode)
         C_Timer.After(0, function() Bridge:SkinSeparateFrames() end)
     else
         self:RestoreNativeSkins()
-        if SetCVar then pcall(SetCVar, "combinedBags", "1") end
+        SetCVarIfChanged("combinedBags", "1")
         self:SuppressAll()
         if nativeWasOpen or customWasOpen then Bags.Show() end
     end
@@ -521,22 +516,13 @@ function Bridge:Initialize()
     end
 
     local events = CreateFrame("Frame")
-    events:RegisterEvent("ADDON_LOADED")
     events:RegisterEvent("BAG_UPDATE_DELAYED")
     events:RegisterEvent("ITEM_LOCK_CHANGED")
     events:RegisterEvent("BAG_UPDATE_COOLDOWN")
     events:RegisterEvent("PLAYER_MONEY")
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
-    events:SetScript("OnEvent", function(self, event)
-        if event == "ADDON_LOADED" then
-            EnsureBackpackTokenCapacity()
-            if _G.BackpackTokenFrame and _G.BackpackTokenFrame._TomoModOriginalGetMaxTokensWatched then
-                self:UnregisterEvent("ADDON_LOADED")
-            end
-            return
-        end
-
+    events:SetScript("OnEvent", function(_, event)
         if event == "PLAYER_REGEN_ENABLED" then
             Bags.Modules.Slots:EnsurePool()
             if Bridge.pendingEnabled ~= nil then
@@ -584,6 +570,5 @@ function Bridge:Initialize()
         end
     end)
 
-    EnsureBackpackTokenCapacity()
     self:ApplyEnabled(Bags.IsEnabled())
 end

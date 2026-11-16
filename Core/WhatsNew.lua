@@ -70,6 +70,10 @@ CHANGELOG = {
             L["wn_133_level"],
             L["wn_133_options"],
             L["wn_133_debug"],
+            L["wn_133_clicks"],
+            L["wn_133_bank"],
+            L["wn_133_bagtoggle"],
+            L["wn_133_questslot"],
         },
     },
     {

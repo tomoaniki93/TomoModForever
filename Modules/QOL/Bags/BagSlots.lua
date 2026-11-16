@@ -182,6 +182,10 @@ function Slots:CreatePhysicalSlot(bagID, slotID)
     if button.NewItemTexture then button.NewItemTexture:Hide(); button.NewItemTexture:SetAlpha(0) end
     if button.BattlepayItemTexture then button.BattlepayItemTexture:Hide(); button.BattlepayItemTexture:SetAlpha(0) end
     if button.flash then button.flash:Hide(); button.flash:SetAlpha(0) end
+    -- Blizzard's own quest border: TomoMod draws its own (questBorder below)
+    -- and clears it on empty slots; the native one could linger on a slot a
+    -- quest item left.
+    if button.IconQuestTexture then button.IconQuestTexture:SetAlpha(0) end
     if button.newitemglowAnim then button.newitemglowAnim:Stop() end
     local nativeIcon = button.icon or button.IconTexture or button.Icon
     if nativeIcon then nativeIcon:SetAlpha(0) end
@@ -350,6 +354,10 @@ function Slots:Render(wrapper, item)
         wrapper.pin:Hide()
         if wrapper.triage then wrapper.triage:Hide(); wrapper.triagePlate:Hide() end
         if wrapper.upgrade then wrapper.upgrade:Hide() end
+        -- The quest marks belong to the item: a quest item moved away used to
+        -- leave its gold border on the slot it came from.
+        if wrapper.questBorder then wrapper.questBorder:Hide() end
+        if wrapper.questBang then wrapper.questBang:Hide() end
         button:SetAlpha(1)
         button:EnableMouse(true)
         return

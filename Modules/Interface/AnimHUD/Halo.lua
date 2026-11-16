@@ -668,7 +668,7 @@ end
 -- ---------------------------------------------------------------------
 -- Click zones
 -- ---------------------------------------------------------------------
--- The arcs behave like unit frames: left-click targets the unit,
+-- The health arcs behave like unit frames: left-click targets the unit,
 -- right-click opens its menu, hovering shows its tooltip. Each arc is
 -- covered by a chain of small secure buttons that follow its curve, so the
 -- zones stay as thin as the arcs and the world remains clickable between
@@ -739,13 +739,12 @@ end
 local function BuildClicks()
     if clicks.built then return end
     clicks.built = true
+    -- Only the health arcs are clickable: the power arcs (right side) stay
+    -- click-through so clicking a resource never targets anything.
     ClickArc("player", -1, 190, 2, "hp")
-    ClickArc("player", 1, 190, 2, "pw")
     -- The target's zones sit above the player's where the two overlap.
     ClickArc("target", -1, 190 * TARGET_K, 4, "thp")
-    ClickArc("target", 1, 190 * TARGET_K, 4, "tpw")
     ClickArc("pet", -1, 190 * PET_K, 3, "php")
-    ClickArc("pet", 1, 190 * PET_K, 3, "ppw")
     local name = MakeClick("target", 4, "names")
     name:SetSize(200, 18)
     Pin(name, "BOTTOM", 0, 192)

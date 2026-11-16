@@ -139,7 +139,9 @@ local MODULES = {
     { key = "nameplates",   fr = "Plaques de nom",          en = "Nameplates" },
     { key = "cooldownForge", fr = "Barres de sorts",        en = "Spell bars" },
     { key = "chatV4",       fr = "Fenêtre de discussion",   en = "Chat window" },
-    { key = "bagsV4",       fr = "Sacs",                    en = "Bags" },
+    -- "bagsV4" only owns the window position (passive manifest, always
+    -- reads as on); the bags' on/off switch is the "bagSkin" module.
+    { key = "bagSkin",      fr = "Sacs",                    en = "Bags" },
     { key = "tooltipSkin",  fr = "Infobulles",              en = "Tooltips" },
     { key = "minimap",      fr = "Minicarte",               en = "Minimap" },
     { key = "objectiveTracker", fr = "Suivi des quêtes",    en = "Quest tracker" },

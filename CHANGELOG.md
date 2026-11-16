@@ -22,6 +22,17 @@
 - **New** - Aura size (`unitFrames.animation.auraScale`, 0.5 to 2.0): the buff and debuff icons and their place holders, relative to the HUD size, resized live through `TomoMod_AuraContainer.Relayout`, no `/reload`.
 - **Changed** - The "Size" slider of the Animation HUD page is now called "HUD size", and "Ember amount" moved from the Centre animation card to the Look card.
 
+#### Unit frames: "Animation" look, clicks
+
+- **Changed** - Only the health arcs are clickable now (player, target and pet), plus the target's name and the target-of-target line. The power arcs (right side) no longer carry click zones: a left or right click on a resource used to target the unit or open its menu, it now goes through to the world.
+
+#### Bags
+
+- **Fixed** - Opening the personal bank raised `[ADDON_ACTION_FORBIDDEN] TomoModForever: PurchaseBankTab()`. On show, Blizzard's bank opens the bags and then, in the same call path, buys the free first bank tab, a protected action that fails as soon as that path is tainted. The Bags module replaced `BackpackTokenFrame.GetMaxTokensWatched` with an addon function (to keep three tracked currencies in combined mode), which tainted every caller; the override is removed and Blizzard's own value is used.
+- **Changed** - The `combinedBags` CVar is only written when its value actually changes (`SetCVarIfChanged`), instead of on every login: a CVar written by an addon is tainted for the rest of the session and Blizzard's bag code reads this one while the bank opens.
+- **Fixed** - The "Bags" switch of the Home page always read as on and did nothing: it pointed to the `bagsV4` manifest, which only owns the window position (passive, always on). It now drives the `bagSkin` module, like the Bags tab of the Skins page.
+- **Fixed** - Moving a quest item left its gold quest border on the slot it came from, until another item filled that slot. The empty-slot path of `Slots:Render` reset every mark but the quest border and the quest-starter "!"; both are now hidden there. The native `IconQuestTexture` of the Blizzard item button is also made transparent, like its other decorative regions.
+
 ## ####################################
 
 ## CHANGELOG 1.3.2
