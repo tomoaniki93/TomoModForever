@@ -349,15 +349,25 @@ K.RegisterPage({
                 set = function(v)
                     local changed = TomoModForeverDB.unitFrames.style ~= v
                     TomoModForeverDB.unitFrames.style = v
-                    if changed then K.RefreshPage() end
+                    if changed then
+                        -- Animation look: the halo takes over (or gives back)
+                        -- the frames and cast bars; deferred to the end of
+                        -- combat by AnimHUD itself.
+                        local AH = TomoMod_AnimHUD
+                        if AH and AH.Sync then AH.Sync() end
+                        K.RefreshPage()
+                    end
                 end,
                 default = "tmf",
             }, {
                 { text = "TMF", value = "tmf" },
                 { text = "Forever", value = "forever" },
-            }, "ufall", 2)
+                { text = "Animation", value = "animation" },
+            }, "ufall", 3)
             c:Info(T("TMF : le style par défaut. Forever : bandeau de nom aux couleurs de la classe (ou de la réaction pour les PNJ), vie et ressource centrées, cadre bronze et or, médaillon de niveau. S'applique au joueur, à la cible, à la cible de la cible, au familier et au focus.",
                      "TMF: the default look. Forever: name strip in the class colour (reaction colour for NPCs), centred health and power, bronze and gold border, level medallion. Applies to the player, target, target of target, pet and focus."))
+            c:Info(T("Animation : un halo animé autour du personnage remplace les cadres du joueur, de la cible, de la cible de la cible et du familier, ainsi que leurs barres d'incantation TMF. Le focus et les boss gardent le style TMF. Réglages dans Cadres > HUD Animation.",
+                     "Animation: an animated halo around your character replaces the player, target, target of target and pet frames, and their TMF cast bars. Focus and boss frames keep the TMF look. Settings in Frames > Animation HUD."))
             c:Toggle(T("Forever : afficher le portrait", "Forever: show the portrait"), "unitFrames.foreverPortrait", "ufall",
                 T("Portrait rond à côté du joueur, de la cible et du focus, avec le niveau posé dessus.",
                   "Round portrait beside the player, target and focus, with the level on it."))
@@ -435,6 +445,118 @@ K.RegisterPage({
 
             c = page:Card(T("Cadres Blizzard", "Blizzard frames"), { adv = true })
             ReloadToggle(c, T("Masquer les cadres Blizzard d'origine", "Hide the default Blizzard frames"), "unitFrames.hideBlizzardFrames")
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- Animation look (Modules/Interface/AnimHUD, from Braise)
+-- ---------------------------------------------------------------------
+local function AnimRefresh()
+    local AH = TomoMod_AnimHUD
+    if AH and AH.Refresh then AH.Refresh() end
+end
+
+local function A(key) return "unitFrames.animation." .. key end
+
+K.RegisterPage({
+    key = "uf_anim",
+    section = SECTION,
+    label = T("HUD Animation", "Animation HUD"),
+    kw = "animation braise halo arc arcs hud anneau anneaux braises menace combo incantation cast onde",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            local AH = TomoMod_AnimHUD
+            page:Hero(T("HUD Animation", "Animation HUD"),
+                T("Le style Animation : des arcs autour du personnage pour ta vie, ta ressource, ta cible et ton familier, la menace, les points de combo, les incantations, et une animation au centre qui respire hors combat et s'embrase en combat.",
+                  "The Animation look: arcs around your character for your health, power, target and pet, threat, combo points, casts, and a centre animation that breathes out of combat and ignites in combat."))
+
+            local c = page:Card(T("Style", "Look"))
+            local uf = TomoModForeverDB.unitFrames
+            if AH and AH.BraiseLoaded and AH.BraiseLoaded() then
+                c:Info(T("L'addon Braise est chargé : il affiche déjà son halo, le style Animation reste en retrait pour ne pas en dessiner un second. Désactive Braise pour utiliser celui de TMF.",
+                         "The Braise addon is loaded: it already draws its halo, so the Animation look stands down rather than draw a second one. Turn Braise off to use TMF's."))
+            elseif uf.style ~= "animation" then
+                c:Info(T("Le style Animation n'est pas actif. Tu peux régler ce HUD dès maintenant ; il apparaîtra quand tu choisiras ce style.",
+                         "The Animation look is not on. You can set this HUD up now; it shows once you pick that look."))
+                c:Button(T("Utiliser le style Animation", "Use the Animation look"), function()
+                    uf.style = "animation"
+                    if AH and AH.Sync then AH.Sync() end
+                    K.Apply("ufall")
+                    K.RefreshPage()
+                end, 240)
+            elseif not uf.enabled then
+                c:Info(T("Les cadres d'unité TomoMod sont désactivés : le HUD Animation aussi. Active-les depuis l'Accueil.",
+                         "TomoMod unit frames are turned off, and so is the Animation HUD. Turn them on from Home."))
+            else
+                c:Info(T("Style Animation actif. Les barres d'incantation TMF du joueur, de la cible et du familier sont remplacées par les arcs d'incantation.",
+                         "Animation look on. The TMF cast bars of the player, target and pet are replaced by the cast arcs."))
+                c:Button(T("Déplacer les éléments", "Move the elements"), function()
+                    if AH and AH.ToggleMover then AH.ToggleMover() end
+                end, 240, T("Une poignée par élément, une au centre pour tout le HUD. Clic droit sur une poignée : la remettre en place. Aussi : /tmf anim.",
+                            "One handle per element, one in the centre for the whole HUD. Right-click a handle: put it back. Also: /tmf anim."))
+                c:Button(T("Combat de démonstration", "Demo fight"), function()
+                    if AH and AH.Demo then AH.Demo() end
+                end, 240, T("Joue l'entrée et la sortie de combat. Aussi : /tmf anim test.",
+                            "Plays the combat start and end. Also: /tmf anim test."))
+            end
+            c:Done()
+
+            c = page:Card(T("Apparence", "Look"))
+            local themes = {}
+            for _, th in ipairs((AH and AH.themes) or {}) do
+                themes[#themes + 1] = { text = T(th.fr, th.en), value = th.key }
+            end
+            c:Seg(T("Thème", "Theme"), A("theme"), themes, AnimRefresh, 4,
+                T("Classe : chaque classe a ses couleurs, au repos et en combat.", "Class: each class has its own colours, idle and in combat."))
+            c:Slider(T("Taille", "Size"), A("scale"), 0.6, 1.6, 0.05, AnimRefresh, "%.2f")
+            c:Slider(T("Opacité hors combat", "Opacity out of combat"), {
+                get = function() return math.floor((tonumber(uf.animation and uf.animation.oocAlpha) or 0.35) * 100 + 0.5) end,
+                set = function(v) uf.animation.oocAlpha = v / 100 end,
+                default = 35,
+            }, 0, 100, 5, AnimRefresh, "%d %%",
+                T("Le halo se réveille tout seul quand tu cibles quelque chose ou qu'il te manque de la vie.",
+                  "The halo wakes up on its own when you target something or are missing health."))
+            c:Toggle(T("Valeurs de vie et de ressource", "Health and power values"), A("texts"), AnimRefresh)
+            c:Done()
+
+            c = page:Card(T("Arcs", "Arcs"))
+            c:Toggle(T("Cible (arcs extérieurs)", "Target (outer arcs)"), A("target"), AnimRefresh)
+            c:Toggle(T("Familier (arcs intérieurs)", "Pet (inner arcs)"), A("pet"), AnimRefresh)
+            c:Toggle(T("Cible de la cible (au-dessus du nom de la cible)", "Target of target (above the target's name)"), A("tot"), AnimRefresh)
+            c:Toggle(T("Clic sur les arcs (cibler, menu, infobulle)", "Click the arcs (target, menu, tooltip)"), A("click"), AnimRefresh,
+                T("Clic gauche : cibler. Clic droit : menu de l'unité. Survol : infobulle. Appliqué à la sortie du combat.",
+                  "Left-click: target. Right-click: unit menu. Hover: tooltip. Applied when combat ends."))
+            c:Toggle(T("Garder le cadre TMF du familier", "Keep the TMF pet frame"), A("keepPetFrame"), AnimRefresh,
+                T("Utile aux chasseurs : le cadre TMF montre l'humeur du familier.", "Handy for hunters: the TMF frame shows the pet's mood."))
+            c:Toggle(T("Garder le cadre TMF de la cible de la cible", "Keep the TMF target-of-target frame"), A("keepToTFrame"), AnimRefresh)
+            c:Done()
+
+            c = page:Card(T("Signes", "Signs"))
+            c:Toggle(T("Arcs d'incantation (toi et ta cible)", "Cast arcs (you and your target)"), A("cast"), AnimRefresh)
+            c:Toggle(T("Jauge de menace (en groupe ou avec un familier)", "Threat gauge (in a group or with a pet)"), A("threat"), AnimRefresh)
+            c:Toggle(T("Je suis tank (garder l'aggro est bon)", "I am the tank (holding aggro is good)"), A("tankMode"), AnimRefresh)
+            c:Toggle(T("Points de combo", "Combo points"), A("combo"), AnimRefresh)
+            c:Toggle(T("Tes buffs et débuffs (à gauche du halo)", "Your buffs and debuffs (left of the halo)"), A("auraPlayer"), AnimRefresh)
+            c:Toggle(T("Buffs et débuffs de la cible (à droite du halo)", "Target buffs and debuffs (right of the halo)"), A("auraTarget"), AnimRefresh)
+            c:Done()
+
+            c = page:Card(T("Animation centrale", "Centre animation"))
+            c:Toggle(T("Anneaux qui tournent", "Turning rings"), A("ring"), AnimRefresh)
+            c:Toggle(T("Braises", "Embers"), A("embers"), AnimRefresh)
+            c:Slider(T("Quantité de braises", "Ember amount"), A("emberAmount"), 0.2, 1.3, 0.1, AnimRefresh, "%.1f")
+            c:Toggle(T("Braises à la façon de la classe", "Embers move the way your class does"), A("classEmbers"), AnimRefresh,
+                T("Étincelles du guerrier, feuilles du druide, statique du chaman...", "Warrior sparks, druid leaves, shaman static..."))
+            c:Toggle(T("Onde de choc et lames en début et fin de combat", "Shockwave and blades on combat start and end"), A("transitions"), AnimRefresh)
+            c:Toggle(T("Chrono de combat", "Combat timer"), A("timer"), AnimRefresh)
+            c:Done()
+
+            c = page:Card(T("Réinitialiser", "Reset"), { adv = true })
+            c:Danger(T("Réglages et positions par défaut", "Default settings and positions"), function()
+                if AH and AH.Reset then AH.Reset() end
+                K.RefreshPage()
+            end, 260)
             c:Done()
         end)
     end,

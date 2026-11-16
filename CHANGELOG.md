@@ -1,5 +1,23 @@
 ## ####################################
 
+## CHANGELOG 1.3.2
+
+#### Unit frames: "Animation" look
+
+- **New** - `Modules/Interface/AnimHUD/`: a third look for the unit frames, `unitFrames.style = "animation"`, chosen in Frames > Shared style next to TMF and Forever. It is the halo of Braise 1.11 (TomoAniki's HUD addon) brought into TMF, settings in `unitFrames.animation`: thin arcs around the character instead of boxes. Your health (left) and power (right), the target one ring further out (class or reaction colour, name above the halo, slides in on target change, no power arc for creatures without one), the pet one ring further in (opens on summon), the target of target above the target's name ("YOU" in the combat colour when the target turns on you). Health arc colour from a C-side curve, low-health red glow on it, values by the arcs. Idle, the halo dims to the chosen opacity and breathes; it wakes up on a target or missing health.
+- **New** - Signs: cast arcs (`UnitCastingDuration` / `UnitChannelDuration` timers, so secret cast times are fine; flash on success, red "Interrupted"), threat gauge at the top (in a group or with a pet, tank mode), combo points as pips under the character (read like ResourceBars since 1.3.1: `GetComboPoints` on the target when `UnitPower` reads 0, cap 5 when `UnitPowerMax` reads 0, refreshed on target change), buffs / debuffs of the player (left) and target (right) through the client's `AuraContainer`.
+- **New** - Centre animation: two rings turning in opposite directions (slow idle, fast in combat), embers (theme colours, class motion optional), and on combat start a shockwave, two blades, arcs snapping in with a flash and the rings popping; on combat end a closing wave. Combat timer under the halo. Four themes: Ember, Frost, Sap, Class.
+- **Not ported** (on purpose): Braise's screen-edge heat and low-health vignette, level-up fanfare, after-combat recap card with the XP gained, and its missing-buff reminders (TMF has its own).
+- **New** - With this look, the TMF frames of the player, target, target of target and pet are switched off the oUF way (`UF.ApplyAnimationVisibility`: `Disable`, flagged `_animHidden` so `ToggleLock` and the master switch leave them off) and come back when the look changes, no `/reload`. The pet and target-of-target frames can be kept (`keepPetFrame`, for the hunter pet mood; `keepToTFrame`). Focus and boss frames keep the TMF look.
+- **New** - The TMF cast bars of the player, target and pet are not built with this look (`CB.CreateCastbar` asks `TomoMod_AnimHUD.HidesCastbar`), nor the GCD spark; they are rebuilt when the look changes. Blizzard's cast bars are kept hidden.
+- **New** - Clickable arcs: chains of small `SecureUnitButtonTemplate` buttons along each arc (left-click targets, right-click opens the unit menu, hover shows the tooltip); the target, pet and target-of-target zones follow `RegisterUnitWatch`. Changes made in combat wait for the end of the fight, as does switching the look.
+- **New** - Move mode: one handle per element plus one for the whole HUD, right-click a handle to put it back (`unitFrames.animation.offsets`). From the options page, `/tmf anim`, or with the layout mode (`/tmf layout`). `/tmf anim test` plays a demo fight.
+- **New** - Options: Frames > Animation HUD (theme, size, idle opacity, values; target, pet, target of target, clicks, keep the TMF pet / ToT frames; cast arcs, threat, tank mode, combo points, auras; rings, embers, amount, class motion, shockwave and blades, timer; reset). Frames > Shared style explains the look.
+- **Changed** - If the Braise addon itself is loaded, the Animation look stands down (two halos would overlap) and the options page says so.
+- Textures in `Assets/Textures/Animation/` (from Braise), font Poppins already shipped by TMF.
+
+## ####################################
+
 ## CHANGELOG 1.3.1
 
 #### Resource bars: class power without a specialization

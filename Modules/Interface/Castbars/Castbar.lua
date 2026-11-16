@@ -300,6 +300,11 @@ function CB.CreateCastbar(unit)
     local dbKey = GetDBKey(unit)
     local unitSettings = db[dbKey]
     if not unitSettings or not unitSettings.enabled then return nil end
+    -- Look "Animation" (AnimHUD, 1.3.2): the cast arcs of the halo replace
+    -- the player, target and pet bars. AnimHUD rebuilds the bars when the
+    -- look changes.
+    local AH = TomoMod_AnimHUD
+    if AH and AH.HidesCastbar and AH.HidesCastbar(unit) then return nil end
 
     local L = TomoMod_L
     local tex  = CB.ResolveBarTexture(db)
@@ -1167,6 +1172,8 @@ function CB.CreateGCDSpark()
     local db = TomoModForeverDB and TomoModForeverDB.castbars
     if not db or not db.player or not db.player.enabled then return end
     if CB._gcdBar then return end
+    -- No player bar in the Animation look: no GCD spark under it either.
+    if TomoMod_AnimHUD and TomoMod_AnimHUD.HidesCastbar and TomoMod_AnimHUD.HidesCastbar("player") then return end
 
     local playerBar = CB.castbars["player"]
     local unitS     = db.player
@@ -1331,6 +1338,8 @@ function CB.UnlockPlayerCastbar()
         cb:SetLocked(false); cb:ShowPreview()
     else
         CB._layoutPreview = false
+        -- Animation look: the cast arc moves with the halo (/tmf anim move).
+        if TomoMod_AnimHUD and TomoMod_AnimHUD.HidesCastbar and TomoMod_AnimHUD.HidesCastbar("player") then return end
         local L = TomoMod_L
         print("|cffffd100TomoModForever|r " .. (L and L["cb_player_missing_notice"]
             or "Player Cast Bar isn't enabled — turn it on in Castbars settings before it can be moved."))

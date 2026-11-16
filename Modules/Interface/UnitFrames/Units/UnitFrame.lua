@@ -1089,7 +1089,10 @@ function UF.ToggleLock()
     isLocked = not isLocked
 
     for unit, frame in pairs(frames) do
-        if not isLocked then
+        if frame._animHidden then
+            -- Look "Animation" (AnimHUD): this frame is replaced by the halo
+            -- and stays off; the halo has its own move mode.
+        elseif not isLocked then
             -- Déverrouillé: retirer RegisterUnitWatch pour garder la frame visible lors du drag
             if frame.SetLocked then frame:SetLocked(false) end
             UnregisterUnitWatch(frame)
@@ -1372,6 +1375,7 @@ function UF.RefreshAllUnits()
             UF.RefreshUnit(unitKey)
         end
     end
+    UF.ApplyAnimationVisibility()
     if TomoMod_BossFrames and TomoMod_BossFrames.RefreshAll then
         TomoMod_BossFrames.RefreshAll()
     end
@@ -1476,6 +1480,56 @@ function UF.Initialize()
 
     end)
     initialized = true
+
+    -- Look "Animation": the halo takes over player / target / ToT / pet.
+    if TomoMod_AnimHUD and TomoMod_AnimHUD.Sync then TomoMod_AnimHUD.Sync() end
+end
+
+-- =====================================
+-- LOOK "ANIMATION" (Modules/Interface/AnimHUD, 1.3.2)
+-- The halo replaces the frames of the player, the target, the target of
+-- target and the pet (the last two can be kept, AnimHUD options). Those
+-- frames are switched off the oUF way (UnregisterUnitWatch + Hide) and
+-- flagged, so the move mode and the master switch leave them alone, and
+-- switched back on when the look changes. Out of combat only (protected
+-- frames); AnimHUD defers its sync to the end of combat.
+-- =====================================
+local ANIM_UNITS = { "player", "target", "targettarget", "pet" }
+
+function UF.ApplyAnimationVisibility()
+    if InCombatLockdown() then return end
+    local root = TomoModForeverDB and TomoModForeverDB.unitFrames
+    if not root then return end
+    local AH = TomoMod_AnimHUD
+    for _, unit in ipairs(ANIM_UNITS) do
+        local f = frames[unit]
+        if f then
+            local hide = root.enabled and AH and AH.HidesUnit and AH.HidesUnit(unit) or false
+            if hide and not f._animHidden then
+                f._animHidden = true
+                if f.SetLocked then f:SetLocked(true) end
+                if f.dragFrame then f.dragFrame:Hide() end
+                if f.Disable then f:Disable()
+                else
+                    UnregisterUnitWatch(f)
+                    f:Hide()
+                end
+            elseif not hide and f._animHidden then
+                f._animHidden = nil
+                local settings = root[unit]
+                if root.enabled and settings and settings.enabled ~= false then
+                    f:SetAttribute("unit", unit)
+                    if isLocked then
+                        if f.Enable then f:Enable() else RegisterUnitWatch(f) end
+                    else
+                        if f.SetLocked then f:SetLocked(false) end
+                        f:Show()
+                    end
+                    UF.RefreshUnit(unit)
+                end
+            end
+        end
+    end
 end
 
 local function SetBossRuntimeEnabled(enabled)
@@ -1534,6 +1588,7 @@ function UF.SetEnabled(value)
             end
         end
         SetBossRuntimeEnabled(false)
+        if TomoMod_AnimHUD and TomoMod_AnimHUD.Sync then TomoMod_AnimHUD.Sync() end
         return true
     end
 
@@ -1542,7 +1597,9 @@ function UF.SetEnabled(value)
     else
         for unit, frame in pairs(frames) do
             local settings = root[unit]
-            if frame and settings and settings.enabled ~= false then
+            if frame and frame._animHidden then
+                -- replaced by the Animation look: stays off
+            elseif frame and settings and settings.enabled ~= false then
                 if frame.Enable then frame:Enable()
                 else RegisterUnitWatch(frame) end
             elseif frame and frame.Disable then
@@ -1553,6 +1610,7 @@ function UF.SetEnabled(value)
     end
 
     SetBossRuntimeEnabled(true)
+    if TomoMod_AnimHUD and TomoMod_AnimHUD.Sync then TomoMod_AnimHUD.Sync() end
     return true
 end
 

@@ -1,0 +1,12 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+
+    <!-- "Animation" look of the unit frames (1.3.2), from Braise.
+         Order matters: Halo before Signs and Auras (they hang from its root). -->
+    <Script file="Core.lua" />
+    <Script file="Fx.lua" />
+    <Script file="Halo.lua" />
+    <Script file="Signs.lua" />
+    <Script file="Auras.lua" />
+
+</Ui>

@@ -509,6 +509,17 @@ SlashCmdList["TOMOMOD"] = function(msg)
             end
             print("|cffffd100TomoModForever Nameplates:|r " .. (TomoModForeverDB.nameplates.enabled and L["msg_np_enabled"] or L["msg_np_disabled"]))
         end
+    elseif msg == "anim" or msg:match("^anim%s+") then
+        -- Look "Animation" (AnimHUD, 1.3.2): move mode, demo fight.
+        local AH = TomoMod_AnimHUD
+        local arg = msg:match("^anim%s+(.+)$")
+        if not AH then return end
+        if arg == "test" or arg == "demo" then
+            if AH.active then AH.Demo()
+            else print("|cffffd100TomoModForever|r " .. L["msg_anim_off"]) end
+        else
+            AH.ToggleMover()
+        end
     elseif msg == "help" or msg == "?" then
         print("|cffffd100TomoModForever|r " .. L["msg_help_title"])
         print("  |cffffd100/tmf install|r — " .. L["msg_help_install"])
@@ -530,6 +541,8 @@ SlashCmdList["TOMOMOD"] = function(msg)
         print("  |cffffd100/tmf way clear|r — " .. L["msg_help_way_clear"])
         print("  |cffffd100/tmf cr|r — " .. L["msg_help_cr"])
         print("  |cffffd100/tmf rangs|r — " .. L["msg_help_ranks"])
+        print("  |cffffd100/tmf anim|r — " .. L["msg_help_anim"])
+        print("  |cffffd100/tmf anim test|r — " .. L["msg_help_anim_test"])
         print("  |cffffd100/tmf help|r — " .. L["msg_help_help"])
     else
         -- Argument purement numérique : soit une macro tierce (ex : RareScanner

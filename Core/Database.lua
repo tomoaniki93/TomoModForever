@@ -1001,9 +1001,23 @@ TomoMod_Defaults = {
     -- =====================
     unitFrames = {
         enabled = true,
-        style = "tmf",            -- "tmf" (default look) | "forever" (ForeverStyle.lua)
+        style = "tmf",            -- "tmf" (default look) | "forever" (ForeverStyle.lua) | "animation" (AnimHUD)
         foreverPortrait = false,  -- Forever look: round portrait beside player / target / focus
         foreverSizes = {},        -- Forever look: [unit] = { width, name, health, power } over the defaults
+        -- Animation look (Modules/Interface/AnimHUD, from Braise): the halo
+        -- replaces the player / target / ToT / pet frames and their cast bars.
+        animation = {
+            target = true, pet = true, tot = true,
+            auraPlayer = true, auraTarget = true,
+            cast = true, combo = true, click = true, texts = true,
+            ring = true, embers = true, classEmbers = true,
+            threat = true, tankMode = false,
+            transitions = true, timer = true,
+            keepPetFrame = false, keepToTFrame = false,
+            scale = 1.0, oocAlpha = 0.35, emberAmount = 1.0,
+            x = 0, y = 0, theme = "classe",
+            offsets = {},
+        },
         totems = { enabled = true, size = 28, spacing = 4, showEmpty = false },  -- shaman totem bar (TotemBar.lua)
         hideBlizzardFrames = true,
         texture = ADDON_TEXTURE,

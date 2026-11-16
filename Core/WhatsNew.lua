@@ -63,6 +63,14 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.2",
+        highlights = {
+            L["wn_132_anim"],
+            L["wn_132_cast"],
+            L["wn_132_fx"],
+        },
+    },
+    {
         version = "1.3.1",
         highlights = {
             L["wn_131_classpower"],
