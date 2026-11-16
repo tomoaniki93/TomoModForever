@@ -11,11 +11,12 @@
 -- dispel colour.
 --
 -- Addon code may not read auras in combat on this client, so nothing here
--- does. Each block is an AuraContainer: we declare a unit, a filter and
--- how to build one button, and the client scans, sorts, lays out and
--- updates the buttons itself. Our part is the look of a button and where
--- the block sits. If the client has no such engine, the blocks are simply
--- not built.
+-- does. Each block is a container built by TomoMod_AuraContainer, the same
+-- builder as the TMF unit frames, nameplates and group frames: we declare
+-- a unit, a filter and a look, the client scans, sorts, lays out and
+-- updates the buttons itself.
+-- (Braise builds its own containers; in TMF that path built nothing on the
+-- first in-game test, while TMF's builder is proven on the same client.)
 -- =====================================================================
 
 local B = TomoMod_AnimHUD
@@ -37,115 +38,18 @@ local SPECS = {
       side = 1,  x = 250,  y = 46,  option = "auraTarget", fr = "Buffs de la cible", en = "Target buffs" },
 }
 
--- ---------------------------------------------------------------------
--- Engine availability
--- ---------------------------------------------------------------------
-local available
+local AC = TomoMod_AuraContainer
 
 local function Available()
-    if available ~= nil then return available end
-    local ok, probe = pcall(CreateFrame, "AuraContainer", nil, UIParent, "CustomAuraContainerTemplate")
-    available = ok and probe and probe.AddAuraGroup and probe.SetUnit and true or false
-    if available then
-        probe:Hide()
-        probe:SetParent(nil)
-    end
-    return available
+    return AC ~= nil and AC.IsAvailable() and true or false
 end
 
--- ---------------------------------------------------------------------
--- Buttons
--- ---------------------------------------------------------------------
--- The client refuses to size an aura button while auras are restricted,
--- and it builds each pooled button only once: a button first built during
--- a fight would stay sizeless. Wanted sizes are kept here and retried.
-local pending = setmetatable({}, { __mode = "k" })
-
-local function TrySize(button)
-    local size = pending[button]
-    if size and pcall(button.SetSize, button, size, size) then
-        pending[button] = nil
-    end
-end
-
-local function RetrySizes()
-    for button in pairs(pending) do TrySize(button) end
-end
-
-local function MakeInitializer(spec)
-    local size, harmful = spec.size, spec.filter == "HARMFUL"
-    return function(button)
-        pending[button] = size
-        TrySize(button)
-
-        -- Tooltips ride on mouse motion; clicks stay with the world.
-        pcall(button.SetMouseClickEnabled, button, false)
-        pcall(button.SetMouseMotionEnabled, button, true)
-
-        -- Every region is created and styled before any is registered:
-        -- registering one makes the client write into it straight away.
-        local glow
-        if harmful then
-            glow = button:CreateTexture(nil, "BACKGROUND")
-            glow:SetTexture(B.MEDIA .. "Glow")
-            glow:SetBlendMode("ADD")
-            glow:SetPoint("CENTER")
-            glow:SetSize(size * 1.9, size * 1.9)
-        end
-
-        local back = button:CreateTexture(nil, "BORDER")
-        back:SetAllPoints()
-        back:SetColorTexture(0, 0, 0, 0.85)
-
-        local icon = button:CreateTexture(nil, "ARTWORK")
-        icon:SetPoint("TOPLEFT", 1, -1)
-        icon:SetPoint("BOTTOMRIGHT", -1, 1)
-        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-
-        local cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-        cooldown:SetAllPoints(icon)
-        cooldown:SetDrawEdge(false)
-        cooldown:SetReverse(true)
-        cooldown:SetHideCountdownNumbers(true)      -- the client writes the time on `duration` below
-        cooldown:EnableMouse(false)
-
-        local count = button:CreateFontString(nil, "OVERLAY")
-        count:SetFont(B.FONT_BOLD, harmful and 10 or 9, "OUTLINE")
-        count:SetPoint("TOPRIGHT", 2, 2)
-        count:SetJustifyH("RIGHT")
-
-        local duration = button:CreateFontString(nil, "OVERLAY")
-        duration:SetFont(B.FONT_BOLD, harmful and 10 or 8, "OUTLINE")
-        duration:SetPoint("BOTTOM", 0, -3)
-        duration:SetTextColor(0.95, 0.92, 0.86)
-
-        -- A new aura pops in. The animation lives on our own icon texture;
-        -- if the client will not let us watch its button, there is no pop.
-        local pop = icon:CreateAnimationGroup()
-        local grow = pop:CreateAnimation("Scale")
-        grow:SetScaleFrom(1.45, 1.45); grow:SetScaleTo(1, 1); grow:SetDuration(0.22); grow:SetSmoothing("OUT")
-        local fade = pop:CreateAnimation("Alpha")
-        fade:SetFromAlpha(0.2); fade:SetToAlpha(1); fade:SetDuration(0.22)
-        pcall(button.HookScript, button, "OnShow", function()
-            pop:Stop()
-            pop:Play()
-        end)
-
-        -- Registration last, each call guarded: these are what the client
-        -- refuses while auras are restricted, and one refusal must not
-        -- stop the others.
-        if glow and button.AddDispelTypeTexture then
-            pcall(button.AddDispelTypeTexture, button, glow, { showWhenHarmful = true, showWhenHelpful = false })
-        elseif glow then
-            glow:SetVertexColor(0.9, 0.2, 0.15, 0.6)
-        end
-        pcall(button.SetIcon, button, icon)
-        pcall(button.SetDurationCooldown, button, cooldown)
-        pcall(button.SetApplicationCount, button, count, {})
-        if button.SetDurationText then
-            pcall(button.SetDurationText, button, duration, {})
-        end
-    end
+--- Dark backdrop behind each icon, like Braise's buttons. Called by the
+--- builder before the client registers anything on the button.
+local function Backdrop(button)
+    local back = button:CreateTexture(nil, "BACKGROUND")
+    back:SetAllPoints()
+    back:SetColorTexture(0, 0, 0, 0.85)
 end
 
 -- ---------------------------------------------------------------------
@@ -163,6 +67,7 @@ end
 local function Build(spec)
     local block = { spec = spec }
     local step = spec.size + GAP
+    local harmful = spec.filter == "HARMFUL"
 
     -- Our own frame holds the place; the engine resizes its container at
     -- will, so the handle and the options talk to this one.
@@ -170,34 +75,35 @@ local function Build(spec)
     block.host:SetSize(spec.perRow * step, math.ceil(spec.max / spec.perRow) * step)
     Place(block)
 
-    local ok, container = pcall(CreateFrame, "AuraContainer", nil, block.host, "CustomAuraContainerTemplate")
-    if not ok or not container then return nil end
-    local corner = spec.side < 0 and "TOPRIGHT" or "TOPLEFT"
-    container:SetPoint(corner, block.host, corner)
-    container:SetSize(1, 1)
-
-    if not pcall(container.AddAuraGroup, container, spec.key, spec.filter, {
-        maxFrameCount   = spec.max,
-        initializeFrame = MakeInitializer(spec),
-        layout = { elementWidth = spec.size, elementHeight = spec.size, elementSpacing = GAP, lineSpacing = GAP },
-    }) then
-        container:Hide()
+    -- Away from the halo, then downward; wrap after perRow icons. With
+    -- anchorHost the builder pins the corner the flow grows away from.
+    local container = AC.Create(block.host, {
+        key           = "anim_" .. spec.key,
+        unit          = spec.unit,
+        filter        = AC.Filter(harmful and "HARMFUL" or "HELPFUL"),
+        harmful       = harmful,
+        size          = spec.size,
+        max           = spec.max,
+        spacing       = GAP,
+        font          = B.FONT_BOLD,
+        growDirection = spec.side < 0 and "LEFT" or "RIGHT",
+        growVertical  = "DOWN",
+        rowWidth      = spec.perRow * step,
+        anchorHost    = block.host,
+        tooltips      = true,
+        showDuration  = true,
+        durationPoint = "BOTTOM", durationRelPoint = "BOTTOM", durationX = 0, durationY = -3,
+        durationColor = { 0.95, 0.92, 0.86 },
+        dispelBorder  = harmful,
+        border        = Backdrop,
+    })
+    if not container then
+        Auras.buildError = (Auras.buildError and Auras.buildError .. ", " or "") .. spec.key .. ": AC.Create nil"
+        block.host:Hide()
         return nil
     end
-
-    -- Away from the halo, then downward; wrap after perRow icons.
-    local grow = container.SetFlowLayoutGrowthDirection or container.SetAuraLayoutGrowthDirection
-    if grow then pcall(grow, container, spec.side < 0 and "Left" or "Right", "Down") end
-    local wrap = container.SetFlowLayoutMaximumLineSize or container.SetAuraLayoutRowWidth
-    if wrap then pcall(wrap, container, spec.perRow * step) end
-
-    -- The unit goes last: assigning it makes the engine register its
-    -- events, which it only does for a container that has groups. Same
-    -- sequence as TomoMod_AuraContainer: unit, enable, full update.
     block.container = container
-    block.unitOK = pcall(container.SetUnit, container, spec.unit)
-    if container.SetEnabled then pcall(container.SetEnabled, container, true) end
-    pcall(container.UpdateAllAuras, container)
+    block.unitOK = true
 
     B.Movable(spec.key, T(spec.fr, spec.en), function(h)
         h:SetAllPoints(block.host)
@@ -212,10 +118,7 @@ end
 --- (UF_Elements.UpdateAuras -> TomoMod_AuraContainer.SetUnit): the engine
 --- does not always pick the new unit up on its own.
 local function Rebind(block)
-    local c = block.container
-    block.unitOK = pcall(c.SetUnit, c, block.spec.unit)
-    if c.SetEnabled then pcall(c.SetEnabled, c, true) end
-    pcall(c.UpdateAllAuras, c)
+    block.unitOK = AC.SetUnit(block.container, block.spec.unit) and true or false
 end
 
 local function Apply()
@@ -235,7 +138,7 @@ end
 
 --- /tmf anim debug: what the aura blocks look like right now.
 function Auras:Debug(out)
-    out("auras: engine " .. tostring(Available()) .. ", blocks " .. #blocks)
+    out("auras: engine " .. tostring(Available()) .. ", builder " .. tostring(AC ~= nil) .. ", blocks " .. #blocks)
     for _, block in ipairs(blocks) do
         local h, c = block.host, block.container
         local w, ht = c:GetSize()
@@ -269,7 +172,7 @@ end
 
 function Auras:Refresh()
     Apply()
-    RetrySizes()
+    AC.ResizePending()
 end
 
 function Auras:Disable()
@@ -277,5 +180,5 @@ function Auras:Disable()
 end
 
 function Auras:CombatEnd()
-    RetrySizes()
+    AC.ResizePending()
 end

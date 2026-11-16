@@ -30,6 +30,7 @@
 - **Changed** - If the Braise addon itself is loaded, the Animation look stands down (two halos would overlap) and the options page says so.
 - Textures in `Assets/Textures/Animation/` (from Braise), font Poppins already shipped by TMF.
 - **Fixed** - First in-game test: no buffs or debuffs around the halo. The aura blocks were given their unit once, at build time, under a parent that was still hidden. They now follow the TMF pattern (`TomoMod_AuraContainer.SetUnit`): unit, `SetEnabled(true)`, `UpdateAllAuras`, again on every refresh, target change and entering the world; the HUD anchor is shown before the build.
+- **Fixed** - Second test: `/tmf anim debug` showed the aura engine available but 0 blocks built, with no error: the containers built the Braise way failed quietly on Forever. The aura blocks now go through `TomoMod_AuraContainer.Create` / `.SetUnit` / `.ResizePending`, the builder already used by the TMF unit frames, nameplates and group frames on the same client (dark backdrop per icon, dispel-coloured border on debuffs, remaining time under the icon).
 - **New** - `/tmf anim debug`: state of the look (style, Braise, active), last module error, and per aura block: option, host and container shown / visible, container size, unit accepted, button count.
 
 ## ####################################
