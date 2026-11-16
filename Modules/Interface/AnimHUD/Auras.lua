@@ -23,18 +23,20 @@ local B = TomoMod_AnimHUD
 local Auras = B.Module("Auras")
 local T = B.T
 
-local GAP = 2
+-- Room between icons: the remaining time ("47 m") is wider than a small
+-- icon and spilled over its neighbours with 2.
+local GAP = 5
 
 -- side: -1 left of the halo (grows left), 1 right of it (grows right).
 -- x, y: the block's top inner corner, from the centre of the halo.
 local SPECS = {
-    { key = "pDebuff", unit = "player", filter = "HARMFUL", size = 28, max = 10, perRow = 5,
+    { key = "pDebuff", unit = "player", filter = "HARMFUL", size = 30, max = 10, perRow = 5,
       side = -1, x = -250, y = 112, option = "auraPlayer", fr = "Tes débuffs", en = "Your debuffs" },
-    { key = "pBuff",   unit = "player", filter = "HELPFUL", size = 20, max = 12, perRow = 6,
+    { key = "pBuff",   unit = "player", filter = "HELPFUL", size = 26, max = 12, perRow = 6,
       side = -1, x = -250, y = 46,  option = "auraPlayer", fr = "Tes buffs", en = "Your buffs" },
-    { key = "tDebuff", unit = "target", filter = "HARMFUL", size = 28, max = 10, perRow = 5,
+    { key = "tDebuff", unit = "target", filter = "HARMFUL", size = 30, max = 10, perRow = 5,
       side = 1,  x = 250,  y = 112, option = "auraTarget", fr = "Débuffs de la cible", en = "Target debuffs" },
-    { key = "tBuff",   unit = "target", filter = "HELPFUL", size = 20, max = 12, perRow = 6,
+    { key = "tBuff",   unit = "target", filter = "HELPFUL", size = 26, max = 12, perRow = 6,
       side = 1,  x = 250,  y = 46,  option = "auraTarget", fr = "Buffs de la cible", en = "Target buffs" },
 }
 
@@ -64,9 +66,18 @@ local function Place(block)
     block.host:SetPoint(s.side < 0 and "TOPRIGHT" or "TOPLEFT", B.Halo.root, "CENTER", s.x + ox, s.y + oy)
 end
 
+local function AuraScale()
+    local s = tonumber(B.db and B.db.auraScale) or 1
+    return math.max(0.5, math.min(2, s))
+end
+
+local function SizeOf(spec) return math.floor(spec.size * AuraScale() + 0.5) end
+
 local function Build(spec)
     local block = { spec = spec }
-    local step = spec.size + GAP
+    local size = SizeOf(spec)
+    local step = size + GAP
+    block.size = size
     local harmful = spec.filter == "HARMFUL"
 
     -- Our own frame holds the place; the engine resizes its container at
@@ -82,7 +93,7 @@ local function Build(spec)
         unit          = spec.unit,
         filter        = AC.Filter(harmful and "HARMFUL" or "HELPFUL"),
         harmful       = harmful,
-        size          = spec.size,
+        size          = size,
         max           = spec.max,
         spacing       = GAP,
         font          = B.FONT_BOLD,
@@ -92,7 +103,7 @@ local function Build(spec)
         anchorHost    = block.host,
         tooltips      = true,
         showDuration  = true,
-        durationPoint = "BOTTOM", durationRelPoint = "BOTTOM", durationX = 0, durationY = -3,
+        durationPoint = "BOTTOM", durationRelPoint = "BOTTOM", durationX = 0, durationY = 1,
         durationColor = { 0.95, 0.92, 0.86 },
         dispelBorder  = harmful,
         border        = Backdrop,
@@ -121,8 +132,20 @@ local function Rebind(block)
     block.unitOK = AC.SetUnit(block.container, block.spec.unit) and true or false
 end
 
+--- Aura size setting: resize the place holder and the engine's buttons.
+local function Resize(block)
+    local size = SizeOf(block.spec)
+    if size == block.size then return end
+    block.size = size
+    local step = size + GAP
+    local spec = block.spec
+    block.host:SetSize(spec.perRow * step, math.ceil(spec.max / spec.perRow) * step)
+    AC.Relayout(block.container, { size = size, max = spec.max, rowWidth = spec.perRow * step })
+end
+
 local function Apply()
     for _, block in ipairs(blocks) do
+        Resize(block)
         local on = (B.active and B.db[block.spec.option]) and true or false
         if block.on ~= on then
             block.on = on
@@ -141,12 +164,17 @@ function Auras:Debug(out)
     out("auras: engine " .. tostring(Available()) .. ", builder " .. tostring(AC ~= nil) .. ", blocks " .. #blocks)
     for _, block in ipairs(blocks) do
         local h, c = block.host, block.container
+        -- The engine sizes its container from aura data: the size can be
+        -- secret. Only print it when Lua is allowed to read it.
         local w, ht = c:GetSize()
-        out(string.format("  %s (%s %s): option %s, host %s/%s, container %s/%s %dx%d, unit %s, buttons %d",
+        w, ht = B.Num(w), B.Num(ht)
+        local dims = (w and ht) and string.format("%dx%d", math.floor(w + 0.5), math.floor(ht + 0.5)) or "?x?"
+        local n = c.GetNumChildren and B.Num(c:GetNumChildren()) or nil
+        out(string.format("  %s (%s %s): option %s, host %s/%s, container %s/%s %s, icon %d, unit %s, buttons %s",
             block.spec.key, block.spec.unit, block.spec.filter,
             tostring(B.db[block.spec.option]), tostring(h:IsShown()), tostring(h:IsVisible()),
-            tostring(c:IsShown()), tostring(c:IsVisible()), math.floor((w or 0) + 0.5), math.floor((ht or 0) + 0.5),
-            tostring(block.unitOK), c.GetNumChildren and c:GetNumChildren() or -1))
+            tostring(B.Flag(c:IsShown())), tostring(B.Flag(c:IsVisible())), dims, block.size or 0,
+            tostring(block.unitOK), n and tostring(n) or "?"))
     end
 end
 

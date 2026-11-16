@@ -1,5 +1,29 @@
 ## ####################################
 
+## CHANGELOG 1.3.3
+
+#### Unit frames: "Animation" look, buffs and debuffs
+
+- **Fixed** - Still no buffs or debuffs around the halo in 1.3.2: `/tmf anim debug` showed the aura engine available but 0 blocks built, with no error. The containers were built the Braise way (`CreateFrame("AuraContainer", ..., "CustomAuraContainerTemplate")` and our own button initializer), and on Forever that path failed quietly.
+- **Changed** - The four aura blocks (player buffs and debuffs on the left, target buffs and debuffs on the right) now go through `TomoMod_AuraContainer.Create` / `.SetUnit` / `.ResizePending`, the builder already used by the TMF unit frames, nameplates and group frames on the same client. Same places, sizes, rows and options as before; still nothing read from addon code in combat.
+- **Changed** - Look of the aura icons: dark backdrop behind each icon, dispel-coloured border on debuffs (was a dispel-coloured glow), remaining time inside the bottom of the icon, tooltip on hover. The small "pop" when a new aura appears is gone with the old buttons.
+- **Changed** - Larger aura icons (buffs 26 instead of 20, debuffs 30 instead of 28) with more room between them (5 instead of 2): on the first render the remaining time ("47 m") was wider than a small icon and spilled over its neighbours.
+- **Changed** - `/tmf anim debug` also says whether the TMF aura builder is there, the icon size of each block, and names the block that failed when one cannot be built (`AC.Create nil`).
+- **Fixed** - `/tmf anim debug` raised an error on the container size, which the engine can make secret since it sizes the container from aura data. The size and button count are only printed when Lua may read them (`?x?` otherwise).
+
+#### Unit frames: "Animation" look, target level
+
+- **New** - Target level before its name above the halo, in the difficulty colour, with "Elite" / "Rare" when it applies, and "??" in red for bosses and skull-level targets. Refreshed on `UNIT_LEVEL` / `UNIT_CLASSIFICATION_CHANGED`, uses the effective level when the client has it, and falls back to the bare name if anything goes wrong.
+
+#### Unit frames: "Animation" look, settings in Shared style
+
+- **New** - Frames > Shared style, with the Animation look chosen: an "Animation look" card like the Forever sizes one, with theme, HUD size, text size, aura size, idle opacity, ember amount and values, plus "Move the elements" and "All HUD settings" (opens Frames > Animation HUD). The Animation HUD page shows the same controls in its "Look" card; both pages share one builder (`AnimLookControls`).
+- **New** - Text size (`unitFrames.animation.textScale`, 0.6 to 1.8): every text of the HUD (names, values, timer, spell names), relative to the HUD size, applied live on refresh (`B.ApplyTextScale`).
+- **New** - Aura size (`unitFrames.animation.auraScale`, 0.5 to 2.0): the buff and debuff icons and their place holders, relative to the HUD size, resized live through `TomoMod_AuraContainer.Relayout`, no `/reload`.
+- **Changed** - The "Size" slider of the Animation HUD page is now called "HUD size", and "Ember amount" moved from the Centre animation card to the Look card.
+
+## ####################################
+
 ## CHANGELOG 1.3.2
 
 #### Dungeon codex: new look
@@ -30,7 +54,6 @@
 - **Changed** - If the Braise addon itself is loaded, the Animation look stands down (two halos would overlap) and the options page says so.
 - Textures in `Assets/Textures/Animation/` (from Braise), font Poppins already shipped by TMF.
 - **Fixed** - First in-game test: no buffs or debuffs around the halo. The aura blocks were given their unit once, at build time, under a parent that was still hidden. They now follow the TMF pattern (`TomoMod_AuraContainer.SetUnit`): unit, `SetEnabled(true)`, `UpdateAllAuras`, again on every refresh, target change and entering the world; the HUD anchor is shown before the build.
-- **Fixed** - Second test: `/tmf anim debug` showed the aura engine available but 0 blocks built, with no error: the containers built the Braise way failed quietly on Forever. The aura blocks now go through `TomoMod_AuraContainer.Create` / `.SetUnit` / `.ResizePending`, the builder already used by the TMF unit frames, nameplates and group frames on the same client (dark backdrop per icon, dispel-coloured border on debuffs, remaining time under the icon).
 - **New** - `/tmf anim debug`: state of the look (style, Braise, active), last module error, and per aura block: option, host and container shown / visible, container size, unit accepted, button count.
 
 ## ####################################

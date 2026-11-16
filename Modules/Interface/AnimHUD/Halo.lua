@@ -151,9 +151,18 @@ local function MakeRing(file, size, degrees)
     return r
 end
 
+-- Every text of the HUD, with its base size, for the text size setting.
+local allTexts = {}
+
+local function TextScale()
+    local s = tonumber(B.db and B.db.textScale) or 1
+    return math.max(0.6, math.min(1.8, s))
+end
+
 local function Text(parent, size, bold)   -- shared with Signs.lua as B.Text
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    fs:SetFont(bold and B.FONT_BOLD or B.FONT, size, "")
+    allTexts[#allTexts + 1] = { fs = fs, size = size, font = bold and B.FONT_BOLD or B.FONT }
+    fs:SetFont(bold and B.FONT_BOLD or B.FONT, math.floor(size * TextScale() + 0.5), "")
     fs:SetShadowOffset(1, -1)
     fs:SetShadowColor(0, 0, 0, 0.9)
     fs:SetTextColor(0.95, 0.92, 0.86)
@@ -161,6 +170,14 @@ local function Text(parent, size, bold)   -- shared with Signs.lua as B.Text
 end
 
 B.Text = Text
+
+--- Text size setting: re-apply every font at base size x textScale.
+function B.ApplyTextScale()
+    local s = TextScale()
+    for _, t in ipairs(allTexts) do
+        t.fs:SetFont(t.font, math.max(6, math.floor(t.size * s + 0.5)), "")
+    end
+end
 
 -- ---------------------------------------------------------------------
 -- Health and power
@@ -412,13 +429,49 @@ local function UpdateTarget(instant)
     end
 end
 
+--- "12 ", "12 Élite ", "?? " (boss or skull level) before the target's
+--- name, in the difficulty colour. Escape codes in the text override the
+--- name's own colour for this part only. ASCII and accented letters only
+--- (no "+" for elites: TMF fonts may not have the glyph).
+local function TargetLevelPrefix()
+    local lvl = UnitEffectiveLevel and UnitEffectiveLevel("target") or UnitLevel("target")
+    lvl = B.Num(lvl)
+    local cls = UnitClassification and UnitClassification("target")
+    if B.Secret(cls) then cls = nil end
+
+    local txt, r, g, b
+    if not lvl or lvl <= 0 or cls == "worldboss" then
+        txt, r, g, b = "??", 1, 0.15, 0.1
+    else
+        txt = tostring(lvl)
+        local col = (GetCreatureDifficultyColor and GetCreatureDifficultyColor(lvl))
+            or (GetQuestDifficultyColor and GetQuestDifficultyColor(lvl))
+        if col then r, g, b = col.r, col.g, col.b else r, g, b = 1, 0.82, 0 end
+    end
+    local tag
+    if cls == "elite" or cls == "rareelite" then
+        tag = T("Élite", "Elite")
+    elseif cls == "rare" then
+        tag = "Rare"
+    end
+    if tag then txt = txt .. " " .. tag end
+    return string.format("|cff%02x%02x%02x%s|r  ", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5),
+        math.floor(b * 255 + 0.5), txt)
+end
+
+local function WriteTargetName()
+    local name = UnitName("target") or ""
+    local ok, prefix = pcall(TargetLevelPrefix)
+    tgt.name:SetText((ok and prefix or "") .. name)
+end
+
 --- Called when the target changes or the option is toggled.
 local function TargetChanged(flash)
     if not tgt then return end
     local want = B.db.target and (B.Flag(UnitExists("target")) or Halo.preview)
     if want then
         if B.Flag(UnitExists("target")) then
-            tgt.name:SetText(UnitName("target") or "")
+            WriteTargetName()
         else
             tgt.name:SetText(T("Cible", "Target"))          -- move mode, no target
         end
@@ -949,6 +1002,8 @@ function Halo:Init()
     ev:RegisterUnitEvent("UNIT_HEALTH", "player", "target")
     ev:RegisterUnitEvent("UNIT_MAXHEALTH", "player", "target")
     ev:RegisterUnitEvent("UNIT_FACTION", "target")
+    ev:RegisterUnitEvent("UNIT_LEVEL", "target")
+    ev:RegisterUnitEvent("UNIT_CLASSIFICATION_CHANGED", "target")
     ev:RegisterEvent("PLAYER_TARGET_CHANGED")
     ev:RegisterUnitEvent("UNIT_TARGET", "target")
     ev:RegisterUnitEvent("UNIT_POWER_FREQUENT", "player")
@@ -974,7 +1029,9 @@ function Halo:Init()
             TargetChanged(true)
             ToTChanged()
         elseif unit == "target" then
-            if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" or event == "UNIT_FACTION" then
+            if event == "UNIT_LEVEL" or event == "UNIT_CLASSIFICATION_CHANGED" then
+                if tgt and tgt.on and B.Flag(UnitExists("target")) then WriteTargetName() end
+            elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" or event == "UNIT_FACTION" then
                 UpdateTarget()
             else
                 UpdateTargetPower()
@@ -997,6 +1054,7 @@ end
 
 function Halo:Refresh()
     if not root then return end
+    B.ApplyTextScale()
     Halo:ApplyClicks()
     UpdateHealth()
     UpdatePower()

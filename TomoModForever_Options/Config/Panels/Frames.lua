@@ -330,6 +330,45 @@ K.RegisterPage({
 -- ---------------------------------------------------------------------
 -- Shared look of every unit frame
 -- ---------------------------------------------------------------------
+-- Animation look (AnimHUD): settings live in unitFrames.animation.
+local function AnimRefresh()
+    local AH = TomoMod_AnimHUD
+    if AH and AH.Refresh then AH.Refresh() end
+end
+
+local function A(key) return "unitFrames.animation." .. key end
+
+--- The main Animation-look settings, shared by the Shared style page and
+--- the Animation HUD page.
+local function AnimLookControls(c)
+    local AH = TomoMod_AnimHUD
+    local uf = TomoModForeverDB.unitFrames
+    local themes = {}
+    for _, th in ipairs((AH and AH.themes) or {}) do
+        themes[#themes + 1] = { text = T(th.fr, th.en), value = th.key }
+    end
+    c:Seg(T("Thème", "Theme"), A("theme"), themes, AnimRefresh, 4,
+        T("Classe : chaque classe a ses couleurs, au repos et en combat.", "Class: each class has its own colours, idle and in combat."))
+    c:Slider(T("Taille du HUD", "HUD size"), A("scale"), 0.6, 1.6, 0.05, AnimRefresh, "%.2f",
+        T("Tout le halo : arcs, anneaux, incantations, menace, combo, auras et textes.", "The whole halo: arcs, rings, casts, threat, combo, auras and texts."))
+    c:Slider(T("Taille des textes", "Text size"), A("textScale"), 0.6, 1.8, 0.05, AnimRefresh, "%.2f",
+        T("Noms, valeurs, chrono et noms des sorts, par rapport à la taille du HUD.", "Names, values, timer and spell names, relative to the HUD size."))
+    c:Slider(T("Taille des auras", "Aura size"), A("auraScale"), 0.5, 2.0, 0.05, AnimRefresh, "%.2f",
+        T("Icônes des buffs et débuffs, par rapport à la taille du HUD.", "Buff and debuff icons, relative to the HUD size."))
+    c:Slider(T("Opacité hors combat", "Opacity out of combat"), {
+        get = function() return math.floor((tonumber(uf.animation and uf.animation.oocAlpha) or 0.35) * 100 + 0.5) end,
+        set = function(v)
+            uf.animation = type(uf.animation) == "table" and uf.animation or {}
+            uf.animation.oocAlpha = v / 100
+        end,
+        default = 35,
+    }, 0, 100, 5, AnimRefresh, "%d %%",
+        T("Le halo se réveille tout seul quand tu cibles quelque chose ou qu'il te manque de la vie.",
+          "The halo wakes up on its own when you target something or are missing health."))
+    c:Slider(T("Quantité de braises", "Ember amount"), A("emberAmount"), 0.2, 1.3, 0.1, AnimRefresh, "%.1f")
+    c:Toggle(T("Valeurs de vie et de ressource", "Health and power values"), A("texts"), AnimRefresh)
+end
+
 K.RegisterPage({
     key = "uf_style",
     section = SECTION,
@@ -436,6 +475,22 @@ K.RegisterPage({
                 end)
                 c:Done()
             end
+            -- Animation look: its main settings right here, like the Forever
+            -- sizes; everything else on the Animation HUD page.
+            if TomoModForeverDB.unitFrames.style == "animation" then
+                c = page:Card(T("Style Animation", "Animation look"))
+                AnimLookControls(c)
+                c:Button(T("Déplacer les éléments", "Move the elements"), function()
+                    local AH = TomoMod_AnimHUD
+                    if AH and AH.ToggleMover then AH.ToggleMover() end
+                end, 240)
+                c:Button(T("Tous les réglages du HUD", "All HUD settings"), function()
+                    local C = TomoMod_Config
+                    if C and C.SwitchCategory then C.SwitchCategory("uf_anim") end
+                end, 240, T("Arcs, signes, auras, animation centrale.", "Arcs, signs, auras, centre animation."))
+                c:Done()
+            end
+
             c = page:Card(T("Animations", "Animations"))
             c:Toggle(T("Traînée rouge quand un cadre perd de la vie", "Red trail when a frame loses health"), "unitFrames.healthTrail", "ufall",
                 T("Le morceau de vie perdu reste affiché en rouge un instant puis s'écoule.", "The lost chunk of health stays red for a moment, then drains away."))
@@ -451,14 +506,9 @@ K.RegisterPage({
 })
 
 -- ---------------------------------------------------------------------
--- Animation look (Modules/Interface/AnimHUD, from Braise)
+-- Animation look (Modules/Interface/AnimHUD, from Braise): helpers above
+-- the Shared style page, which also shows the main settings.
 -- ---------------------------------------------------------------------
-local function AnimRefresh()
-    local AH = TomoMod_AnimHUD
-    if AH and AH.Refresh then AH.Refresh() end
-end
-
-local function A(key) return "unitFrames.animation." .. key end
 
 K.RegisterPage({
     key = "uf_anim",
@@ -504,21 +554,7 @@ K.RegisterPage({
             c:Done()
 
             c = page:Card(T("Apparence", "Look"))
-            local themes = {}
-            for _, th in ipairs((AH and AH.themes) or {}) do
-                themes[#themes + 1] = { text = T(th.fr, th.en), value = th.key }
-            end
-            c:Seg(T("Thème", "Theme"), A("theme"), themes, AnimRefresh, 4,
-                T("Classe : chaque classe a ses couleurs, au repos et en combat.", "Class: each class has its own colours, idle and in combat."))
-            c:Slider(T("Taille", "Size"), A("scale"), 0.6, 1.6, 0.05, AnimRefresh, "%.2f")
-            c:Slider(T("Opacité hors combat", "Opacity out of combat"), {
-                get = function() return math.floor((tonumber(uf.animation and uf.animation.oocAlpha) or 0.35) * 100 + 0.5) end,
-                set = function(v) uf.animation.oocAlpha = v / 100 end,
-                default = 35,
-            }, 0, 100, 5, AnimRefresh, "%d %%",
-                T("Le halo se réveille tout seul quand tu cibles quelque chose ou qu'il te manque de la vie.",
-                  "The halo wakes up on its own when you target something or are missing health."))
-            c:Toggle(T("Valeurs de vie et de ressource", "Health and power values"), A("texts"), AnimRefresh)
+            AnimLookControls(c)
             c:Done()
 
             c = page:Card(T("Arcs", "Arcs"))
@@ -545,7 +581,6 @@ K.RegisterPage({
             c = page:Card(T("Animation centrale", "Centre animation"))
             c:Toggle(T("Anneaux qui tournent", "Turning rings"), A("ring"), AnimRefresh)
             c:Toggle(T("Braises", "Embers"), A("embers"), AnimRefresh)
-            c:Slider(T("Quantité de braises", "Ember amount"), A("emberAmount"), 0.2, 1.3, 0.1, AnimRefresh, "%.1f")
             c:Toggle(T("Braises à la façon de la classe", "Embers move the way your class does"), A("classEmbers"), AnimRefresh,
                 T("Étincelles du guerrier, feuilles du druide, statique du chaman...", "Warrior sparks, druid leaves, shaman static..."))
             c:Toggle(T("Onde de choc et lames en début et fin de combat", "Shockwave and blades on combat start and end"), A("transitions"), AnimRefresh)

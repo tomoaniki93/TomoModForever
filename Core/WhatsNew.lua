@@ -63,6 +63,16 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.3",
+        highlights = {
+            L["wn_133_auras"],
+            L["wn_133_look"],
+            L["wn_133_level"],
+            L["wn_133_options"],
+            L["wn_133_debug"],
+        },
+    },
+    {
         version = "1.3.2",
         highlights = {
             L["wn_132_anim"],
