@@ -346,7 +346,7 @@ function ns.CreateMeterWindow(cfg)
     -- Reset button (rightmost)
     local resetBtn = MakeHeaderBtn(nil, ns.TEX_RESET)
     resetBtn:SetScript("OnClick", function()
-        C_DamageMeter.ResetAllCombatSessions()
+        ns.ResetAllSessions()
     end)
     resetBtn:HookScript("OnEnter", function(self) ShowTip(self, L["TIP_RESET"]) end)
     resetBtn:HookScript("OnLeave", HideTip)
@@ -1063,7 +1063,7 @@ function ns.CreateMeterWindow(cfg)
     ----------------------------------------------------------------------
 
     function state.CollectData()
-        local session = C_DamageMeter.GetCombatSessionFromType(state.sessionType, state.meterType)
+        local session = ns.GetSessionFromType(state.sessionType, state.meterType)
         dataProvider:Flush()
 
         -- Default: no self bar this pass; re-enabled below if data + setting allow.
@@ -1225,7 +1225,7 @@ function ns.CreateMeterWindow(cfg)
         end
 
         local seconds
-        local session = C_DamageMeter.GetCombatSessionFromType(state.sessionType, state.meterType)
+        local session = ns.GetSessionFromType(state.sessionType, state.meterType)
         if session and not issecretvalue(session) then
             -- API field is `durationSeconds` (matching TargetBreakdown), not `duration`.
             local d = session.durationSeconds

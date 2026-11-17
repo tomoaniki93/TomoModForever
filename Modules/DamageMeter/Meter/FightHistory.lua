@@ -481,8 +481,11 @@ local function EnsureFrame()
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 20)
     frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
     frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
-    UISpecialFrames = UISpecialFrames or {}
-    table.insert(UISpecialFrames, "TomoModDMFightHistory")
+    -- [fix] Escape captured by the window itself instead of UISpecialFrames
+    -- (reassigning that global also tainted it).
+    if TomoMod_Utils and TomoMod_Utils.CloseOnEscape then
+        TomoMod_Utils.CloseOnEscape(frame)
+    end
 
     local r, g, b = Accent()
     local accent = frame:CreateTexture(nil, "OVERLAY")

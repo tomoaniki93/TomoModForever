@@ -551,6 +551,13 @@ end
 
 local function ObserveDps()
     -- Called synchronously from native meter events, never by the ticker.
+    -- Gate on the mode BEFORE querying: this runs on every DAMAGE_METER_*
+    -- event, and an idle benchmark has no use for a full session scan.
+    local mode = benchmark.mode
+    if mode ~= "armed" and mode ~= "waitingData"
+        and mode ~= "running" and mode ~= "capturing" then
+        return
+    end
     local nativeDps = ReadPlayerDps()
     if not HasNativeDps(nativeDps) then return end
     local now = GetTime()
@@ -637,8 +644,11 @@ local function EnsureFrame()
     RestorePosition(frame)
     frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
     frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); SavePosition(self) end)
-    UISpecialFrames = UISpecialFrames or {}
-    table.insert(UISpecialFrames, "TomoDMBenchmark")
+    -- [fix] Escape captured by the window itself instead of UISpecialFrames
+    -- (reassigning that global also tainted it).
+    if TomoMod_Utils and TomoMod_Utils.CloseOnEscape then
+        TomoMod_Utils.CloseOnEscape(frame)
+    end
 
     local accent = frame:CreateTexture(nil, "OVERLAY")
     frame._accent = accent

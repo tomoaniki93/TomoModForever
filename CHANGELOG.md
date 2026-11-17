@@ -8,6 +8,22 @@
 - **New** - `/tmf tracker reset` (also `/tmf suivi reset`), listed in `/tmf help`.
 - **New** - Skins (Apparence) > Obj. Tracker tab: "Reset the tracker position" button, with a line explaining when to use it.
 
+#### Damage meter: death recap
+
+- **Fixed** - The automatic death recap ("Show on death") never appeared when the player died mid-pull, the usual case. The recap ID was read from a `C_Timer` callback 0.5 s after `PLAYER_DEAD`, where the Deaths session comes back secret during combat. `PLAYER_DEAD` now only arms a 15 s window and the lookup runs synchronously in the next readable event (`DAMAGE_METER_COMBAT_SESSION_UPDATED`, `DAMAGE_METER_CURRENT_SESSION_UPDATED` or `PLAYER_REGEN_ENABLED`). The timer read is kept as an out-of-combat fallback.
+- **Fixed** - A recap already shown is never opened again: the Overall session still holds earlier deaths.
+
+#### Damage meter: stability
+
+- **New** - `ns.SafeRegisterEvent(frame, event)`: event registration through `pcall`. An event unknown to the client used to throw and abort the whole calling file, taking the database and the windows down with it. Benchmark and Fight history already looked for this helper and fell back to a bare `pcall` because it was never defined. Used for the `DAMAGE_METER_*` events and the death recap.
+- **New** - `ns.GetSessionFromType(sessionType, meterType)` and `ns.ResetAllSessions()`: protected wrappers around `C_DamageMeter.GetCombatSessionFromType` and `C_DamageMeter.ResetAllCombatSessions`. An error raised by the API (expired session, API change) no longer aborts the whole refresh handler. Used by the meter windows, the report snapshot, the spell and target breakdowns, the death recap lookup, the reset button, `/tdm reset` and the auto-reset on entering an instance.
+- **Fixed** - Spell breakdown (player list) and Target breakdown (enemy list): the `combatSources` list is checked with `issecretvalue` before its length is read, which raised an error when the list came back secret.
+
+#### Damage meter: Benchmark and Fight history
+
+- **Changed** - Benchmark: the player DPS is no longer read on every `DAMAGE_METER_*` event while the benchmark is idle. The mode (armed, waiting for data, running, capturing) is checked before any session scan.
+- **Fixed** - Benchmark and Fight history windows: Escape now closes them through `TomoMod_Utils.CloseOnEscape` instead of adding them to `UISpecialFrames`. Reassigning that global tainted it.
+
 ## ####################################
 
 ## CHANGELOG 1.3.3

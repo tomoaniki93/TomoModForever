@@ -563,7 +563,7 @@ local function PopulateEnemies(frame, sessionID)
     end
 
     local sources = session.combatSources
-    if not sources or #sources == 0 then
+    if not sources or issecretvalue(sources) or #sources == 0 then
         frame._noDataFS:Show()
         return
     end

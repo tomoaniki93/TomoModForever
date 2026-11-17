@@ -275,7 +275,7 @@ instanceFrame:SetScript("OnEvent", function(self, event, isInitialLogin, isReloa
     -- On a fresh login the sessions are empty anyway; resetting would only
     -- risk discarding data if the client kept any across the reconnect.
     if ns.db.autoResetOnInstance and not isInitialLogin then
-        C_DamageMeter.ResetAllCombatSessions()
+        ns.ResetAllSessions()
     end
 end)
 
@@ -285,9 +285,11 @@ end)
 
 local dmEventFrame = CreateFrame("Frame")
 ns._dmEventFrame = dmEventFrame
-dmEventFrame:RegisterEvent("DAMAGE_METER_COMBAT_SESSION_UPDATED")
-dmEventFrame:RegisterEvent("DAMAGE_METER_CURRENT_SESSION_UPDATED")
-dmEventFrame:RegisterEvent("DAMAGE_METER_RESET")
+-- Through SafeRegisterEvent: an unknown event would otherwise throw and abort
+-- this whole file, taking the DB and the windows down with it.
+ns.SafeRegisterEvent(dmEventFrame, "DAMAGE_METER_COMBAT_SESSION_UPDATED")
+ns.SafeRegisterEvent(dmEventFrame, "DAMAGE_METER_CURRENT_SESSION_UPDATED")
+ns.SafeRegisterEvent(dmEventFrame, "DAMAGE_METER_RESET")
 dmEventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 dmEventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 
@@ -473,7 +475,7 @@ SLASH_TDM2 = "/tomodm"
 SlashCmdList["TDM"] = function(msg)
     local L = ns.L
     if msg == "reset" then
-        C_DamageMeter.ResetAllCombatSessions()
+        ns.ResetAllSessions()
     elseif msg == "lock" then
         -- Single target state for every window: avoids windows with mixed
         -- lock states drifting further apart on each toggle.

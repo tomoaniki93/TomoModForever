@@ -66,6 +66,9 @@ CHANGELOG = {
         version = "1.3.4",
         highlights = {
             L["wn_134_tracker"],
+            L["wn_134_deathrecap"],
+            L["wn_134_dmstable"],
+            L["wn_134_dmwindows"],
         },
     },
     {

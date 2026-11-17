@@ -863,13 +863,13 @@ local function BuildPlayerStrip(frame, meterType, sessionType, selectedGUID)
     end
 
     -- Get session data for player list
-    local session = C_DamageMeter.GetCombatSessionFromType(sessionType, meterType)
+    local session = ns.GetSessionFromType(sessionType, meterType)
     if not session or issecretvalue(session) then
         frame._ddToggle:Hide()
         return nil
     end
     local sources = session.combatSources
-    if not sources or #sources == 0 then
+    if not sources or issecretvalue(sources) or #sources == 0 then
         frame._ddToggle:Hide()
         return nil
     end
@@ -1046,7 +1046,7 @@ function ns.ShowSpellBreakdown(playerName, sourceGUID, meterType, sessionType, c
         sourceGUID = firstGUID
         -- Find classFilename for first player
         if sourceGUID then
-            local session = C_DamageMeter.GetCombatSessionFromType(sessionType, meterType)
+            local session = ns.GetSessionFromType(sessionType, meterType)
             if session and not issecretvalue(session) and session.combatSources then
                 for _, src in ipairs(session.combatSources) do
                     local g = src.sourceGUID

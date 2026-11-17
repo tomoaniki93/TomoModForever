@@ -20,6 +20,35 @@ ns.windows = {}
 ns.inCombat = false
 
 ----------------------------------------------------------------------
+-- Safe event registration / protected C_DamageMeter entry points
+----------------------------------------------------------------------
+
+-- RegisterEvent throws on an event the client does not know, which aborts the
+-- rest of the calling file. Benchmark and FightHistory already looked for this
+-- helper and fell back to a bare pcall because it was never defined here.
+function ns.SafeRegisterEvent(frame, event)
+    if not frame or not event then return false end
+    local ok = pcall(frame.RegisterEvent, frame, event)
+    return ok
+end
+
+-- A raised error inside the refresh path (expired session, API change) would
+-- otherwise abort the whole DAMAGE_METER_* handler. pcall does not change the
+-- readability of the returned values: called in-handler, they stay readable.
+function ns.GetSessionFromType(sessionType, meterType)
+    if not (C_DamageMeter and C_DamageMeter.GetCombatSessionFromType) then return nil end
+    local ok, session = pcall(C_DamageMeter.GetCombatSessionFromType, sessionType, meterType)
+    if ok then return session end
+    return nil
+end
+
+function ns.ResetAllSessions()
+    if C_DamageMeter and C_DamageMeter.ResetAllCombatSessions then
+        pcall(C_DamageMeter.ResetAllCombatSessions)
+    end
+end
+
+----------------------------------------------------------------------
 -- Meter Type Metadata
 ----------------------------------------------------------------------
 
