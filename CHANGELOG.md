@@ -1,5 +1,15 @@
 ## ####################################
 
+## CHANGELOG 1.3.4
+
+#### Quest tracker: reset position
+
+- **New** - `TomoMod_ObjectiveTracker.ResetPosition()`: back to the default place (`TomoMod_Defaults.objectiveTracker.position`, top right) and a 100 % scale, applied live. In combat the settings are written at once and the move waits for `PLAYER_REGEN_ENABLED`. Reported: a player changed something in Blizzard's Edit Mode and his quest tracker vanished since, off screen. The tracker is not clamped to the screen (on purpose, see `ApplyPosition`) and its place is TMF's own, re-applied on every load, so Edit Mode's reset cannot bring it back; the move-mode handle sits on the tracker, off screen with it. The only way back was a `/run`, and the code comment pointing to a "Reset position" setting referred to a button that did not exist.
+- **New** - `/tmf tracker reset` (also `/tmf suivi reset`), listed in `/tmf help`.
+- **New** - Skins (Apparence) > Obj. Tracker tab: "Reset the tracker position" button, with a line explaining when to use it.
+
+## ####################################
+
 ## CHANGELOG 1.3.3
 
 #### Unit frames: "Animation" look, buffs and debuffs

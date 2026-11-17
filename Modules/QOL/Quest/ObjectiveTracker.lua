@@ -2517,8 +2517,9 @@ local function ApplyPosition()
     -- Blizzard's and far exceeds the visible content. Its bottom edge sits
     -- at or past the bottom of the screen, so the engine refused every
     -- downward drag while still allowing up/left/right. Off by default;
-    -- "Reset position" in the settings remains the way back if the panel
-    -- is dragged somewhere unreachable.
+    -- "Reset position" in the settings (Skins > Quest tracker) and
+    -- /tmf tracker reset are the way back if the panel ends up somewhere
+    -- unreachable (OT.ResetPosition, 1.3.4).
     if tracker.SetClampedToScreen then tracker:SetClampedToScreen(false) end
     tracker.IsUserPlaced = function() return true end
 
@@ -2673,6 +2674,52 @@ end
 
 function OT.ToggleLock()
     OT.SetLocked(not isMoverLocked)
+end
+
+-- =====================================
+-- RESET POSITION (1.3.4)
+-- The tracker is not clamped to the screen (see ApplyPosition), and its
+-- place is TMF's own (objectiveTracker.position), re-applied on every load:
+-- Blizzard's Edit Mode reset does not bring it back. A player who dragged it
+-- off screen (or whose Edit Mode change pushed it out) had no way back but
+-- a /run. This puts the default place and a 100 % scale back, live.
+-- In combat the move waits for the end of the fight (the tracker can carry
+-- protected quest item buttons).
+-- =====================================
+local resetWaiter
+
+local function DefaultPosition()
+    local def = TomoMod_Defaults and TomoMod_Defaults.objectiveTracker
+    if def and type(def.position) == "table" then return CopyTable(def.position) end
+    return { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 }
+end
+
+local function ApplyResetPosition()
+    if not isInitialized or not IsEnabled() then return end
+    ApplyPosition()
+    if moverOverlay and moverOverlay:IsShown() and moverOverlay.UpdateScaleLabel then
+        moverOverlay:UpdateScaleLabel(1)
+    end
+end
+
+--- Back to the default place and scale. Returns "now" or "after_combat".
+function OT.ResetPosition()
+    local db = S()
+    db.position = DefaultPosition()
+    db.scale = 1.0
+    if InCombatLockdown() then
+        if not resetWaiter then
+            resetWaiter = CreateFrame("Frame")
+            resetWaiter:SetScript("OnEvent", function(self)
+                self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+                ApplyResetPosition()
+            end)
+        end
+        resetWaiter:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return "after_combat"
+    end
+    ApplyResetPosition()
+    return "now"
 end
 
 local function RegisterWithMovers()

@@ -509,6 +509,13 @@ SlashCmdList["TOMOMOD"] = function(msg)
             end
             print("|cffffd100TomoModForever Nameplates:|r " .. (TomoModForeverDB.nameplates.enabled and L["msg_np_enabled"] or L["msg_np_disabled"]))
         end
+    elseif msg == "tracker reset" or msg == "suivi reset" then
+        -- Quest tracker back on screen (1.3.4): default place, 100 % scale.
+        local OT = TomoMod_ObjectiveTracker
+        if not (OT and OT.ResetPosition) then return end
+        local when = OT.ResetPosition()
+        print("|cffffd100TomoModForever|r " .. (when == "after_combat"
+            and L["msg_tracker_reset_combat"] or L["msg_tracker_reset"]))
     elseif msg == "anim" or msg:match("^anim%s+") then
         -- Look "Animation" (AnimHUD, 1.3.2): move mode, demo fight.
         local AH = TomoMod_AnimHUD
@@ -530,6 +537,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
         print("  |cffffd100/tmf reset|r — " .. L["msg_help_reset"])
         print("  |cffffd100/tmf uf|r — " .. L["msg_help_uf"])
         print("  |cffffd100/tmf uf reset|r — " .. L["msg_help_uf_reset"])
+        print("  |cffffd100/tmf tracker reset|r — " .. L["msg_help_tracker_reset"])
         print("  |cffffd100/tmf rb|r — " .. L["msg_help_rb"])
         print("  |cffffd100/tmf rb sync|r — " .. L["msg_help_rb_sync"])
         print("  |cffffd100/tmf np|r — " .. L["msg_help_np"])

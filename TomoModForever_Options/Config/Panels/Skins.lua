@@ -506,6 +506,20 @@ local function BuildObjectiveTrackerTab(parent)
     end)
     y = ny
 
+    -- 1.3.4: the way back when the tracker ends up off screen.
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateInfoText(c, L["info_obj_tracker_reset"], y)
+    y = ny
+    local _, ny = W.CreateButton(c, L["btn_obj_tracker_reset"], 240, y, function()
+        local OT = TomoMod_ObjectiveTracker
+        if not (OT and OT.ResetPosition) then return end
+        local when = OT.ResetPosition()
+        print("|cffffd100TomoModForever|r " .. (when == "after_combat"
+            and L["msg_tracker_reset_combat"] or L["msg_tracker_reset"]))
+    end)
+    y = ny
+
     c:SetHeight(math.abs(y) + 40)
     if scroll.UpdateScroll then scroll.UpdateScroll() end
     return scroll
