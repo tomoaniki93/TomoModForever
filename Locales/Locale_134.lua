@@ -10,6 +10,7 @@ TomoMod_RegisterLocale("enUS", {
     ["wn_134_deathrecap"] = "Fixed - Damage meter: the automatic death recap now opens when you die mid-fight (it only worked once combat was over), and never shows the same death twice.",
     ["wn_134_dmstable"] = "Fixed - Damage meter: sturdier against Blizzard API errors. A failing call or an unknown event no longer stops the meter windows, breakdowns or reset.",
     ["wn_134_dmwindows"] = "Changed - Damage meter: the Benchmark no longer scans the fight while idle, and Escape closes the Benchmark and Fight history windows without tainting the interface.",
+    ["wn_134_feralcp"] = "Fixed - Resource bars: druids now get their combo points in Cat Form, whatever their spec. They only showed for the Feral spec, so a druid without a spec (low level on Forever) or with another one saw none.",
 })
 
 TomoMod_RegisterLocale("frFR", {
@@ -22,6 +23,7 @@ TomoMod_RegisterLocale("frFR", {
     ["wn_134_deathrecap"] = "Corrigé - Damage meter : le récap de mort automatique s'ouvre maintenant quand tu meurs en plein combat (il ne marchait qu'après le combat), et n'affiche jamais deux fois la même mort.",
     ["wn_134_dmstable"] = "Corrigé - Damage meter : plus solide face aux erreurs de l'API Blizzard. Un appel qui échoue ou un événement inconnu n'arrête plus les fenêtres, les détails ni la remise à zéro.",
     ["wn_134_dmwindows"] = "Modifié - Damage meter : le Benchmark ne lit plus le combat quand il est inactif, et Échap ferme les fenêtres Benchmark et Historique des combats sans corrompre l'interface (taint).",
+    ["wn_134_feralcp"] = "Corrigé - Barres de ressources : le druide a maintenant ses points de combo en forme de félin, quelle que soit sa spécialisation. Ils ne s'affichaient qu'en spé Farouche, donc un druide sans spé (bas niveau sur Forever) ou avec une autre n'en voyait aucun.",
 })
 
 TomoMod_RegisterLocale("deDE", {
@@ -34,6 +36,7 @@ TomoMod_RegisterLocale("deDE", {
     ["wn_134_deathrecap"] = "Behoben - Damage Meter: Die automatische Todesübersicht öffnet sich jetzt, wenn du mitten im Kampf stirbst (sie ging nur nach dem Kampf), und zeigt denselben Tod nie zweimal.",
     ["wn_134_dmstable"] = "Behoben - Damage Meter: robuster gegen Fehler der Blizzard-API. Ein fehlschlagender Aufruf oder ein unbekanntes Ereignis stoppt die Fenster, Aufschlüsselungen und das Zurücksetzen nicht mehr.",
     ["wn_134_dmwindows"] = "Geändert - Damage Meter: Der Benchmark liest den Kampf im Leerlauf nicht mehr aus, und Escape schließt die Fenster Benchmark und Kampfverlauf ohne Taint der Oberfläche.",
+    ["wn_134_feralcp"] = "Behoben - Ressourcenleisten: Druiden erhalten ihre Combopunkte jetzt in Katzengestalt, unabhängig von der Spezialisierung. Sie erschienen nur für Wildheit, ein Druide ohne Spezialisierung (niedrige Stufe auf Forever) oder mit einer anderen sah keine.",
 })
 
 TomoMod_RegisterLocale("esES", {
@@ -46,6 +49,7 @@ TomoMod_RegisterLocale("esES", {
     ["wn_134_deathrecap"] = "Corregido - Medidor de daño: el resumen de muerte automático ahora se abre cuando mueres en pleno combate (solo funcionaba al terminar el combate) y nunca muestra dos veces la misma muerte.",
     ["wn_134_dmstable"] = "Corregido - Medidor de daño: más robusto ante errores de la API de Blizzard. Una llamada fallida o un evento desconocido ya no detiene las ventanas, los desgloses ni el reinicio.",
     ["wn_134_dmwindows"] = "Cambiado - Medidor de daño: el Benchmark ya no analiza el combate cuando está inactivo, y Escape cierra las ventanas Benchmark e Historial de combates sin contaminar (taint) la interfaz.",
+    ["wn_134_feralcp"] = "Corregido - Barras de recursos: los druidas tienen ahora sus puntos de combo en forma felina, sea cual sea su especialización. Solo aparecían con Feral, así que un druida sin especialización (nivel bajo en Forever) o con otra no veía ninguno.",
 })
 
 TomoMod_RegisterLocale("itIT", {
@@ -58,6 +62,7 @@ TomoMod_RegisterLocale("itIT", {
     ["wn_134_deathrecap"] = "Corretto - Damage meter: il riepilogo di morte automatico ora si apre quando muori in pieno combattimento (funzionava solo a fine combattimento) e non mostra mai due volte la stessa morte.",
     ["wn_134_dmstable"] = "Corretto - Damage meter: più solido contro gli errori dell'API Blizzard. Una chiamata fallita o un evento sconosciuto non blocca più le finestre, i dettagli né il reset.",
     ["wn_134_dmwindows"] = "Modificato - Damage meter: il Benchmark non analizza più il combattimento quando è inattivo, ed Esc chiude le finestre Benchmark e Cronologia combattimenti senza contaminare (taint) l'interfaccia.",
+    ["wn_134_feralcp"] = "Corretto - Barre risorse: i druidi ora hanno i punti combo in forma felina, qualunque sia la specializzazione. Apparivano solo con Aggressore Ferino, quindi un druido senza specializzazione (basso livello su Forever) o con un'altra non ne vedeva.",
 })
 
 TomoMod_RegisterLocale("ptBR", {
@@ -70,4 +75,5 @@ TomoMod_RegisterLocale("ptBR", {
     ["wn_134_deathrecap"] = "Corrigido - Medidor de dano: o resumo de morte automático agora abre quando você morre no meio do combate (só funcionava depois do combate) e nunca mostra a mesma morte duas vezes.",
     ["wn_134_dmstable"] = "Corrigido - Medidor de dano: mais robusto contra erros da API da Blizzard. Uma chamada que falha ou um evento desconhecido não para mais as janelas, os detalhamentos nem a redefinição.",
     ["wn_134_dmwindows"] = "Alterado - Medidor de dano: o Benchmark não analisa mais o combate quando está inativo, e Esc fecha as janelas Benchmark e Histórico de combates sem contaminar (taint) a interface.",
+    ["wn_134_feralcp"] = "Corrigido - Barras de recurso: druidas agora têm seus pontos de combo na Forma de Felino, qualquer que seja a especialização. Só apareciam com Feral, então um druida sem especialização (nível baixo no Forever) ou com outra não via nenhum.",
 })

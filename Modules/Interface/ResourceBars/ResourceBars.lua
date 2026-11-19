@@ -201,12 +201,12 @@ local CLASS_RESOURCES = {
         [2] = { classPower = { display = "points", powerType = POWER_SOUL_SHARDS, label = "Soul Shards", maxPoints = 5, showPartial = true } },
         [3] = { classPower = { display = "points", powerType = POWER_SOUL_SHARDS, label = "Soul Shards", maxPoints = 5, showPartial = true } },
     },
+    -- Druid combo points follow Cat Form, not the spec (DruidResources
+    -- below): on Forever a low-level druid has no spec, or another one, and
+    -- Cat Form showed no points at all when they hung on spec 2 (1.3.4).
     DRUID = {
         [1] = { druidMana = true }, -- Balance: Astral Power in UF info bar
-        [2] = { -- Feral
-            classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 5 },
-            druidMana = true,
-        },
+        [2] = { druidMana = true }, -- Feral
         [3] = { druidMana = true, primaryPower = true }, -- Guardian: Rage centered, mana secondary
         -- [4] Restoration: Mana in UF info bar
     },
@@ -319,6 +319,34 @@ local function IsClassPowerAvailable(cpDef)
     return (max or 0) > 0
 end
 local classPowerAvailable = true
+
+-- =====================================
+-- DRUID: combo points in Cat Form, whatever the spec
+-- =====================================
+local CAT_FORM_ID = 1
+local DRUID_COMBO = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 5 }
+local druidInCat = false
+
+local function DruidInCat()
+    if GetShapeshiftFormID then
+        local id = GetShapeshiftFormID()
+        if not issecret(id) and id == CAT_FORM_ID then return true end
+    end
+    -- Fallback: Cat Form is the only druid form running on energy.
+    local pt = UnitPowerType("player")
+    if issecret(pt) then return false end
+    local ENERGY = (Enum and Enum.PowerType and Enum.PowerType.Energy) or 3
+    return pt == ENERGY
+end
+
+--- The spec's entry (or none) with the combo points added in Cat Form.
+local function DruidResources(base)
+    druidInCat = DruidInCat()
+    local r = {}
+    if base then for k, v in pairs(base) do r[k] = v end end
+    r.classPower = druidInCat and DRUID_COMBO or nil
+    return r
+end
 
 -- =====================================
 -- HELPERS
@@ -1666,6 +1694,7 @@ local function BuildResourceDisplay()
 
     local classData = CLASS_RESOURCES[playerClass]
     local resources = classData and (classData[specIndex] or classData.default)
+    if playerClass == "DRUID" then resources = DruidResources(resources) end
 
     RefreshChargedPoints()
 
@@ -1978,7 +2007,14 @@ local function OnEvent(self, event, arg1)
     elseif event == "UNIT_AURA" then
         if arg1 == "player" then UpdateAll() end
     elseif event == "UPDATE_SHAPESHIFT_FORM" then
-        if playerClass == "DRUID" then UpdateDruidMana() end
+        if playerClass == "DRUID" then
+            -- In or out of Cat Form: the combo points appear or go.
+            if DruidInCat() ~= druidInCat then
+                BuildResourceDisplay()
+                if RB._refreshOnUpdate then RB._refreshOnUpdate() end
+            end
+            UpdateDruidMana()
+        end
     elseif event == "PLAYER_TARGET_CHANGED" then
         -- Combo points are tied to the target on WoW: Forever.
         UpdateAlpha()

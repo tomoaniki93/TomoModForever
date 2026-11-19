@@ -69,6 +69,7 @@ CHANGELOG = {
             L["wn_134_deathrecap"],
             L["wn_134_dmstable"],
             L["wn_134_dmwindows"],
+            L["wn_134_feralcp"],
         },
     },
     {

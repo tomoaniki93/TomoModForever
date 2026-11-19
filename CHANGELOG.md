@@ -8,6 +8,10 @@
 - **New** - `/tmf tracker reset` (also `/tmf suivi reset`), listed in `/tmf help`.
 - **New** - Skins (Apparence) > Obj. Tracker tab: "Reset the tracker position" button, with a line explaining when to use it.
 
+#### Resource bars: druid combo points
+
+- **Fixed** - Druid combo points only showed for spec 2 (Feral) in `CLASS_RESOURCES`. On Forever a low-level druid has no spec (`GetSpecialization` 0) or another one, so Cat Form showed no points with either unit frame look (TMF, Forever). They now follow Cat Form whatever the spec (`DruidResources`: `GetShapeshiftFormID() == 1`, energy power type as fallback), and `UPDATE_SHAPESHIFT_FORM` rebuilds the display when the druid enters or leaves Cat Form. The druid mana bar is unchanged.
+
 #### Damage meter: death recap
 
 - **Fixed** - The automatic death recap ("Show on death") never appeared when the player died mid-pull, the usual case. The recap ID was read from a `C_Timer` callback 0.5 s after `PLAYER_DEAD`, where the Deaths session comes back secret during combat. `PLAYER_DEAD` now only arms a 15 s window and the lookup runs synchronously in the next readable event (`DAMAGE_METER_COMBAT_SESSION_UPDATED`, `DAMAGE_METER_CURRENT_SESSION_UPDATED` or `PLAYER_REGEN_ENABLED`). The timer read is kept as an out-of-combat fallback.
