@@ -63,6 +63,15 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.5",
+        highlights = {
+            L["wn_135_tracker"],
+            L["wn_135_sort"],
+            L["wn_135_clicks"],
+            L["wn_135_items"],
+        },
+    },
+    {
         version = "1.3.4",
         highlights = {
             L["wn_134_tracker"],

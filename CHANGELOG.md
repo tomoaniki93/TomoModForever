@@ -1,5 +1,29 @@
 ## ####################################
 
+## CHANGELOG 1.3.5
+
+#### Quest tracker: rebuilt from scratch
+
+Player reports: quests in no particular order, colours that mean nothing, the Ready to turn in group mixed with everything else, quests missing from the tracker. The cause was structural: up to 1.3.4 `ObjectiveTracker.lua` re-skinned Blizzard's Retail objective tracker, walked its frame tree and sorted blocks by Retail quest classification (campaign, world quest, legendary, calling...), none of which exists on Forever. Every quest fell in the same bucket in log order, and the re-parenting fought Blizzard's own layout (combat flicker, blocks shown then hidden, 1.2.7 / 1.2.8 / 1.2.9 fixes).
+
+- **Changed** - TMF now draws its own tracker straight from the quest log (`C_QuestLog.GetInfo` / `GetQuestObjectives`, Classic `GetQuestLogTitle` / `GetQuestLogLeaderBoard` as fallback). Blizzard's tracker (`ObjectiveTrackerFrame`, `QuestWatchFrame`) is moved under a hidden parent out of combat, and put back when the module is switched off. `TomoMod_ObjectiveTracker` keeps its public API.
+- **New** - Sections: Pinned, Ready to turn in, then one per zone (quest log headers). The zone you are in comes first and is marked; the others fold by themselves (option), and the folds you make last until you change zone. Each zone header shows its level range and quest count.
+- **New** - Sort inside a section: by level (default), name (A-Z, `strcmputf8i` so accents sort right), progress, or distance when `C_QuestLog.GetDistanceSqToQuest` exists. Zone order: current zone then by level, by name, or quest log order.
+- **New** - Colours with a meaning only: the level takes the quest difficulty colour (`GetQuestDifficultyColor`), titles stay off-white (option to colour them too), finished objectives turn green, failed quests red. Optional tag (Elite, Dungeon, Group N) and a thin progress bar per quest.
+- **New** - Every quest of the log is shown by default (no watch limit); "Watched quests only" is an option. Hidden quests can be brought back from the menu.
+- **New** - Clicks: open the quest (click again closes the log), Shift link in chat, Ctrl pin to the top. Right click: open, pin, arrow (`C_SuperTrack`, when available), link, share with the group, hide, abandon (Blizzard's confirmation). Header: left click folds everything, right click (or the three dots) opens the quick menu for display, sort and zone options.
+- **New** - Quest item buttons (`SecureActionButtonTemplate`, `type = item`) beside each quest, left or right of the tracker, with cooldown, charges and an out-of-range tint.
+- **New** - A green pulse when a quest becomes ready to turn in, a short fade-in for a newly accepted quest.
+- **New** - Mouse wheel scrolls when the list is taller than the screen (or the max height option); a footer says how many quests are below.
+- **New** - Opacity in combat, width, max height, item side, tooltips, level, tags and progress bar in Skins > Quest tracker.
+- **Changed** - Combat: item buttons are parented to the header, so the header is never moved, resized, shown or hidden in combat (alpha only). While an item button is on screen a change of structure waits for `PLAYER_REGEN_ENABLED` and only the texts are refreshed in place; without one the tracker re-lays out freely.
+- **Fixed** - The title bar is clamped to the screen: the tracker can no longer be lost off screen (`/tmf tracker reset` stays available).
+- **Changed** - Pins, hidden quests and folded sections are saved per character (`TomoModForeverCharDB.questTracker`).
+- **Changed** - Migration `questTrackerV2`: the bucket keys (`buckets`, `bucketsCollapsed`, `zonesCollapsed`, `minimized`) are dropped. A saved position anchored by its top is kept; any other goes back to the default corner (it was measured on Blizzard's frame, up to 4000 px high).
+- Questie: unchanged, TMF stands down when Questie draws the tracker.
+
+## ####################################
+
 ## CHANGELOG 1.3.4
 
 #### Quest tracker: reset position

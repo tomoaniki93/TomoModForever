@@ -97,19 +97,35 @@ TomoMod_Defaults = {
         autoTurnIn = false,
         autoGossip = false,
     },
+    -- [1.3.5] TMF's own quest tracker (Modules/QOL/Quest/ObjectiveTracker.lua).
+    -- Pins, hidden quests and folded sections are per character
+    -- (TomoModForeverCharDB.questTracker).
     objectiveTracker = {
         enabled = true,
+        width = 260,
         bgAlpha = 0.65,
         showBorder = true,
         hideWhenEmpty = true,
         headerFontSize = 13,
-        categoryFontSize = 11,
+        categoryFontSize = 11,    -- section (zone) headers
         questFontSize = 12,
         objectiveFontSize = 11,
         maxQuestsShown = 0,
-        buckets = true,
-        groupByZone = true,       -- "Quests" bucket: unfinished quests under zone sub-headers
-        bucketsCollapsed = {},
+        maxHeight = 0,            -- 0 = down to the bottom of the screen
+        displayMode = "all",      -- "all" (whole log) | "watched"
+        questSort = "level",      -- "level" | "name" | "progress" | "distance"
+        zoneSort = "level",       -- "level" | "name" | "log"
+        groupByZone = true,
+        separateComplete = true,
+        autoFoldZones = true,
+        hideCompletedObjectives = false,
+        showLevel = true,
+        showTags = true,
+        showProgressBar = true,
+        titleByDifficulty = false,
+        showTooltips = true,
+        combatAlpha = 1,
+        itemSide = "left",        -- quest item buttons: "left" | "right"
         scale = 1.0,
         position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 },
     },
@@ -1775,6 +1791,23 @@ local function TomoMod_RunMigrations()
         done.ttHideHealthBar = true
         if type(TomoModForeverDB.tooltipSkin) == "table" then
             TomoModForeverDB.tooltipSkin.hideHealthBar = true
+        end
+    end
+
+    -- [1.3.5] New quest tracker: the bucket keys of the Blizzard skin are
+    -- gone. The old position was measured on Blizzard's tracker, whose
+    -- height was 4000 px at times; one anchored by its top lands in the
+    -- same place, anything else goes back to the default corner.
+    if not done.questTrackerV2 then
+        done.questTrackerV2 = true
+        local ot = TomoModForeverDB.objectiveTracker
+        if type(ot) == "table" then
+            ot.buckets, ot.bucketsCollapsed, ot.zonesCollapsed, ot.minimized = nil, nil, nil, nil
+            local pos = ot.position
+            local point = type(pos) == "table" and (pos.point or pos.anchor)
+            if type(pos) == "table" and not (type(point) == "string" and point:find("TOP")) then
+                ot.position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 }
+            end
         end
     end
 

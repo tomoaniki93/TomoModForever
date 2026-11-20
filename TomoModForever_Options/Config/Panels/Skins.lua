@@ -430,81 +430,105 @@ local function BuildObjectiveTrackerTab(parent)
     local scroll = W.CreateScrollPanel(parent)
     local c = scroll.child
     local y = -10
+    local db = TomoModForeverDB.objectiveTracker
+
+    -- [1.3.5] TMF draws its own quest tracker.
+    local function Apply()
+        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
+    end
+    local function Check(key, label, default)
+        local value = db[key]
+        if value == nil then value = default end
+        local _, ny = W.CreateCheckbox(c, label, value, y, function(v)
+            db[key] = v
+            Apply()
+        end)
+        y = ny
+    end
+    local function Slider(key, label, minV, maxV, step, default, fmt)
+        local _, ny = W.CreateSlider(c, label, db[key] or default, minV, maxV, step, y, function(v)
+            db[key] = v
+            Apply()
+        end, fmt, default)
+        y = ny
+    end
+    local function Dropdown(key, label, options, default)
+        local _, ny = W.CreateDropdown(c, label, options, db[key] or default, y, function(v)
+            db[key] = v
+            Apply()
+        end)
+        y = ny
+    end
 
     local _, ny = W.CreateSectionHeader(c, L["section_obj_tracker"], y)
     y = ny
-
     local _, ny = W.CreateInfoText(c, L["info_obj_tracker"], y)
     y = ny
 
-    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_enable"], TomoModForeverDB.objectiveTracker.enabled, y, function(v)
+    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_enable"], db.enabled, y, function(v)
         if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.SetEnabled(v) end
     end)
     y = ny
 
-    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_bg_alpha"], TomoModForeverDB.objectiveTracker.bgAlpha, 0, 1, 0.05, y, function(v)
-        TomoModForeverDB.objectiveTracker.bgAlpha = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
+    local _, ny = W.CreateInfoText(c, L["info_ot_clicks"], y)
     y = ny
 
-    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_border"], TomoModForeverDB.objectiveTracker.showBorder, y, function(v)
-        TomoModForeverDB.objectiveTracker.showBorder = v
-    end)
+    -- Content
+    local _, ny = W.CreateSubLabel(c, L["opt_ot_content"], y)
     y = ny
-
-    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_hide_empty"], TomoModForeverDB.objectiveTracker.hideWhenEmpty, y, function(v)
-        TomoModForeverDB.objectiveTracker.hideWhenEmpty = v
-    end)
-    y = ny
-
-    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_buckets"], TomoModForeverDB.objectiveTracker.buckets, y, function(v)
-        TomoModForeverDB.objectiveTracker.buckets = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateCheckbox(c, L["opt_obj_tracker_group_zone"], TomoModForeverDB.objectiveTracker.groupByZone ~= false, y, function(v)
-        TomoModForeverDB.objectiveTracker.groupByZone = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateSeparator(c, y)
-    y = ny
-
-    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_header_size"], TomoModForeverDB.objectiveTracker.headerFontSize, 8, 20, 1, y, function(v)
-        TomoModForeverDB.objectiveTracker.headerFontSize = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_cat_size"], TomoModForeverDB.objectiveTracker.categoryFontSize, 8, 18, 1, y, function(v)
-        TomoModForeverDB.objectiveTracker.categoryFontSize = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_quest_size"], TomoModForeverDB.objectiveTracker.questFontSize, 8, 18, 1, y, function(v)
-        TomoModForeverDB.objectiveTracker.questFontSize = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
-    y = ny
-
-    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_obj_size"], TomoModForeverDB.objectiveTracker.objectiveFontSize, 8, 16, 1, y, function(v)
-        TomoModForeverDB.objectiveTracker.objectiveFontSize = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
-    y = ny
+    Dropdown("displayMode", L["opt_ot_show"], {
+        { value = "all",     text = L["ot_qm_show_all"] },
+        { value = "watched", text = L["ot_qm_show_watched"] },
+    }, "all")
+    local sorts = {
+        { value = "level",    text = L["ot_sort_level"] },
+        { value = "name",     text = L["ot_sort_name"] },
+        { value = "progress", text = L["ot_sort_progress"] },
+    }
+    if C_QuestLog and C_QuestLog.GetDistanceSqToQuest then
+        sorts[#sorts + 1] = { value = "distance", text = L["ot_sort_distance"] }
+    end
+    Dropdown("questSort", L["ot_qm_sort"], sorts, "level")
+    Dropdown("zoneSort", L["ot_qm_zones"], {
+        { value = "level", text = L["ot_zsort_level"] },
+        { value = "name",  text = L["ot_zsort_name"] },
+        { value = "log",   text = L["ot_zsort_log"] },
+    }, "level")
+    Check("groupByZone",             L["ot_qm_group"], true)
+    Check("separateComplete",        L["ot_qm_complete"], true)
+    Check("autoFoldZones",           L["ot_qm_autofold"], true)
+    Check("hideCompletedObjectives", L["ot_qm_hidedone"], false)
+    Check("hideWhenEmpty",           L["opt_obj_tracker_hide_empty"], true)
+    Slider("maxQuestsShown", L["opt_obj_tracker_max_quests"], 0, 25, 1, 0)
 
     local _, ny = W.CreateSeparator(c, y)
     y = ny
 
-    local _, ny = W.CreateSlider(c, L["opt_obj_tracker_max_quests"], TomoModForeverDB.objectiveTracker.maxQuestsShown, 0, 25, 1, y, function(v)
-        TomoModForeverDB.objectiveTracker.maxQuestsShown = v
-        if TomoMod_ObjectiveTracker then TomoMod_ObjectiveTracker.ApplySettings() end
-    end)
+    -- Look
+    local _, ny = W.CreateSubLabel(c, L["opt_ot_look"], y)
     y = ny
+    Check("showLevel",         L["opt_ot_show_level"], true)
+    Check("titleByDifficulty", L["opt_ot_title_difficulty"], false)
+    Check("showTags",          L["opt_ot_show_tags"], true)
+    Check("showProgressBar",   L["opt_ot_progress_bar"], true)
+    Check("showTooltips",      L["opt_ot_tooltips"], true)
+    Check("showBorder",        L["opt_obj_tracker_border"], true)
+    Dropdown("itemSide", L["opt_ot_item_side"], {
+        { value = "left",  text = L["opt_ot_item_left"] },
+        { value = "right", text = L["opt_ot_item_right"] },
+    }, "left")
+    Slider("width",       L["opt_ot_width"], 200, 400, 10, 260)
+    Slider("maxHeight",   L["opt_ot_max_height"], 0, 1000, 20, 0)
+    Slider("bgAlpha",     L["opt_obj_tracker_bg_alpha"], 0, 1, 0.05, 0.65, "%.2f")
+    Slider("combatAlpha", L["opt_ot_combat_alpha"], 0, 1, 0.05, 1, "%.2f")
+
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+
+    Slider("headerFontSize",    L["opt_obj_tracker_header_size"], 8, 20, 1, 13)
+    Slider("categoryFontSize",  L["opt_obj_tracker_cat_size"], 8, 18, 1, 11)
+    Slider("questFontSize",     L["opt_obj_tracker_quest_size"], 8, 18, 1, 12)
+    Slider("objectiveFontSize", L["opt_obj_tracker_obj_size"], 8, 16, 1, 11)
 
     -- 1.3.4: the way back when the tracker ends up off screen.
     local _, ny = W.CreateSeparator(c, y)

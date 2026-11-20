@@ -1,2692 +1,1667 @@
-﻿-- =====================================
--- ObjectiveTracker.lua
--- Skin for Blizzard's Objective Tracker (WoW 12.x)
--- Uses recursive child scanning for maximum compatibility
--- =====================================
+﻿-- =====================================================================
+-- ObjectiveTracker.lua — TMF quest tracker (1.3.5, full rewrite)
+--
+-- Up to 1.3.4 this file re-skinned Blizzard's Retail objective tracker:
+-- it walked its frame tree, re-parented quest blocks into "buckets" and
+-- coloured them by Retail quest classification (campaign, world quest,
+-- legendary...). None of that exists on Forever, so every quest landed in
+-- one bucket in log order, with colours that meant nothing, and the
+-- re-parenting fought Blizzard's own layout (combat flicker, lost blocks).
+--
+-- 1.3.5 draws its own tracker straight from the quest log:
+--   * sections: Pinned, Ready to turn in, then one per zone, the zone you
+--     are in first; other zones fold by themselves (option)
+--   * quests sorted inside a section by level, name, progress or distance
+--   * colours that carry meaning only: the level follows the quest
+--     difficulty colour, finished objectives turn green, failed is red
+--   * quest item buttons (secure), with cooldown, charges and range
+--   * clicks: open the quest, Shift link, Ctrl pin, right click menu;
+--     a quick menu in the header for display and sort
+--   * a header that is clamped to the screen: it can no longer be lost
+--
+-- Combat. Item buttons are SecureActionButtons parented to `root` (the
+-- header), so `root` is protected in combat: it is never moved, resized,
+-- shown or hidden then -- only its alpha changes. While an item button is
+-- on screen a structural change waits for the end of the fight and only
+-- the texts are refreshed in place.
+--
+-- Public API kept: Initialize, Enable, Disable, SetEnabled, ApplySettings,
+-- ResetPosition, SetLocked, IsLocked, ToggleLock, ToggleMinimized,
+-- ApplyPosition, SavePosition.
+-- =====================================================================
 
 TomoMod_ObjectiveTracker = TomoMod_ObjectiveTracker or {}
 local OT = TomoMod_ObjectiveTracker
+local L  = TomoMod_L
 
--- =====================================
--- LOCALS & CACHES
--- =====================================
+local FONT       = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
+local FONT_BOLD  = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-SemiBold.ttf"
+local FONT_BLACK = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Bold.ttf"
+local BAR_TEX    = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoaniki"
+local CHECK_TEX  = "Interface\\RaidFrame\\ReadyCheck-Ready"
+local FAIL_TEX   = "Interface\\RaidFrame\\ReadyCheck-NotReady"
 
-local ADDON_FONT       = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
-local ADDON_FONT_BOLD  = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-SemiBold.ttf"
-local ADDON_FONT_BLACK = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Bold.ttf"
-local ADDON_TEXTURE    = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoaniki"
-local L = TomoMod_L
+-- Forever palette
+local C_GOLD   = { 0.788, 0.635, 0.322 }
+local C_YELLOW = { 1.000, 0.820, 0.000 }
+local C_TEXT   = { 0.949, 0.922, 0.859 }
+local C_OBJ    = { 0.860, 0.835, 0.780 }
+local C_DIM    = { 0.620, 0.585, 0.515 }
+local C_BRONZE = { 0.380, 0.290, 0.170 }
+local C_GREEN  = { 0.450, 0.850, 0.400 }
+local C_RED    = { 0.950, 0.330, 0.270 }
+local C_BG     = { 0.060, 0.050, 0.040 }
 
-local skinFrame
-local headerBar
-local headerTitle
-local headerCount
-local IsMinimized, UpdateMinimizeButton, ToggleMinimized -- defined further down
-local headerDash
-local headerOptions
-local isInitialized = false
-local isHooked      = false
-local _tmApplyingPosition = false -- guard so our own re-anchor doesn't recurse
+local HEADER_H  = 24
+local PAD       = 8
+local ITEM_SIZE = 24
+local LEVEL_W   = 20
 
--- Dedup tables to avoid re-styling frames each pass
-local styledFonts = setmetatable({}, { __mode = "k" })
+-- =====================================================================
+-- SETTINGS
+-- =====================================================================
 
--- =====================================
--- CATEGORY HEADER COLORS
--- =====================================
-
-local HEADER_COLORS = {
-    -- FR + EN keywords — colors aligned with HorizonSuite palette
-    ["CAMPAIGN"]        = { 1.00, 0.82, 0.20 },   -- Gold
-    ["CAMPAGNE"]        = { 1.00, 0.82, 0.20 },
-    ["QUÊTES"]          = { 0.90, 0.90, 0.90 },   -- Light grey (generic)
-    ["QUESTS"]          = { 0.90, 0.90, 0.90 },
-    ["QUEST"]           = { 0.90, 0.90, 0.90 },
-    ["WORLD QUESTS"]    = { 0.78, 0.42, 0.95 },   -- Purple-violet
-    ["QUÊTES MONDIALES"]= { 0.78, 0.42, 0.95 },
-    ["EXPÉDITIONS"]     = { 0.32, 0.72, 0.68 },   -- Teal
-    ["DELVES"]          = { 0.32, 0.72, 0.68 },
-    ["BONUS"]           = { 0.25, 0.88, 0.92 },   -- Cyan
-    ["SCENARIO"]        = { 0.38, 0.52, 0.88 },   -- Deep blue
-    ["SCÉNARIO"]        = { 0.38, 0.52, 0.88 },
-    ["ACHIEVEMENTS"]    = { 0.78, 0.48, 0.22 },   -- Bronze
-    ["HAUTS FAITS"]     = { 0.78, 0.48, 0.22 },
-    ["PROFESSIONS"]     = { 0.55, 0.75, 0.45 },   -- Sage green
-    ["PROFESSION"]      = { 0.55, 0.75, 0.45 },
-    ["MÉTIERS"]         = { 0.55, 0.75, 0.45 },
-    ["MÉTIER"]          = { 0.55, 0.75, 0.45 },
-    ["METIERS"]         = { 0.55, 0.75, 0.45 },   -- accent-stripped fallback
-    ["METIER"]          = { 0.55, 0.75, 0.45 },
-    ["MONTHLY"]         = { 0.90, 0.30, 0.70 },
-    ["MENSUEL"]         = { 0.90, 0.30, 0.70 },
-    ["ADVENTURE"]       = { 0.90, 0.80, 0.50 },   -- Artifact gold
-    ["AVENTURE"]        = { 0.90, 0.80, 0.50 },
-    ["DUNGEON"]         = { 0.64, 0.21, 0.93 },   -- Epic purple
-    ["DONJON"]          = { 0.64, 0.21, 0.93 },
-    ["RAID"]            = { 0.85, 0.25, 0.25 },   -- Red
-    ["CALLING"]         = { 0.20, 0.60, 1.00 },   -- Blue
-    ["APPEL"]           = { 0.20, 0.60, 1.00 },
-    ["WEEKLY"]          = { 0.25, 0.88, 0.92 },   -- Cyan
-    ["HEBDOMADAIRE"]    = { 0.25, 0.88, 0.92 },
-    ["DAILY"]           = { 0.25, 0.88, 0.92 },   -- Cyan
-    ["QUOTIDIEN"]       = { 0.25, 0.88, 0.92 },
-    ["PREY"]            = { 0.72, 0.22, 0.22 },   -- Dark crimson (Midnight)
-    ["PROIE"]           = { 0.72, 0.22, 0.22 },
+local DEFAULTS = {
+    enabled = true,
+    width = 260,
+    bgAlpha = 0.65,
+    showBorder = true,
+    hideWhenEmpty = true,
+    headerFontSize = 13,
+    categoryFontSize = 11,
+    questFontSize = 12,
+    objectiveFontSize = 11,
+    maxQuestsShown = 0,
+    maxHeight = 0,
+    displayMode = "all",        -- "all" | "watched"
+    questSort = "level",        -- "level" | "name" | "progress" | "distance"
+    zoneSort = "level",         -- "level" | "name" | "log"
+    groupByZone = true,
+    separateComplete = true,
+    autoFoldZones = true,
+    hideCompletedObjectives = false,
+    showLevel = true,
+    showTags = true,
+    showProgressBar = true,
+    titleByDifficulty = false,
+    showTooltips = true,
+    combatAlpha = 1,
+    itemSide = "left",          -- "left" | "right"
+    scale = 1.0,
 }
 
--- =====================================
--- SETTINGS
--- =====================================
-
 local function S()
-    return TomoModForeverDB and TomoModForeverDB.objectiveTracker or {}
+    return (TomoModForeverDB and TomoModForeverDB.objectiveTracker) or DEFAULTS
 end
 
-local function IsEnabled()
-    return S().enabled
+local function Opt(key)
+    local v = S()[key]
+    if v == nil then v = DEFAULTS[key] end
+    return v
 end
 
--- [1.2.8] Questie's tracker in use: it hides Blizzard's tracker and draws
--- its own, so TomoMod leaves ObjectiveTrackerFrame alone (no skin, no extra
--- room, no anchor). See Compat.QuestieOwnsTracker.
+local function SetOpt(key, value)
+    local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
+    if db then db[key] = value end
+end
+
+-- Per-character state: pins, hidden quests, folded sections.
+local function CS()
+    if type(TomoModForeverCharDB) ~= "table" then TomoModForeverCharDB = {} end
+    local c = TomoModForeverCharDB.questTracker
+    if type(c) ~= "table" then
+        c = {}
+        TomoModForeverCharDB.questTracker = c
+    end
+    if type(c.pinned) ~= "table" then c.pinned = {} end
+    if type(c.hidden) ~= "table" then c.hidden = {} end
+    if type(c.folded) ~= "table" then c.folded = {} end
+    return c
+end
+
+local function T(key, fallback)
+    local v = L and L[key]
+    if v == nil or v == key or v == "" then return fallback end
+    return v
+end
+
+local function Secret(v)
+    return issecretvalue ~= nil and issecretvalue(v) or false
+end
+
 local function QuestieOwnsTracker()
     return TomoMod_Compat and TomoMod_Compat.QuestieOwnsTracker
         and TomoMod_Compat.QuestieOwnsTracker() or false
 end
 
-local questieNoticeShown = false
-local function QuestieNotice()
-    if questieNoticeShown then return end
-    questieNoticeShown = true
-    print("|cffffd100TomoModForever|r " .. L["ot_questie_standdown"])
+-- =====================================================================
+-- STRINGS / ZONES
+-- =====================================================================
+
+-- Sort key: lower case, accents folded, so "Élan" sorts with the E and
+-- not after "Zèbre" (strcmputf8i folds case, not accents).
+local FOLD = {
+    ["à"]="a", ["á"]="a", ["â"]="a", ["ã"]="a", ["ä"]="a", ["å"]="a",
+    ["À"]="a", ["Á"]="a", ["Â"]="a", ["Ã"]="a", ["Ä"]="a", ["Å"]="a",
+    ["ç"]="c", ["Ç"]="c", ["ñ"]="n", ["Ñ"]="n", ["ß"]="ss",
+    ["è"]="e", ["é"]="e", ["ê"]="e", ["ë"]="e", ["È"]="e", ["É"]="e", ["Ê"]="e", ["Ë"]="e",
+    ["ì"]="i", ["í"]="i", ["î"]="i", ["ï"]="i", ["Ì"]="i", ["Í"]="i", ["Î"]="i", ["Ï"]="i",
+    ["ò"]="o", ["ó"]="o", ["ô"]="o", ["õ"]="o", ["ö"]="o", ["Ò"]="o", ["Ó"]="o", ["Ô"]="o", ["Õ"]="o", ["Ö"]="o",
+    ["ù"]="u", ["ú"]="u", ["û"]="u", ["ü"]="u", ["Ù"]="u", ["Ú"]="u", ["Û"]="u", ["Ü"]="u",
+    ["ý"]="y", ["ÿ"]="y", ["Ý"]="y", ["œ"]="oe", ["Œ"]="oe", ["æ"]="ae", ["Æ"]="ae",
+}
+local keyCache = {}
+local function SortKey(str)
+    local k = keyCache[str]
+    if k then return k end
+    k = str:gsub("[\192-\223][\128-\191]", FOLD):lower()
+    keyCache[str] = k
+    return k
 end
 
--- Blizzard's ObjectiveTrackerContainerTemplate owns a full-size NineSlice
--- ("common-opacity-background"), and its header templates animate their own
--- Background textures back to alpha 1. A one-shot SetAlpha(0) therefore only
--- lasts until the next native layout/update. Keep only those presentation
--- regions locked at zero while TomoMod owns the skin, then restore their exact
--- previous alpha when the module is disabled.
-local nativeAlphaLocks     = setmetatable({}, { __mode = "k" })
-local nativeAlphaHooks     = setmetatable({}, { __mode = "k" })
-local nativeAlphaEnforcing = setmetatable({}, { __mode = "k" })
-local nativeAlphaOriginal  = setmetatable({}, { __mode = "k" })
-
-local function LockNativeAlpha(region)
-    if not region or type(region.SetAlpha) ~= "function" then return end
-
-    if nativeAlphaOriginal[region] == nil and type(region.GetAlpha) == "function" then
-        nativeAlphaOriginal[region] = region:GetAlpha()
-    end
-    nativeAlphaLocks[region] = true
-
-    if not nativeAlphaHooks[region] and hooksecurefunc then
-        local ok = pcall(hooksecurefunc, region, "SetAlpha", function(self)
-            if not nativeAlphaLocks[self] or nativeAlphaEnforcing[self] then return end
-            nativeAlphaEnforcing[self] = true
-            self:SetAlpha(0)
-            nativeAlphaEnforcing[self] = nil
-        end)
-        if ok then nativeAlphaHooks[region] = true end
-    end
-
-    nativeAlphaEnforcing[region] = true
-    region:SetAlpha(0)
-    nativeAlphaEnforcing[region] = nil
+local function Cmp(a, b)
+    a, b = SortKey(a or ""), SortKey(b or "")
+    if a == b then return 0 end
+    return a < b and -1 or 1
 end
 
-local function LockNativeFrameTree(frame, depth)
-    if not frame or (depth or 0) > 2 then return end
-    LockNativeAlpha(frame)
-
-    if frame.GetRegions then
-        for _, region in ipairs({ frame:GetRegions() }) do
-            LockNativeAlpha(region)
-        end
-    end
-    if frame.GetChildren then
-        for _, child in ipairs({ frame:GetChildren() }) do
-            LockNativeFrameTree(child, (depth or 0) + 1)
-        end
-    end
+local function CurrentZone()
+    local z = GetRealZoneText and GetRealZoneText()
+    if not z or z == "" then z = GetZoneText and GetZoneText() end
+    return z
 end
 
-local function RestoreNativeAlphaLocks()
-    for region, alpha in pairs(nativeAlphaOriginal) do
-        nativeAlphaLocks[region] = nil
-        nativeAlphaEnforcing[region] = nil
-        if region and type(region.SetAlpha) == "function" then
-            region:SetAlpha(type(alpha) == "number" and alpha or 1)
-        end
-        nativeAlphaOriginal[region] = nil
-    end
+local function MapZone()
+    if not (C_Map and C_Map.GetBestMapForUnit and C_Map.GetMapInfo) then return nil end
+    local id = C_Map.GetBestMapForUnit("player")
+    local info = id and C_Map.GetMapInfo(id)
+    return info and info.name
 end
 
--- =====================================
--- GET COLOR FOR HEADER TEXT
--- =====================================
-
-local function GetHeaderColor(text)
-    if not text or text == "" then return nil end
-    -- Lua's string.upper / string.lower only fold ASCII bytes, so accented
-    -- characters (é, ê, ç, …) keep their case. We compare both the raw text
-    -- and its naive upper/lower forms against every keyword's forms so that
-    -- "Métier", "MÉTIER", "métier" all match the "MÉTIER" keyword.
-    local upper = string.upper(text)
-    local lower = string.lower(text)
-    for keyword, color in pairs(HEADER_COLORS) do
-        local kUp, kLo = string.upper(keyword), string.lower(keyword)
-        if string.find(upper, kUp, 1, true)
-            or string.find(lower, kLo, 1, true)
-            or string.find(text,  keyword, 1, true) then
-            return color
-        end
-    end
-    return nil
+local function IsHere(zone, here, mapHere)
+    if not zone then return false end
+    return (here and Cmp(zone, here) == 0) or (mapHere and Cmp(zone, mapHere) == 0) or false
 end
 
--- =====================================
--- DETECT FRAME ROLE
--- =====================================
-
-local function IsModuleHeader(frame)
-    -- Quest blocks have HeaderText (the quest title); objective lines have Dash.
-    -- Neither is ever a Blizzard module header — guard against false positives
-    -- now that GetHeaderColor matches case-insensitively and accent-stripped.
-    if frame.HeaderText or frame.Dash then
-        return false, nil
+local function DifficultyColor(level)
+    if level and level > 0 and GetQuestDifficultyColor then
+        local c = GetQuestDifficultyColor(level)
+        if c and c.r then return c.r, c.g, c.b end
     end
-    if frame.Text and frame.Text.GetText then
-        local txt = frame.Text:GetText()
-        if txt and GetHeaderColor(txt) then
-            return true, txt
+    return C_TEXT[1], C_TEXT[2], C_TEXT[3]
+end
+
+-- =====================================================================
+-- QUEST LOG READING
+-- =====================================================================
+
+local function ParseCount(text)
+    if type(text) ~= "string" then return nil end
+    local have, need = text:match("(%d+)%s*/%s*(%d+)")
+    return tonumber(have), tonumber(need)
+end
+
+local function ReadObjectives(questID, logIndex)
+    local out = {}
+    if C_QuestLog and C_QuestLog.GetQuestObjectives then
+        local ok, objs = pcall(C_QuestLog.GetQuestObjectives, questID)
+        if ok and type(objs) == "table" then
+            for _, o in ipairs(objs) do
+                local text = o.text
+                if type(text) == "string" and text ~= "" and not Secret(text) then
+                    local have, need = o.numFulfilled, o.numRequired
+                    if Secret(have) or Secret(need) then have, need = nil, nil end
+                    if not need or need == 0 then have, need = ParseCount(text) end
+                    out[#out + 1] = {
+                        text = text, done = o.finished and true or false,
+                        have = have, need = need,
+                    }
+                end
+            end
+            return out
         end
     end
-    local regions = { frame:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region:IsObjectType("FontString") then
-            local txt = region:GetText()
-            if txt and GetHeaderColor(txt) then
-                return true, txt
+    if GetNumQuestLeaderBoards and GetQuestLogLeaderBoard and logIndex then
+        local n = GetNumQuestLeaderBoards(logIndex) or 0
+        for i = 1, n do
+            local text, _, finished = GetQuestLogLeaderBoard(i, logIndex)
+            if type(text) == "string" and text ~= "" and not Secret(text) then
+                local have, need = ParseCount(text)
+                out[#out + 1] = { text = text, done = finished and true or false, have = have, need = need }
             end
         end
     end
-    return false, nil
+    return out
 end
 
--- =====================================
--- STYLE FUNCTIONS
--- =====================================
-
-local function StyleFontString(fs, font, size, outline, r, g, b, a)
-    if not fs or not fs.SetFont then return end
-    local sizeKey = size .. (outline or "")
-    if styledFonts[fs] == sizeKey then return end
-
-    pcall(fs.SetFont, fs, font, size, outline or "")
-    if r then pcall(fs.SetTextColor, fs, r, g, b, a or 1) end
-    styledFonts[fs] = sizeKey
-end
-
-local function StyleModuleHeader(frame, headerText)
-    local s = S()
-    local color = GetHeaderColor(headerText)
-    if not color then return end
-
-    -- Style the header FontString
-    if frame.Text and frame.Text.SetFont then
-        frame.Text:SetFont(ADDON_FONT_BOLD, s.categoryFontSize or 11, "OUTLINE")
-        frame.Text:SetTextColor(color[1], color[2], color[3], 1)
-    end
-
-    -- Also style any matching region FontString
-    local regions = { frame:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region:IsObjectType("FontString") then
-            local txt = region:GetText()
-            if txt and GetHeaderColor(txt) then
-                region:SetFont(ADDON_FONT_BOLD, s.categoryFontSize or 11, "OUTLINE")
-                region:SetTextColor(color[1], color[2], color[3], 1)
+local function QuestTag(questID, group)
+    local tag
+    if C_QuestLog and C_QuestLog.GetQuestTagInfo then
+        local ok, info = pcall(C_QuestLog.GetQuestTagInfo, questID)
+        if ok and type(info) == "table" then
+            local name = info.tagName
+            if type(name) == "string" and name ~= "" and not Secret(name) then
+                tag = name
+            elseif info.isElite then
+                tag = T("ot_tag_elite", "Elite")
             end
         end
+    elseif GetQuestTagInfo then
+        local ok, _, name = pcall(GetQuestTagInfo, questID)
+        if ok and type(name) == "string" and name ~= "" then tag = name end
     end
-
-    -- Suppress the animated native module-header background permanently while
-    -- the TomoMod skin is active.
-    if frame.Background then LockNativeAlpha(frame.Background) end
-
-    -- Add colored underline
-    if not frame._tomoLine then
-        local line = frame:CreateTexture(nil, "ARTWORK")
-        line:SetHeight(1)
-        line:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-        line:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-        frame._tomoLine = line
+    if group and group > 1 then
+        if tag then
+            tag = tag .. " " .. group
+        else
+            tag = string.format(T("ot_tag_group", "Group %d"), group)
+        end
     end
-    frame._tomoLine:SetColorTexture(color[1], color[2], color[3], 0.35)
+    return tag
 end
 
--- =====================================
--- QUEST TITLE COLORS (by quest type)
--- Inspired by HorizonSuite's color matrix system
--- Priority: complete > campaign > important > legendary > calling > dungeon > raid > world > weekly > daily > prey > delves > scenario > default
--- =====================================
-
-local QUEST_TITLE_COLORS = {
-    COMPLETE    = { 0.20, 1.00, 0.40 },   -- Green (ready to turn in)
-    CAMPAIGN    = { 1.00, 0.82, 0.20 },   -- Gold
-    IMPORTANT   = { 1.00, 0.45, 0.80 },   -- Pink
-    LEGENDARY   = { 1.00, 0.50, 0.00 },   -- Orange
-    CALLING     = { 0.20, 0.60, 1.00 },   -- Blue
-    DUNGEON     = { 0.64, 0.21, 0.93 },   -- Epic purple
-    RAID        = { 0.85, 0.25, 0.25 },   -- Red
-    WORLD       = { 0.78, 0.42, 0.95 },   -- Purple-violet
-    WEEKLY      = { 0.25, 0.88, 0.92 },   -- Cyan
-    DAILY       = { 0.25, 0.88, 0.92 },   -- Cyan
-    PREY        = { 0.72, 0.22, 0.22 },   -- Dark crimson (Midnight)
-    DELVES      = { 0.32, 0.72, 0.68 },   -- Teal/seafoam
-    SCENARIO    = { 0.38, 0.52, 0.88 },   -- Deep blue
-    ADVENTURE   = { 0.90, 0.80, 0.50 },   -- Artifact gold
-    ACHIEVEMENT = { 0.78, 0.48, 0.22 },   -- Bronze
-    PROFESSION  = { 0.55, 0.75, 0.45 },   -- Sage green
-    DEFAULT     = { 0.90, 0.90, 0.90 },   -- Light grey
-}
-
--- Objective line colors per quest type (slightly dimmed vs title)
-local QUEST_OBJECTIVE_COLORS = {
-    COMPLETE    = { 0.20, 0.85, 0.35 },
-    CAMPAIGN    = { 0.90, 0.75, 0.25 },
-    IMPORTANT   = { 0.90, 0.45, 0.72 },
-    LEGENDARY   = { 0.90, 0.48, 0.10 },
-    CALLING     = { 0.25, 0.58, 0.90 },
-    DUNGEON     = { 0.58, 0.25, 0.82 },
-    RAID        = { 0.78, 0.28, 0.28 },
-    WORLD       = { 0.70, 0.40, 0.85 },
-    WEEKLY      = { 0.28, 0.78, 0.82 },
-    DAILY       = { 0.28, 0.78, 0.82 },
-    PREY        = { 0.65, 0.25, 0.25 },
-    DELVES      = { 0.32, 0.65, 0.62 },
-    SCENARIO    = { 0.38, 0.48, 0.78 },
-    DEFAULT     = { 0.75, 0.75, 0.75 },
-}
-
--- Extract questID from an objective tracker block (walks up parent chain)
-local function GetBlockQuestID(frame)
-    local f = frame
-    for _ = 1, 4 do
-        if not f then break end
-        if f.questID then return f.questID end
-        if f.id then return f.id end
-        f = f:GetParent()
+local function IsWatched(questID, logIndex)
+    if C_QuestLog and C_QuestLog.GetQuestWatchType then
+        return C_QuestLog.GetQuestWatchType(questID) ~= nil
     end
+    if IsQuestWatched and logIndex then return IsQuestWatched(logIndex) and true or false end
+    return true
+end
+
+local function QuestItem(logIndex, complete)
+    if not (GetQuestLogSpecialItemInfo and logIndex) then return nil end
+    local ok, link, icon, charges, showWhenComplete = pcall(GetQuestLogSpecialItemInfo, logIndex)
+    if not ok or type(link) ~= "string" or Secret(link) then return nil end
+    if complete and not showWhenComplete then return nil end
+    local itemID = tonumber(link:match("item:(%d+)"))
+    if not itemID then return nil end
+    return { link = link, icon = icon, charges = charges, itemID = itemID, logIndex = logIndex }
+end
+
+local function Distance(questID)
+    if not (C_QuestLog and C_QuestLog.GetDistanceSqToQuest) then return nil end
+    local ok, d = pcall(C_QuestLog.GetDistanceSqToQuest, questID)
+    if ok and type(d) == "number" and not Secret(d) and d > 0 then return d end
     return nil
 end
 
--- [1.2.9] Zone of every quest in the log. On Forever the quest log is grouped
--- by zone headers (as in Classic): a quest belongs to the header above it.
--- Returns map[questID] = { zone = header text, order = header position }.
-local function QuestZoneMap()
-    local map, zone, order = {}, nil, 0
+local function IsTrue(v) return v == true or v == 1 end
+
+local function MakeQuest(id, logIndex, title, level, group, zone, zoneOrder, isComplete)
+    if Secret(title) or type(title) ~= "string" or title == "" then title = "#" .. id end
+    local q = {
+        id = id, logIndex = logIndex, title = title,
+        level = tonumber(level) or 0, group = tonumber(group) or 0,
+        zone = zone or T("ot_zone_other", "Other"), zoneOrder = zoneOrder or 0,
+    }
+    local complete, failed = IsTrue(isComplete), isComplete == -1
+    if C_QuestLog and C_QuestLog.IsComplete then
+        local ok, v = pcall(C_QuestLog.IsComplete, id)
+        if ok and v == true then complete = true end
+    end
+    if C_QuestLog and C_QuestLog.IsFailed then
+        local ok, v = pcall(C_QuestLog.IsFailed, id)
+        if ok and v == true then failed = true end
+    end
+    q.failed = failed
+    q.complete = complete and not failed
+    q.objectives = ReadObjectives(id, logIndex)
+
+    local have, need, counted = 0, 0, false
+    for _, o in ipairs(q.objectives) do
+        if o.need and o.need > 0 then
+            have = have + math.min(o.have or 0, o.need)
+            need = need + o.need
+            counted = true
+        else
+            need = need + 1
+            if o.done then have = have + 1 end
+        end
+    end
+    q.counted = counted
+    q.progress = (need > 0) and (have / need) or (q.complete and 1 or 0)
+    if q.complete then q.progress = 1 end
+    q.tag = QuestTag(id, q.group)
+    q.watched = IsWatched(id, logIndex)
+    q.item = QuestItem(logIndex, q.complete)
+    return q
+end
+
+local function GatherLog()
+    local quests, byID = {}, {}
+    local zone, zoneOrder = nil, 0
+    local function add(q)
+        quests[#quests + 1] = q
+        byID[q.id] = q
+    end
+
     if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo then
         local n = C_QuestLog.GetNumQuestLogEntries() or 0
         for i = 1, n do
             local info = C_QuestLog.GetInfo(i)
             if info then
                 if info.isHeader then
-                    zone, order = info.title, order + 1
-                elseif info.questID and info.questID > 0 then
-                    map[info.questID] = { zone = zone, order = order }
+                    zone, zoneOrder = info.title, zoneOrder + 1
+                elseif info.questID and info.questID > 0 and not info.isHidden
+                    and not info.isTask and not info.isBounty and not byID[info.questID] then
+                    add(MakeQuest(info.questID, i, info.title, info.level,
+                        info.suggestedGroup, zone, zoneOrder, info.isComplete))
                 end
             end
         end
     elseif GetNumQuestLogEntries and GetQuestLogTitle then
         local n = GetNumQuestLogEntries() or 0
         for i = 1, n do
-            local title, _, _, isHeader, _, _, _, questID = GetQuestLogTitle(i)
+            local title, level, group, isHeader, _, isComplete, _, questID = GetQuestLogTitle(i)
             if isHeader then
-                zone, order = title, order + 1
-            elseif questID and questID > 0 then
-                map[questID] = { zone = zone, order = order }
+                zone, zoneOrder = title, zoneOrder + 1
+            elseif questID and questID > 0 and not byID[questID] then
+                add(MakeQuest(questID, i, title, level, group, zone, zoneOrder, isComplete))
             end
         end
     end
-    return map
-end
-
--- =====================================
--- QUEST BASE CATEGORY (inspired by HorizonSuite)
--- Uses C_QuestInfoSystem.GetQuestClassification + tag info fallbacks
--- =====================================
-
-local questCategoryCache = setmetatable({}, { __mode = "v" })
-
-local function GetQuestBaseCategory(questID)
-    if not questID or questID <= 0 then return "DEFAULT" end
-
-    -- Cache lookup
-    local cached = questCategoryCache[questID]
-    if cached then return cached end
-
-    local category = "DEFAULT"
-
-    -- 1) C_QuestInfoSystem.GetQuestClassification (most reliable on 12.x)
-    if C_QuestInfoSystem and C_QuestInfoSystem.GetQuestClassification then
-        local ok, qc = pcall(C_QuestInfoSystem.GetQuestClassification, questID)
-        if ok and qc then
-            if qc == Enum.QuestClassification.Campaign then
-                category = "CAMPAIGN"
-            elseif qc == Enum.QuestClassification.Important then
-                category = "IMPORTANT"
-            elseif qc == Enum.QuestClassification.Legendary then
-                category = "LEGENDARY"
-            elseif qc == Enum.QuestClassification.Calling then
-                category = "CALLING"
-            elseif qc == Enum.QuestClassification.Recurring then
-                -- Recurring: differentiate weekly vs daily via frequency
-                local tagInfo = C_QuestLog.GetQuestTagInfo and C_QuestLog.GetQuestTagInfo(questID)
-                if tagInfo and tagInfo.frequency then
-                    if tagInfo.frequency == Enum.QuestFrequency.Daily then
-                        category = "DAILY"
-                    elseif tagInfo.frequency == Enum.QuestFrequency.Weekly then
-                        category = "WEEKLY"
-                    else
-                        category = "WEEKLY" -- fallback for recurring
-                    end
-                else
-                    category = "WEEKLY"
-                end
-            end
-        end
-    end
-
-    -- 2) Fallback: Campaign detection via C_CampaignInfo
-    if category == "DEFAULT" and C_CampaignInfo and C_CampaignInfo.IsCampaignQuest then
-        local ok, isCampaign = pcall(C_CampaignInfo.IsCampaignQuest, questID)
-        if ok and isCampaign then
-            category = "CAMPAIGN"
-        end
-    end
-
-    -- 3) Fallback: Important quest
-    if category == "DEFAULT" and C_QuestLog.IsImportantQuest then
-        local ok, isImp = pcall(C_QuestLog.IsImportantQuest, questID)
-        if ok and isImp then
-            category = "IMPORTANT"
-        end
-    end
-
-    -- 4) World quest detection
-    if category == "DEFAULT" then
-        local isWorld = false
-        if C_QuestLog.IsWorldQuest then
-            local ok, val = pcall(C_QuestLog.IsWorldQuest, questID)
-            isWorld = ok and val
-        end
-        if not isWorld and QuestUtils_IsQuestWorldQuest then
-            local ok, val = pcall(QuestUtils_IsQuestWorldQuest, questID)
-            isWorld = ok and val
-        end
-        if isWorld then
-            category = "WORLD"
-        end
-    end
-
-    -- 5) Tag-based detection: dungeon, raid, scenario, daily/weekly frequency
-    if category == "DEFAULT" or category == "WORLD" then
-        local tagInfo = C_QuestLog.GetQuestTagInfo and C_QuestLog.GetQuestTagInfo(questID)
-        if tagInfo then
-            -- Dungeon / Raid from tagID
-            if tagInfo.tagID then
-                if tagInfo.tagID == 81 then -- Dungeon
-                    category = "DUNGEON"
-                elseif tagInfo.tagID == 62 then -- Raid
-                    category = "RAID"
-                end
-            end
-            -- Frequency fallback for daily/weekly (if not already categorized)
-            if category == "DEFAULT" and tagInfo.frequency then
-                if tagInfo.frequency == Enum.QuestFrequency.Daily then
-                    category = "DAILY"
-                elseif tagInfo.frequency == Enum.QuestFrequency.Weekly then
-                    category = "WEEKLY"
-                end
-            end
-        end
-    end
-
-    -- 6) Calling detection (fallback)
-    if category == "DEFAULT" and C_QuestLog.IsQuestCalling then
-        local ok, isCalling = pcall(C_QuestLog.IsQuestCalling, questID)
-        if ok and isCalling then
-            category = "CALLING"
-        end
-    end
-
-    questCategoryCache[questID] = category
-    return category
-end
-
--- Determine quest title color based on quest type
-local function GetQuestTitleColor(questID)
-    if not questID then return QUEST_TITLE_COLORS.DEFAULT end
-
-    -- Ready to turn in (completed, not yet turned in) — always green
-    if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
-        return QUEST_TITLE_COLORS.COMPLETE
-    end
-    if C_QuestLog.ReadyForTurnIn and C_QuestLog.ReadyForTurnIn(questID) then
-        return QUEST_TITLE_COLORS.COMPLETE
-    end
-
-    local category = GetQuestBaseCategory(questID)
-    return QUEST_TITLE_COLORS[category] or QUEST_TITLE_COLORS.DEFAULT
-end
-
--- Get quest category string for objective coloring
-local function GetQuestCategory(questID)
-    if not questID then return "DEFAULT" end
-    if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
-        return "COMPLETE"
-    end
-    if C_QuestLog.ReadyForTurnIn and C_QuestLog.ReadyForTurnIn(questID) then
-        return "COMPLETE"
-    end
-    return GetQuestBaseCategory(questID)
-end
-
-local function StyleQuestTitle(fs, parentFrame)
-    local s = S()
-    local questID = GetBlockQuestID(parentFrame or (fs and fs:GetParent()))
-    local color = GetQuestTitleColor(questID)
-    StyleFontString(fs, ADDON_FONT_BOLD, s.questFontSize or 12, "OUTLINE", color[1], color[2], color[3], 0.95)
-    -- Force color every pass (dedup only checks font/size, not color)
-    if fs and fs.SetTextColor then
-        fs:SetTextColor(color[1], color[2], color[3], 0.95)
-    end
-end
-
-local function StyleObjectiveLine(fs, completed, parentFrame)
-    local s = S()
-    if completed then
-        -- Completed: always green
-        StyleFontString(fs, ADDON_FONT, s.objectiveFontSize or 11, "OUTLINE", 0.20, 0.85, 0.35, 1)
-    else
-        -- Incomplete: use quest-type tinted color for objectives
-        local questID = GetBlockQuestID(parentFrame or (fs and fs:GetParent()))
-        local category = GetQuestCategory(questID)
-        local objColor = QUEST_OBJECTIVE_COLORS[category] or QUEST_OBJECTIVE_COLORS.DEFAULT
-        StyleFontString(fs, ADDON_FONT, s.objectiveFontSize or 11, "OUTLINE", objColor[1], objColor[2], objColor[3], 0.90)
-        -- Force color update
-        if fs and fs.SetTextColor then
-            fs:SetTextColor(objColor[1], objColor[2], objColor[3], 0.90)
-        end
-    end
-end
-
--- Detect if an objective line is completed
-local function IsObjectiveComplete(frame)
-    -- Method 1: Check Blizzard state
-    if frame.state and frame.state == 1 then return true end
-    -- Method 2: Check if the Check mark texture is shown
-    if frame.Check and frame.Check:IsShown() then return true end
-    -- Method 3: Check Dash color (Blizzard colors completed dashes differently)
-    if frame.Dash and frame.Dash.GetTextColor then
-        local r, g, b = frame.Dash:GetTextColor()
-        -- Blizzard dims completed lines
-        if r < 0.5 and g < 0.5 and b < 0.5 then return true end
-    end
-    return false
-end
-
--- =====================================
--- STATUS BAR RESTYLING (forces, progress)
--- =====================================
-
-local styledBars = setmetatable({}, { __mode = "k" })
-
-local function StyleStatusBar(bar)
-    if not bar or styledBars[bar] then return end
-    if not bar.SetStatusBarTexture then return end
-    styledBars[bar] = true
-
-    -- Apply our texture
-    bar:SetStatusBarTexture(ADDON_TEXTURE)
-    bar:SetStatusBarColor(0.788, 0.635, 0.322, 1)
-
-    -- Dark background
-    if not bar._tmBG then
-        local bg = bar:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints()
-        bg:SetColorTexture(0.098, 0.082, 0.063, 0.80)
-        bar._tmBG = bg
-    end
-
-    -- 1px black border
-    if not bar._tmBorder then
-        for _, info in ipairs({
-            {"TOPLEFT","TOPLEFT","TOPRIGHT","TOPRIGHT", nil, 1},
-            {"BOTTOMLEFT","BOTTOMLEFT","BOTTOMRIGHT","BOTTOMRIGHT", nil, 1},
-            {"TOPLEFT","TOPLEFT","BOTTOMLEFT","BOTTOMLEFT", 1, nil},
-            {"TOPRIGHT","TOPRIGHT","BOTTOMRIGHT","BOTTOMRIGHT", 1, nil},
-        }) do
-            local t = bar:CreateTexture(nil, "OVERLAY", nil, 7)
-            t:SetColorTexture(0, 0, 0, 1)
-            t:SetPoint(info[1], bar, info[2])
-            t:SetPoint(info[3], bar, info[4])
-            if info[5] then t:SetWidth(info[5]) end
-            if info[6] then t:SetHeight(info[6]) end
-        end
-        bar._tmBorder = true
-    end
-
-    -- Style the bar text if present
-    local regions = { bar:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region:IsObjectType("FontString") then
-            local s = S()
-            region:SetFont(ADDON_FONT_BOLD, s.objectiveFontSize or 11, "OUTLINE")
-        end
-    end
-end
-
--- =====================================
--- RECURSIVE SCANNER
--- =====================================
-
-local function ScanAndStyle(frame, depth)
-    if not frame or depth > 6 then return end
-    if frame._tmBucket then return end
-
-    -- Check if this frame is a module header
-    local isHeader, headerText = IsModuleHeader(frame)
-    if isHeader then
-        StyleModuleHeader(frame, headerText)
-    end
-
-    -- Check for HeaderText (quest block title)
-    if frame.HeaderText and frame.HeaderText.GetText then
-        StyleQuestTitle(frame.HeaderText, frame)
-    end
-
-    -- Check for objective lines (.Text + optional .Dash)
-    if frame.Text and frame.Text.GetText and not frame.HeaderText then
-        local txt = frame.Text:GetText()
-        if txt and txt ~= "" then
-            if frame.Dash then
-                local done = IsObjectiveComplete(frame)
-                StyleObjectiveLine(frame.Text, done, frame)
-                StyleObjectiveLine(frame.Dash, done, frame)
-            end
-        end
-    end
-
-    -- Restyle StatusBars (enemy forces, progress bars)
-    if frame:IsObjectType("StatusBar") then
-        StyleStatusBar(frame)
-    end
-
-    -- Recurse into children
-    local children = { frame:GetChildren() }
-    for _, child in ipairs(children) do
-        ScanAndStyle(child, depth + 1)
-    end
-end
-
--- =====================================
--- QUEST DISPLAY LIMITER
--- =====================================
-
-local overflowText = nil
-
-local function CollectQuestBlocks(frame, depth, blocks)
-    if not frame or depth > 6 then return end
-    if frame == skinFrame or frame == headerBar then return end
-
-    -- A frame with HeaderText is a quest/objective block
-    if frame.HeaderText and frame.HeaderText.GetText then
-        local txt = frame.HeaderText:GetText()
-        if txt and txt ~= "" then
-            blocks[#blocks + 1] = frame
-        end
-    end
-
-    local children = { frame:GetChildren() }
-    for _, child in ipairs(children) do
-        CollectQuestBlocks(child, depth + 1, blocks)
-    end
-end
-
-local function LimitDisplayedQuests()
-    local s = S()
-    local maxQuests = s.maxQuestsShown or 0
-    if maxQuests <= 0 then
-        -- No limit: show all and hide overflow text
-        if overflowText then overflowText:Hide() end
-        return
-    end
-
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-
-    local blocks = {}
-    CollectQuestBlocks(tracker, 0, blocks)
-
-    local hiddenCount = 0
-    for i, block in ipairs(blocks) do
-        if i > maxQuests then
-            block:Hide()
-            hiddenCount = hiddenCount + 1
-        end
-    end
-
-    -- Show overflow indicator
-    if hiddenCount > 0 and skinFrame then
-        if not overflowText then
-            overflowText = skinFrame:CreateFontString(nil, "OVERLAY")
-            overflowText:SetFont(ADDON_FONT, 10, "OUTLINE")
-            overflowText:SetTextColor(0.55, 0.55, 0.60, 0.9)
-            overflowText:SetPoint("BOTTOMRIGHT", skinFrame, "BOTTOMRIGHT", -10, 6)
-        end
-        overflowText:SetText(string.format(L["ot_overflow_text"], hiddenCount))
-        overflowText:Show()
-    elseif overflowText then
-        overflowText:Hide()
-    end
-end
-
--- =====================================
--- BACKGROUND PANEL
--- =====================================
-
-local function CreateOrUpdateBackground()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    local s = S()
-
-    if not skinFrame then
-        skinFrame = CreateFrame("Frame", "TomoMod_OTSkin", UIParent)
-        skinFrame:SetFrameStrata(tracker:GetFrameStrata())
-        skinFrame:SetFrameLevel(math.max(tracker:GetFrameLevel() - 1, 0))
-
-        -- Background texture
-        local bg = skinFrame:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints()
-        skinFrame.bg = bg
-
-        -- Border textures
-        local bColor = { 0.380, 0.290, 0.170, 0.6 }
-        local borders = {}
-        for _, info in ipairs({
-            { "TOPLEFT", "TOPLEFT", "TOPRIGHT", "TOPRIGHT", nil, 1 },
-            { "BOTTOMLEFT", "BOTTOMLEFT", "BOTTOMRIGHT", "BOTTOMRIGHT", nil, 1 },
-            { "TOPLEFT", "TOPLEFT", "BOTTOMLEFT", "BOTTOMLEFT", 1, nil },
-            { "TOPRIGHT", "TOPRIGHT", "BOTTOMRIGHT", "BOTTOMRIGHT", 1, nil },
-        }) do
-            local t = skinFrame:CreateTexture(nil, "BORDER")
-            t:SetColorTexture(unpack(bColor))
-            t:SetPoint(info[1], skinFrame, info[2])
-            t:SetPoint(info[3], skinFrame, info[4])
-            if info[5] then t:SetWidth(info[5]) end
-            if info[6] then t:SetHeight(info[6]) end
-            borders[#borders + 1] = t
-        end
-        skinFrame.borderTextures = borders
-    end
-
-    -- Position: wrap actual tracker content (+10px wider than the Blizzard tracker)
-    skinFrame:ClearAllPoints()
-    skinFrame:SetPoint("TOPLEFT", tracker, "TOPLEFT", -17, 12)
-    skinFrame:SetPoint("TOPRIGHT", tracker, "TOPRIGHT", 17, 0)
-
-    -- Dynamic height: measure the actual bottom of visible content
-    local trackerTop = tracker:GetTop()
-    local lowestBottom = trackerTop  -- start at top (nothing visible)
-
-    if trackerTop then
-        local children = { tracker:GetChildren() }
-        for _, child in ipairs(children) do
-            -- Skip our own frames
-            if child:IsShown() and child ~= skinFrame and child ~= headerBar then
-                local bot = child:GetBottom()
-                if bot and bot < lowestBottom then
-                    lowestBottom = bot
-                end
-            end
-        end
-    end
-
-    -- Content height = distance from tracker top to lowest child bottom
-    local contentH = (trackerTop and lowestBottom) and (trackerTop - lowestBottom) or 0
-    -- Add padding: 12 top (for our header offset) + 28 header bar + 16 bottom padding
-    local finalH = math.max(contentH + 56, 60)
-    -- [1.2.9] In bucket mode the panel height belongs to LayoutBuckets (it
-    -- knows what it placed). This measurement walks Blizzard's tree, where,
-    -- in combat, the blocks of folded buckets / zones are re-shown at alpha 0
-    -- inside the 4000-high container: the panel then stretched down the whole
-    -- screen during every fight (player report). Keep the last layout height;
-    -- measure only when there is none yet, or with buckets off.
-    if S().buckets ~= false and skinFrame._tmLayoutH then
-        finalH = skinFrame._tmLayoutH
-    end
-    skinFrame:SetHeight(finalH)
-
-    -- Apply alpha
-    skinFrame.bg:SetColorTexture(0, 0, 0, s.bgAlpha or 0.65)
-
-    -- Border visibility
-    if skinFrame.borderTextures then
-        local show = s.showBorder
-        for _, t in ipairs(skinFrame.borderTextures) do
-            if show then t:Show() else t:Hide() end
-        end
-    end
-
-    skinFrame:Show()
-end
-
--- =====================================
--- HEADER BAR
--- =====================================
-
-local function CreateOrUpdateHeader()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker or not skinFrame then return end
-    local s = S()
-
-    if not headerBar then
-        headerBar = CreateFrame("Frame", "TomoMod_OTHeader", skinFrame)
-        headerBar:SetHeight(28)
-        headerBar:SetPoint("TOPLEFT", skinFrame, "TOPLEFT", 0, 0)
-        headerBar:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", 0, 0)
-
-        -- Background
-        local hbg = headerBar:CreateTexture(nil, "BACKGROUND")
-        hbg:SetAllPoints()
-        hbg:SetColorTexture(0.10, 0.10, 0.14, 0.90)
-
-        -- Accent line
-        local accent = headerBar:CreateTexture(nil, "ARTWORK")
-        accent:SetHeight(1)
-        accent:SetPoint("BOTTOMLEFT", headerBar, "BOTTOMLEFT", 0, 0)
-        accent:SetPoint("BOTTOMRIGHT", headerBar, "BOTTOMRIGHT", 0, 0)
-        accent:SetColorTexture(0.788, 0.635, 0.322, 0.60)
-
-        -- Fold / unfold everything
-        local minBtn = CreateFrame("Button", nil, headerBar)
-        minBtn:SetSize(22, 22)
-        minBtn:SetPoint("LEFT", headerBar, "LEFT", 6, 0)
-        minBtn.text = minBtn:CreateFontString(nil, "OVERLAY")
-        minBtn.text:SetFont(ADDON_FONT_BLACK, 15, "OUTLINE")
-        minBtn.text:SetPoint("CENTER", 0, 1)
-        minBtn.text:SetTextColor(0.788, 0.635, 0.322, 1)
-        minBtn:SetScript("OnClick", function() ToggleMinimized() end)
-        minBtn:SetScript("OnEnter", function(self)
-            self.text:SetTextColor(1, 0.82, 0, 1)
-            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-            GameTooltip:SetText(IsMinimized() and (L["ot_expand_all"] or "Expand all") or (L["ot_collapse_all"] or "Collapse all"))
-            GameTooltip:Show()
-        end)
-        minBtn:SetScript("OnLeave", function(self)
-            self.text:SetTextColor(0.788, 0.635, 0.322, 1)
-            GameTooltip:Hide()
-        end)
-        headerBar.minBtn = minBtn
-
-        -- Title
-        headerTitle = headerBar:CreateFontString(nil, "OVERLAY")
-        headerTitle:SetFont(ADDON_FONT_BLACK, s.headerFontSize or 13, "OUTLINE")
-        headerTitle:SetPoint("LEFT", minBtn, "RIGHT", 2, 0)
-        headerTitle:SetTextColor(0.949, 0.922, 0.859, 1)
-        headerTitle:SetText(L["ot_header_title"])
-
-        -- Options button
-        --[[headerOptions = CreateFrame("Button", nil, headerBar)
-        headerOptions:SetHeight(28)
-        headerOptions.text = headerOptions:CreateFontString(nil, "OVERLAY")
-        headerOptions.text:SetFont(ADDON_FONT, 11, "OUTLINE")
-        headerOptions.text:SetPoint("CENTER")
-        headerOptions.text:SetTextColor(0.55, 0.55, 0.60, 1)
-        headerOptions.text:SetText(L["ot_header_options"])
-        headerOptions:SetWidth(headerOptions.text:GetStringWidth() + 10)
-        headerOptions:SetPoint("RIGHT", headerBar, "RIGHT", -60, 0)
-        headerOptions:SetScript("OnEnter", function(self)
-            self.text:SetTextColor(0.788, 0.635, 0.322, 1)
-        end)
-        headerOptions:SetScript("OnLeave", function(self)
-            self.text:SetTextColor(0.55, 0.55, 0.60, 1)
-        end)
-        headerOptions:SetScript("OnClick", function()
-            if TomoMod_Config and TomoMod_Config.Toggle then
-                TomoMod_Config.Toggle()
-            end
-        end)]]--
-
-        -- Dash
-        headerDash = headerBar:CreateFontString(nil, "OVERLAY")
-        headerDash:SetFont(ADDON_FONT, 11, "OUTLINE")
-        headerDash:SetTextColor(0.35, 0.35, 0.40, 1)
-        headerDash:SetText("-")
-
-        -- Count
-        headerCount = headerBar:CreateFontString(nil, "OVERLAY")
-        headerCount:SetFont(ADDON_FONT, 11, "OUTLINE")
-        headerCount:SetPoint("RIGHT", headerBar, "RIGHT", -10, 0)
-        headerCount:SetTextColor(0.55, 0.55, 0.60, 1)
-
-        headerDash:SetPoint("RIGHT", headerCount, "LEFT", -6, 0)
-    end
-
-    -- Update fonts from settings
-    headerTitle:SetFont(ADDON_FONT_BLACK, s.headerFontSize or 13, "OUTLINE")
-    UpdateMinimizeButton()
-
-    headerBar:Show()
-end
-
--- =====================================
--- UPDATE QUEST COUNT
--- =====================================
-
-local function UpdateQuestCount()
-    if not headerCount then return end
-
-    local tracked = 0
-    if C_QuestLog and C_QuestLog.GetNumQuestWatches then
-        tracked = C_QuestLog.GetNumQuestWatches()
-    end
-    local maxQ = 35
-    if C_QuestLog and C_QuestLog.GetMaxNumQuestsCanAccept then
-        maxQ = C_QuestLog.GetMaxNumQuestsCanAccept()
-    end
-
-    headerCount:SetText(tracked .. "/" .. maxQ)
-end
-
--- =====================================
--- HIDE BLIZZARD HEADER
--- =====================================
-
--- Forward declaration: HideBlizzardHeader is defined before the combat
--- deferral block below, so this must already be a local upvalue at that point.
-local MarkLayoutPending
-
-local function HideBlizzardHeader()
-    if InCombatLockdown() then MarkLayoutPending(); return end
-
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-
-    -- Retail's ObjectiveTrackerContainerTemplate includes a full-size native
-    -- opacity backdrop. It is separate from Header, so hiding the header alone
-    -- leaves a second translucent panel behind TomoMod's skin.
-    LockNativeFrameTree(tracker.NineSlice, 0)
-
-    local header = tracker.Header or tracker.HeaderMenu
-    if not header then return end
-
-    -- Hide all regions (textures, fontstrings, lines)
-    local regions = { header:GetRegions() }
-    for _, region in ipairs(regions) do
-        LockNativeAlpha(region)
-    end
-
-    -- Hide all children (buttons, sub-frames)
-    local children = { header:GetChildren() }
-    for _, child in ipairs(children) do
-        LockNativeFrameTree(child, 0)
-    end
-
-    -- Also collapse height so it doesn't take space
-    LockNativeAlpha(header)
-end
-
--- =====================================
--- M+ DETECTION
--- =====================================
-
-local function IsInMythicPlus()
-    return C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive and C_ChallengeMode.IsChallengeModeActive()
-end
-
--- =====================================
--- BUCKETS (Option A: re-anchor Blizzard quest blocks into collapsible groups)
--- =====================================
-
-local BUCKET_ORDER = {
-    "COMPLETE", "CAMPAIGN", "IMPORTANT", "LEGENDARY",
-    "WEEKLY", "DAILY", "WORLD", "DUNGEON", "RAID",
-    "PROFESSION", "ACHIEVEMENT", "DEFAULT", "OTHER",
-}
-
-local function BL(key, fallback)
-    local s = L and L[key]
-    if s and s ~= "" and s ~= key then return s end
-    return fallback
-end
-
-local function BucketLabel(key)
-    if key == "COMPLETE"   then return BL("ot_bucket_complete",   "Ready to Turn In") end
-    if key == "CAMPAIGN"   then return BL("ot_bucket_campaign",   "Campaign") end
-    if key == "IMPORTANT"  then return BL("ot_bucket_important",  "Important") end
-    if key == "LEGENDARY"  then return BL("ot_bucket_legendary",  "Legendary") end
-    if key == "WEEKLY"     then return BL("ot_bucket_weekly",     "Weekly") end
-    if key == "DAILY"      then return BL("ot_bucket_daily",      "Daily") end
-    if key == "WORLD"      then return BL("ot_bucket_world",      "World Quests") end
-    if key == "DUNGEON"    then return BL("ot_bucket_dungeon",    "Dungeons") end
-    if key == "RAID"       then return BL("ot_bucket_raid",       "Raids") end
-    if key == "PROFESSION" then return BL("ot_bucket_profession", "Professions") end
-    if key == "ACHIEVEMENT" then return BL("ot_bucket_achievement", "Achievements") end
-    if key == "DEFAULT"    then return BL("ot_bucket_quests",     "Quests") end
-    if key == "OTHER"      then return BL("ot_bucket_other",      "Other") end
-    return key
-end
-
-local bucketFrames = {}      -- [key] = { frame, header, chev, label, count }
-local bucketEnabled = true   -- mirrors S().buckets at update time
-
-local function BucketsCollapsedTable()
-    local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
-    if not db then return nil end
-    db.bucketsCollapsed = db.bucketsCollapsed or {}
-    return db.bucketsCollapsed
-end
-
--- Whole-tracker fold (header button): every quest bucket counts as
--- collapsed and the bucket headers themselves are not drawn.
-IsMinimized = function()
-    local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
-    return db and db.minimized == true
-end
-
-local function IsBucketCollapsed(key)
-    if IsMinimized() then return true end
-    local t = BucketsCollapsedTable()
-    return t and t[key] == true
-end
-
--- [1.2.9] Zones folded inside the "Quests" bucket, by zone name.
-local function ZonesCollapsedTable()
-    local db = S()
-    if not db then return nil end
-    db.zonesCollapsed = db.zonesCollapsed or {}
-    return db.zonesCollapsed
-end
-
-local function IsZoneCollapsed(zone)
-    local t = zone and ZonesCollapsedTable()
-    return t and t[zone] == true or false
-end
-
--- A block stays hidden when its bucket, or its zone, is folded.
-local function IsBlockCollapsed(block)
-    if not block then return false end
-    local k = block._tmBucketKey
-    if k and IsBucketCollapsed(k) then return true end
-    return block._tmZoneKey ~= nil and IsZoneCollapsed(block._tmZoneKey)
-end
-
--- =====================================
--- [fix 3.6.1] COMBAT DEFERRAL
--- =====================================
--- Every layout path in this file bails out on InCombatLockdown(), and rightly
--- so: quest blocks parent the secure QuestObjectiveItem button, so Hide /
--- SetParent / SetPoint on a block are protected operations. What was missing is
--- the other half of a combat guard -- remembering that the work was skipped and
--- replaying it. PLAYER_REGEN_ENABLED was never even registered, so a quest that
--- arrived during a fight (or a /reload taken in combat) left the tracker in a
--- half-laid-out state until some unrelated quest event happened to fire much
--- later. That is the reported overlap: the new Blizzard-positioned block paints
--- over our bucket stack, and a block belonging to a collapsed bucket that
--- Blizzard re-Shows mid-fight stays on screen underneath the headers.
-local _tmPendingLayout  = false  -- layout work skipped because of the lockdown
-local _tmPendingDisable = false  -- OT.Disable() restore skipped because of it
-local _tmPlacedCount    = 0      -- blocks positioned under skinFrame, last pass
-local _tmCombatAlpha    = {}     -- [block or button] = alpha to restore
-
-MarkLayoutPending = function()
-    _tmPendingLayout = true
-end
-
--- SetAlpha is never a protected operation, unlike Hide/SetPoint/SetParent, so
--- it is the one tool available while the lockdown is on. Used to keep an
--- unplaced or wrongly-reappearing frame from painting over the layout until the
--- real pass can run.
-local function CombatSuppressAlpha(frame)
-    if not frame or _tmCombatAlpha[frame] then return end
-    if not frame.GetAlpha or not frame.SetAlpha then return end
-    _tmCombatAlpha[frame] = frame:GetAlpha() or 1
-    frame:SetAlpha(0)
-    MarkLayoutPending()
-end
-
-local function RestoreCombatSuppressedAlpha()
-    for frame, alpha in pairs(_tmCombatAlpha) do
-        if frame and frame.SetAlpha then
-            frame:SetAlpha(type(alpha) == "number" and alpha or 1)
-        end
-    end
-    wipe(_tmCombatAlpha)
-end
-
--- Called from OnTrackerUpdate while locked down. Only meaningful once a layout
--- pass has actually placed something under skinFrame: on a fresh /reload taken
--- in combat nothing is placed yet, the Blizzard tracker is alone on screen and
--- perfectly readable, so blanking it would be a regression rather than a fix.
--- [1.2.8] "Max quests displayed" in combat. LimitDisplayedQuests hides the
--- extra blocks with Hide(), which waits for the end of the fight; meanwhile a
--- Blizzard update re-shows them, and with the room added in 1.2.7 that is
--- every watched quest at once. Alpha until the deferred pass.
-local function SuppressOverLimitInCombat()
-    local maxQuests = S().maxQuestsShown or 0
-    if maxQuests <= 0 then return end
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    local blocks = {}
-    CollectQuestBlocks(tracker, 0, blocks)
-    for i, b in ipairs(blocks) do
-        if i > maxQuests and b.IsShown and b:IsShown() then
-            CombatSuppressAlpha(b)
-        end
-    end
-end
-
-local function SuppressUnplacedBlocksInCombat()
-    if not bucketEnabled or not skinFrame then return end
-    if _tmPlacedCount <= 0 then return end
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-
-    -- CollectQuestBlocks stops at skinFrame, so everything it returns here is a
-    -- block still living in Blizzard's tree, i.e. one we have not placed.
-    local blocks = {}
-    CollectQuestBlocks(tracker, 0, blocks)
-    for _, b in ipairs(blocks) do
-        if b.IsShown and b:IsShown() then
-            CombatSuppressAlpha(b)
-        end
-    end
+    return quests, byID
 end
 
 -- =====================================================================
--- RIGHT-EDGE BUTTONS (item + "recherche de groupe") d'un bloc de quete
--- ---------------------------------------------------------------------
--- Ces boutons sont ancres au bloc mais PARENTES au ContentsFrame du
--- module (pool Blizzard) : block:Hide() ne les masque donc pas. On les
--- enumere par l'intersection block.addedRegions et block.parentModule.
--- usedRightEdgeFrames -> uniquement les boutons de CE bloc (jamais les
--- timer/progress bars, jamais les boutons d'un autre bloc). Fallback sur
--- le champ nomme block.itemButton si ces tables internes manquent.
+-- MODEL (sections + sorted quests)
 -- =====================================================================
-local function ForEachBlockRightEdgeButton(block, fn)
-    if not block then return end
-    local handled
-    local mod   = block.parentModule
-    local used  = mod and mod.usedRightEdgeFrames
-    local added = block.addedRegions
-    if used and added then
-        for _, frame in pairs(used) do
-            if frame and added[frame] ~= nil then
-                handled = handled or {}
-                handled[frame] = true
-                fn(frame)
+
+local function QuestLess(mode)
+    return function(a, b)
+        if mode == "name" then
+            local c = Cmp(a.title, b.title)
+            if c ~= 0 then return c < 0 end
+        elseif mode == "progress" then
+            if a.progress ~= b.progress then return a.progress > b.progress end
+        elseif mode == "distance" then
+            local da, db = a.distance or math.huge, b.distance or math.huge
+            if da ~= db then return da < db end
+        end
+        if a.level ~= b.level then return a.level < b.level end
+        local c = Cmp(a.title, b.title)
+        if c ~= 0 then return c < 0 end
+        return a.id < b.id
+    end
+end
+
+local function BuildModel()
+    local quests = GatherLog()
+    local cs = CS()
+    local mode = Opt("displayMode")
+    local here, mapHere = CurrentZone(), MapZone()
+    local sortMode = Opt("questSort")
+    local useDistance = sortMode == "distance"
+
+    local visible, hidden = {}, 0
+    for _, q in ipairs(quests) do
+        local show
+        if cs.pinned[q.id] then
+            show = true
+        elseif mode == "watched" then
+            show = q.watched
+        else
+            show = not cs.hidden[q.id]
+        end
+        if show then
+            if useDistance then q.distance = Distance(q.id) end
+            visible[#visible + 1] = q
+        else
+            hidden = hidden + 1
+        end
+    end
+
+    local pinned, complete, rest = {}, {}, {}
+    local separate = Opt("separateComplete")
+    for _, q in ipairs(visible) do
+        if cs.pinned[q.id] then
+            pinned[#pinned + 1] = q
+        elseif separate and q.complete then
+            complete[#complete + 1] = q
+        else
+            rest[#rest + 1] = q
+        end
+    end
+
+    local less = QuestLess(sortMode)
+    local sections = {}
+    local function section(key, kind, label, list, color)
+        table.sort(list, less)
+        sections[#sections + 1] = { key = key, kind = kind, label = label, quests = list, color = color }
+        return sections[#sections]
+    end
+
+    if #pinned > 0 then section("_pinned", "pinned", T("ot_section_pinned", "Pinned"), pinned, C_YELLOW) end
+    if #complete > 0 then section("_complete", "complete", T("ot_section_complete", "Ready to turn in"), complete, C_GREEN) end
+
+    if Opt("groupByZone") then
+        local zones, order = {}, {}
+        for _, q in ipairs(rest) do
+            local z = zones[q.zone]
+            if not z then
+                z = { name = q.zone, quests = {}, minL = 999, maxL = 0, order = q.zoneOrder,
+                      here = IsHere(q.zone, here, mapHere) }
+                zones[q.zone] = z
+                order[#order + 1] = z
+            end
+            z.quests[#z.quests + 1] = q
+            if q.level > 0 then
+                if q.level < z.minL then z.minL = q.level end
+                if q.level > z.maxL then z.maxL = q.level end
             end
         end
-    end
-    -- Fallback : bouton d'objet nomme (comportement historique).
-    local ib = block.itemButton
-    if ib and not (handled and handled[ib]) then
-        fn(ib)
-    end
-end
-
--- Masque a la reduction tous les right-edge buttons du bloc, avec le meme
--- garde anti-reapparition que le bloc (hook Show + garde combat ; Layout-
--- Buckets ne tourne qu'hors combat mais Blizzard peut re-Show pendant un
--- Update en combat).
-local function HideBlockButtons(block)
-    ForEachBlockRightEdgeButton(block, function(btn)
-        if not btn._tmShowHooked then
-            btn._tmShowHooked = true
-            hooksecurefunc(btn, "Show", function(self)
-                if not bucketEnabled then return end
-                if not IsBlockCollapsed(self._tmBucketBlock) then return end
-                -- [COMBAT] This is the secure QuestObjectiveItem button: Hide()
-                -- on it under lockdown is a blocked action. Alpha only, and the
-                -- deferred pass hides it properly after combat. Mouse state is
-                -- left alone on purpose -- EnableMouse on a protected frame is
-                -- itself restricted.
-                if InCombatLockdown() then
-                    CombatSuppressAlpha(self)
-                    return
-                end
-                self:Hide()
-            end)
-        end
-        btn._tmBucketBlock = block
-        -- Ne marquer/masquer que s'il est reellement visible : le bouton est
-        -- mis en pool par Blizzard et peut persister masque (quete sans objet
-        -- utilisable) -> sinon on le re-afficherait a tort a l'expansion.
-        if btn:IsShown() then
-            btn._tmHiddenByBucket = true
-            btn:Hide()
-        end
-    end)
-end
-
--- Re-affiche a l'expansion uniquement les boutons qu'on avait masques soi-
--- meme (Blizzard corrige ensuite si l'objet n'est plus utilisable, lors de
--- son Update).
-local function ShowBlockButtons(block)
-    ForEachBlockRightEdgeButton(block, function(btn)
-        if btn._tmHiddenByBucket then
-            btn._tmHiddenByBucket = false
-            btn:Show()
-        end
-    end)
-end
-
-local LayoutBuckets -- forward
-
--- Re-entry guard for LayoutBuckets / OnTrackerUpdate.
--- LayoutBuckets calls block:Layout() / SetParent / SetPoint which re-fire
--- ObjectiveTrackerFrame:Update + MarkDirty via Blizzard's bookkeeping.
--- Without these guards our hooksecurefunc chain recurses and produces the
--- visible "trembling" feedback loop.
-local _tmInLayout    = false   -- true while LayoutBuckets is mutating frames
--- [fix] Authoritative "is anything actually tracked" flag, written by the
--- layout passes which are the only code that really knows. Visibility used
--- to be decided by scanning ObjectiveTrackerFrame's children, which is
--- wrong in both directions: several Blizzard module containers stay shown
--- (and full height) with nothing tracked, so it read true on an empty
--- tracker; and in bucket mode our own blocks are re-parented to skinFrame,
--- so they are not tracker children at all.
-local _tmHasContent  = false
-local _tmPendingPump = false   -- true while a deferred OnTrackerUpdate is queued
-local _tmSilenceHook = 0       -- > 0 means: ignore hook callbacks (we caused them)
-local _tmHiddenModules = {}    -- WQ module frames we've alpha=0'd (not reparented)
-local _strayBars = {}          -- StatusBar frames hidden by layout; restored by DisableBuckets
-
-
-local function RunPendingPump()
-    _tmPendingPump = false
-    -- forward call without re-entry; OnTrackerUpdate guards itself too
-    if OT and OT._OnTrackerUpdate then OT._OnTrackerUpdate() end
-end
-
-local function PumpUpdateSoon()
-    -- Ignore notifications that we ourselves triggered while laying out.
-    if _tmInLayout or _tmSilenceHook > 0 then return end
-    if _tmPendingPump then return end
-    _tmPendingPump = true
-    -- Named function rather than an inline closure: the pump is coalesced but
-    -- still fires on every event burst, and the closure allocated each time.
-    C_Timer.After(0, RunPendingPump)
-end
-
-local function ToggleZone(zone)
-    local t = ZonesCollapsedTable(); if not (t and zone) then return end
-    t[zone] = not t[zone] or nil
-    LayoutBuckets()
-    C_Timer.After(0,    function() if LayoutBuckets then LayoutBuckets() end end)
-    C_Timer.After(0.05, function() if LayoutBuckets then LayoutBuckets() end end)
-end
-
-local function ToggleBucket(key)
-    local t = BucketsCollapsedTable(); if not t then return end
-    t[key] = not t[key]
-    LayoutBuckets()
-    -- Heights of just-expanded blocks may be stale for a frame or two
-    C_Timer.After(0,    function() if LayoutBuckets then LayoutBuckets() end end)
-    C_Timer.After(0.05, function() if LayoutBuckets then LayoutBuckets() end end)
-end
-
-UpdateMinimizeButton = function()
-    if headerBar and headerBar.minBtn then
-        headerBar.minBtn.text:SetText(IsMinimized() and "+" or "-")
-    end
-end
-
-OT.ToggleMinimized = function() ToggleMinimized() end
-
--- Fold / unfold the whole tracker. With buckets off, Blizzard's own
--- collapse is used (out of combat: the tracker holds secure item buttons).
-ToggleMinimized = function()
-    local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
-    if not db then return end
-    db.minimized = not db.minimized
-    UpdateMinimizeButton()
-    if bucketEnabled then
-        LayoutBuckets()
-        C_Timer.After(0,    function() if LayoutBuckets then LayoutBuckets() end end)
-        C_Timer.After(0.05, function() if LayoutBuckets then LayoutBuckets() end end)
-    else
-        local tracker = ObjectiveTrackerFrame
-        if tracker and not InCombatLockdown() then
-            if tracker.SetCollapsed then
-                pcall(tracker.SetCollapsed, tracker, db.minimized)
-            elseif tracker.ToggleCollapsed then
-                pcall(tracker.ToggleCollapsed, tracker)
+        local zs = Opt("zoneSort")
+        table.sort(order, function(a, b)
+            if zs ~= "log" and a.here ~= b.here then return a.here end
+            if zs == "level" and a.minL ~= b.minL then return a.minL < b.minL end
+            if zs == "log" and a.order ~= b.order then return a.order < b.order end
+            local c = Cmp(a.name, b.name)
+            if c ~= 0 then return c < 0 end
+            return a.order < b.order
+        end)
+        for _, z in ipairs(order) do
+            local s = section("z:" .. z.name, "zone", z.name, z.quests, z.here and C_YELLOW or C_GOLD)
+            s.here = z.here
+            if z.maxL > 0 then
+                s.range = (z.minL == z.maxL) and tostring(z.minL) or (z.minL .. "-" .. z.maxL)
             end
         end
+    elseif #rest > 0 then
+        section("_all", "all", T("ot_section_quests", "Quests"), rest, C_GOLD)
     end
+
+    return {
+        sections = sections, total = #quests, shown = #visible, hidden = hidden,
+        here = here, mapHere = mapHere,
+    }
 end
 
--- [1.2.9] Zone sub-headers inside the "Quests" bucket (pooled, never collected
--- as quest blocks: flagged _tmBucket like the bucket headers).
-local zoneLabels = {}
-local function HideZoneLabels(from)
-    for i = from or 1, #zoneLabels do zoneLabels[i]:Hide() end
-end
-local function GetZoneLabel(i)
-    if zoneLabels[i] then return zoneLabels[i] end
-    if not skinFrame then return nil end
-    -- Click folds / unfolds the zone (ToggleZone). Plus / minus drawn with
-    -- Blizzard's textures, not typed glyphs.
-    local f = CreateFrame("Button", nil, skinFrame)
-    f:SetHeight(16)
-    f:SetFrameStrata("MEDIUM")
-    f:SetFrameLevel(skinFrame:GetFrameLevel() + 20)
-    f._tmBucket = true
-    f:RegisterForClicks("LeftButtonUp")
-    f:SetScript("OnClick", function(self) if self.zone then ToggleZone(self.zone) end end)
-    local icon = f:CreateTexture(nil, "OVERLAY")
-    icon:SetSize(12, 12)
-    icon:SetPoint("LEFT", f, "LEFT", 0, 0)
-    icon:SetVertexColor(0.95, 0.85, 0.60, 1)
-    f.icon = icon
-    local label = f:CreateFontString(nil, "OVERLAY")
-    label:SetFont(ADDON_FONT, 11, "OUTLINE")
-    label:SetPoint("LEFT", icon, "RIGHT", 4, 0)
-    label:SetTextColor(0.788, 0.635, 0.322, 1)
-    label:SetJustifyH("LEFT")
-    local count = f:CreateFontString(nil, "OVERLAY")
-    count:SetFont(ADDON_FONT, 10, "OUTLINE")
-    count:SetPoint("RIGHT", f, "RIGHT", -6, 0)
-    count:SetTextColor(0.65, 0.65, 0.70, 0.95)
-    label:SetPoint("RIGHT", count, "LEFT", -6, 0)
-    label:SetWordWrap(false)
-    local line = f:CreateTexture(nil, "ARTWORK")
-    line:SetColorTexture(0.545, 0.420, 0.247, 0.45)
-    line:SetHeight(1)
-    line:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 0, 0)
-    line:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 0)
-    f:SetScript("OnEnter", function() line:SetColorTexture(0.788, 0.635, 0.322, 0.85) end)
-    f:SetScript("OnLeave", function() line:SetColorTexture(0.545, 0.420, 0.247, 0.45) end)
-    f.label, f.count = label, count
-    zoneLabels[i] = f
+-- Auto-fold: a zone with no saved state is open only when you are in it.
+-- Entering a new zone drops the saved state of every zone, so the
+-- tracker re-centres on where you are; manual folds last until then.
+local function IsFolded(sec)
+    local cs = CS()
+    if cs.minimized then return true end
+    local f = cs.folded[sec.key]
+    if f == nil then
+        if sec.kind == "zone" and Opt("autoFoldZones") then return not sec.here end
+        return false
+    end
     return f
 end
 
-local function GetOrCreateBucket(key)
-    if bucketFrames[key] then return bucketFrames[key] end
-    if not skinFrame then return nil end
+local function SyncAutoFold(model)
+    local cs = CS()
+    local here = model.here or model.mapHere
+    if not here or here == "" then return end
+    if cs.lastZone ~= here then
+        cs.lastZone = here
+        for key in pairs(cs.folded) do
+            if type(key) == "string" and key:sub(1, 2) == "z:" then cs.folded[key] = nil end
+        end
+    end
+end
 
-    local f = CreateFrame("Button", nil, skinFrame)
-    f:SetHeight(20)
-    f:SetFrameStrata("MEDIUM")
-    f:SetFrameLevel(skinFrame:GetFrameLevel() + 20)
-    f._tmBucket = true
-    f:RegisterForClicks("LeftButtonUp")
-    f:SetScript("OnClick", function() ToggleBucket(key) end)
+-- =====================================================================
+-- STATE
+-- =====================================================================
 
-    -- Subtle accent line under header
-    local accent = f:CreateTexture(nil, "ARTWORK")
-    accent:SetColorTexture(1, 1, 1, 0.10)
+local root, body, border, hdr, mover
+local active        = false   -- tracker built and running
+local isInitialized = false
+local isUnlocked    = false
+local state = {
+    model        = nil,
+    sig          = nil,
+    scroll       = 0,
+    itemsShown   = 0,
+    needLayout   = false,
+    needPosition = false,
+    needBlizz    = false,
+    needDisable  = false,
+    emptyHidden  = false,
+    rendered     = false,
+    seen         = {},        -- questIDs drawn in the last pass
+    wasComplete  = {},
+}
+local blockByID = {}
+local RequestRefresh -- forward
+
+-- =====================================================================
+-- SMALL DRAWING HELPERS (no typed glyphs: the font may not carry them)
+-- =====================================================================
+
+local function SetColor(t, c, a) t:SetColorTexture(c[1], c[2], c[3], a or 1) end
+
+-- Plus / minus drawn with two bars.
+local function CreateFoldIcon(parent, size, color)
+    local h = parent:CreateTexture(nil, "OVERLAY")
+    h:SetSize(size, 2)
+    SetColor(h, color)
+    local v = parent:CreateTexture(nil, "OVERLAY")
+    v:SetSize(2, size)
+    SetColor(v, color)
+    v:SetPoint("CENTER", h, "CENTER")
+    return {
+        h = h, v = v,
+        SetPoint = function(self, ...) h:SetPoint(...) end,
+        SetFolded = function(self, folded) v:SetShown(folded) end,
+        SetColor = function(self, c, a) SetColor(h, c, a); SetColor(v, c, a) end,
+    }
+end
+
+local function AddBorder(frame, color, alpha)
+    local list = {}
+    for _, info in ipairs({
+        { "TOPLEFT", "TOPRIGHT", nil, 1 },
+        { "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1 },
+        { "TOPLEFT", "BOTTOMLEFT", 1, nil },
+        { "TOPRIGHT", "BOTTOMRIGHT", 1, nil },
+    }) do
+        local t = frame:CreateTexture(nil, "BORDER")
+        SetColor(t, color, alpha)
+        t:SetPoint(info[1])
+        t:SetPoint(info[2])
+        if info[3] then t:SetWidth(info[3]) end
+        if info[4] then t:SetHeight(info[4]) end
+        list[#list + 1] = t
+    end
+    return list
+end
+
+local function Font(fs, path, size, flags)
+    fs:SetFont(path, size, flags or "OUTLINE")
+    fs:SetShadowOffset(0, 0)
+end
+
+-- =====================================================================
+-- QUEST ACTIONS
+-- =====================================================================
+
+local function SelectQuest(q)
+    if C_QuestLog and C_QuestLog.SetSelectedQuest then
+        C_QuestLog.SetSelectedQuest(q.id)
+    elseif SelectQuestLogEntry then
+        SelectQuestLogEntry(q.logIndex)
+    end
+end
+
+local function OpenQuest(q)
+    -- Clicking the quest that is already open closes the log again.
+    if QuestMapFrame_OpenToQuestDetails then
+        local open = WorldMapFrame and WorldMapFrame:IsShown()
+            and QuestMapFrame_GetDetailQuestID and QuestMapFrame_GetDetailQuestID() == q.id
+        if open then HideUIPanel(WorldMapFrame) return end
+        pcall(QuestMapFrame_OpenToQuestDetails, q.id)
+        return
+    end
+    if QuestLogFrame then
+        local shown = QuestLogFrame:IsShown()
+        if shown and GetQuestLogSelection and GetQuestLogSelection() == q.logIndex then
+            HideUIPanel(QuestLogFrame)
+            return
+        end
+        if QuestLog_OpenToQuest then
+            pcall(QuestLog_OpenToQuest, q.logIndex)
+            return
+        end
+        if not shown then ShowUIPanel(QuestLogFrame) end
+        if QuestLog_SetSelection then
+            pcall(QuestLog_SetSelection, q.logIndex)
+        elseif SelectQuestLogEntry then
+            SelectQuestLogEntry(q.logIndex)
+        end
+        if QuestLog_Update then pcall(QuestLog_Update) end
+        return
+    end
+    if ToggleQuestLog then ToggleQuestLog() end
+end
+
+local function LinkQuest(q)
+    local link
+    if GetQuestLink then
+        -- Modern clients take a questID, Classic ones a log index.
+        local arg = (C_QuestLog and C_QuestLog.GetInfo) and q.id or q.logIndex
+        local ok, l = pcall(GetQuestLink, arg)
+        if ok and type(l) == "string" then link = l end
+    end
+    link = link or q.title
+    local inserted = false
+    if ChatEdit_InsertLink then inserted = ChatEdit_InsertLink(link) end
+    if not inserted and ChatFrame_OpenChat then ChatFrame_OpenChat(link) end
+end
+
+local function CanShare(q)
+    if not (IsInGroup and IsInGroup()) then return false end
+    if C_QuestLog and C_QuestLog.IsPushableQuest then
+        local ok, v = pcall(C_QuestLog.IsPushableQuest, q.id)
+        return ok and v and true or false
+    end
+    return QuestLogPushQuest ~= nil
+end
+
+local function ShareQuest(q)
+    SelectQuest(q)
+    if QuestLogPushQuest then QuestLogPushQuest() end
+end
+
+local function AbandonQuest(q)
+    SelectQuest(q)
+    if C_QuestLog and C_QuestLog.SetAbandonQuest then
+        C_QuestLog.SetAbandonQuest()
+    elseif SetAbandonQuest then
+        SetAbandonQuest()
+    end
+    local name = (GetAbandonQuestName and GetAbandonQuestName()) or q.title
+    if StaticPopup_Show then StaticPopup_Show("ABANDON_QUEST", name) end
+end
+
+local function CanArrow()
+    return C_SuperTrack and C_SuperTrack.SetSuperTrackedQuestID ~= nil
+end
+
+local function IsArrowed(q)
+    return C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID
+        and C_SuperTrack.GetSuperTrackedQuestID() == q.id
+end
+
+local function ToggleArrow(q)
+    if not CanArrow() then return end
+    C_SuperTrack.SetSuperTrackedQuestID(IsArrowed(q) and 0 or q.id)
+end
+
+local function TogglePin(q)
+    local cs = CS()
+    cs.pinned[q.id] = (not cs.pinned[q.id]) or nil
+    RequestRefresh()
+end
+
+local function HideQuest(q)
+    local cs = CS()
+    cs.pinned[q.id] = nil
+    if Opt("displayMode") == "watched" then
+        if C_QuestLog and C_QuestLog.RemoveQuestWatch then
+            C_QuestLog.RemoveQuestWatch(q.id)
+        elseif RemoveQuestWatch then
+            RemoveQuestWatch(q.logIndex)
+        end
+    else
+        cs.hidden[q.id] = true
+    end
+    RequestRefresh()
+end
+
+local function Forget(questID)
+    if not questID then return end
+    local cs = CS()
+    cs.pinned[questID], cs.hidden[questID] = nil, nil
+    state.wasComplete[questID] = nil
+end
+
+-- =====================================================================
+-- MENUS
+-- =====================================================================
+
+local function OpenMenu(owner, build)
+    if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
+    MenuUtil.CreateContextMenu(owner, function(_, rootDesc) build(rootDesc) end)
+end
+
+local function QuestMenu(owner, q)
+    OpenMenu(owner, function(m)
+        m:CreateTitle(q.title)
+        m:CreateButton(T("ot_menu_open", "Open in the quest log"), function() OpenQuest(q) end)
+        m:CreateButton(CS().pinned[q.id] and T("ot_menu_unpin", "Unpin") or T("ot_menu_pin", "Pin to the top"),
+            function() TogglePin(q) end)
+        if CanArrow() then
+            m:CreateButton(IsArrowed(q) and T("ot_menu_arrow_off", "Remove the arrow") or T("ot_menu_arrow", "Arrow to this quest"),
+                function() ToggleArrow(q) end)
+        end
+        m:CreateButton(T("ot_menu_link", "Link in chat"), function() LinkQuest(q) end)
+        if CanShare(q) then
+            m:CreateButton(T("ot_menu_share", "Share with the group"), function() ShareQuest(q) end)
+        end
+        m:CreateButton(T("ot_menu_hide", "Hide from the tracker"), function() HideQuest(q) end)
+        m:CreateDivider()
+        m:CreateButton(T("ot_menu_abandon", "Abandon the quest..."), function() AbandonQuest(q) end)
+    end)
+end
+
+local function SetAndRefresh(key, value)
+    SetOpt(key, value)
+    state.scroll = 0
+    RequestRefresh()
+end
+
+local function FoldAll(folded)
+    local cs = CS()
+    cs.minimized = nil
+    local model = state.model
+    if model then
+        for _, sec in ipairs(model.sections) do cs.folded[sec.key] = folded end
+    end
+    RequestRefresh()
+end
+
+local function QuickMenu(owner)
+    OpenMenu(owner, function(m)
+        m:CreateTitle(T("ot_qm_title", "Quest tracker"))
+
+        local show = m:CreateButton(T("ot_qm_show", "Show"))
+        for _, e in ipairs({
+            { "all",     T("ot_qm_show_all", "Every quest in the log") },
+            { "watched", T("ot_qm_show_watched", "Watched quests only") },
+        }) do
+            show:CreateRadio(e[2], function() return Opt("displayMode") == e[1] end,
+                function() SetAndRefresh("displayMode", e[1]) end)
+        end
+
+        local sort = m:CreateButton(T("ot_qm_sort", "Sort quests"))
+        local sorts = {
+            { "level",    T("ot_sort_level", "By level") },
+            { "name",     T("ot_sort_name", "By name (A-Z)") },
+            { "progress", T("ot_sort_progress", "By progress") },
+        }
+        if C_QuestLog and C_QuestLog.GetDistanceSqToQuest then
+            sorts[#sorts + 1] = { "distance", T("ot_sort_distance", "By distance") }
+        end
+        for _, e in ipairs(sorts) do
+            sort:CreateRadio(e[2], function() return Opt("questSort") == e[1] end,
+                function() SetAndRefresh("questSort", e[1]); OT.UpdateTicker() end)
+        end
+
+        local zsort = m:CreateButton(T("ot_qm_zones", "Zone order"))
+        for _, e in ipairs({
+            { "level", T("ot_zsort_level", "Current zone, then by level") },
+            { "name",  T("ot_zsort_name", "Current zone, then by name") },
+            { "log",   T("ot_zsort_log", "Quest log order") },
+        }) do
+            zsort:CreateRadio(e[2], function() return Opt("zoneSort") == e[1] end,
+                function() SetAndRefresh("zoneSort", e[1]) end)
+        end
+
+        m:CreateDivider()
+        for _, e in ipairs({
+            { "groupByZone",             T("ot_qm_group", "Group by zone") },
+            { "separateComplete",        T("ot_qm_complete", "Separate Ready to turn in section") },
+            { "autoFoldZones",           T("ot_qm_autofold", "Fold the other zones automatically") },
+            { "hideCompletedObjectives", T("ot_qm_hidedone", "Hide finished objectives") },
+        }) do
+            m:CreateCheckbox(e[2], function() return Opt(e[1]) and true or false end,
+                function() SetAndRefresh(e[1], not Opt(e[1])) end)
+        end
+
+        m:CreateDivider()
+        m:CreateButton(T("ot_qm_expand", "Expand all"), function() FoldAll(false) end)
+        m:CreateButton(T("ot_qm_collapse", "Collapse all"), function() FoldAll(true) end)
+        local nHidden = 0
+        for _ in pairs(CS().hidden) do nHidden = nHidden + 1 end
+        if nHidden > 0 then
+            m:CreateButton(string.format(T("ot_qm_unhide", "Show hidden quests again (%d)"), nHidden), function()
+                wipe(CS().hidden)
+                RequestRefresh()
+            end)
+        end
+        m:CreateDivider()
+        m:CreateButton(T("ot_qm_move", "Move the tracker"), function() OT.SetLocked(false) end)
+        if TomoMod_Config and TomoMod_Config.Toggle then
+            m:CreateButton(T("ot_qm_options", "TMF options"), function() TomoMod_Config.Toggle() end)
+        end
+    end)
+end
+
+-- =====================================================================
+-- TOOLTIP
+-- =====================================================================
+
+local function AnchorTooltip(owner)
+    GameTooltip:SetOwner(owner, "ANCHOR_NONE")
+    GameTooltip:ClearAllPoints()
+    local cx = root:GetCenter()
+    if cx and cx * root:GetEffectiveScale() > (UIParent:GetWidth() * UIParent:GetEffectiveScale()) / 2 then
+        GameTooltip:SetPoint("TOPRIGHT", owner, "TOPLEFT", -(ITEM_SIZE + 12), 0)
+    else
+        GameTooltip:SetPoint("TOPLEFT", owner, "TOPRIGHT", ITEM_SIZE + 12, 0)
+    end
+end
+
+local function QuestTooltip(owner, q)
+    if not Opt("showTooltips") then return end
+    AnchorTooltip(owner)
+    local r, g, b = DifficultyColor(q.level)
+    GameTooltip:AddLine(q.title, r, g, b, true)
+    local sub = q.zone
+    if q.level > 0 then sub = string.format(T("ot_level_zone", "Level %d - %s"), q.level, q.zone) end
+    if q.tag then sub = sub .. "  -  " .. q.tag end
+    GameTooltip:AddLine(sub, C_DIM[1], C_DIM[2], C_DIM[3], true)
+    if #q.objectives > 0 then
+        GameTooltip:AddLine(" ")
+        for _, o in ipairs(q.objectives) do
+            local c = o.done and C_GREEN or C_TEXT
+            GameTooltip:AddLine(o.text, c[1], c[2], c[3], true)
+        end
+    end
+    GameTooltip:AddLine(" ")
+    local h = 0.55
+    GameTooltip:AddLine(T("ot_hint_open", "Left click: open the quest"), h, h, h)
+    GameTooltip:AddLine(T("ot_hint_link", "Shift click: link in chat"), h, h, h)
+    GameTooltip:AddLine(T("ot_hint_pin", "Ctrl click: pin to the top"), h, h, h)
+    GameTooltip:AddLine(T("ot_hint_menu", "Right click: more actions"), h, h, h)
+    GameTooltip:Show()
+end
+
+-- =====================================================================
+-- ROW POOLS
+-- =====================================================================
+
+local sectionPool, questPool, itemPool = {}, {}, {}
+local sectionUsed, questUsed = 0, 0
+
+local function ToggleSection(key)
+    local cs = CS()
+    local sec
+    for _, s in ipairs(state.model and state.model.sections or {}) do
+        if s.key == key then sec = s break end
+    end
+    if cs.minimized then
+        cs.minimized = nil
+        cs.folded[key] = false
+    else
+        cs.folded[key] = not (sec and IsFolded(sec))
+    end
+    RequestRefresh()
+end
+
+local function GetSectionRow(i)
+    local r = sectionPool[i]
+    if r then return r end
+    r = CreateFrame("Button", nil, body)
+    r:RegisterForClicks("LeftButtonUp")
+    r.icon = CreateFoldIcon(r, 8, C_GOLD)
+    r.icon:SetPoint("LEFT", r, "LEFT", 2, 0)
+    r.here = r:CreateTexture(nil, "OVERLAY")
+    r.here:SetSize(5, 5)
+    SetColor(r.here, C_YELLOW)
+    r.here:SetRotation(math.pi / 4)
+    r.label = r:CreateFontString(nil, "OVERLAY")
+    r.label:SetJustifyH("LEFT")
+    r.label:SetWordWrap(false)
+    r.right = r:CreateFontString(nil, "OVERLAY")
+    r.right:SetJustifyH("RIGHT")
+    r.right:SetPoint("RIGHT", r, "RIGHT", 0, 0)
+    r.line = r:CreateTexture(nil, "ARTWORK")
+    r.line:SetHeight(1)
+    r.line:SetPoint("BOTTOMLEFT", r, "BOTTOMLEFT", 0, 0)
+    r.line:SetPoint("BOTTOMRIGHT", r, "BOTTOMRIGHT", 0, 0)
+    r:SetScript("OnClick", function(self) if self.key then ToggleSection(self.key) end end)
+    r:SetScript("OnEnter", function(self) self.line:SetAlpha(1) end)
+    r:SetScript("OnLeave", function(self) self.line:SetAlpha(0.45) end)
+    sectionPool[i] = r
+    return r
+end
+
+local function GetQuestBlock(i)
+    local b = questPool[i]
+    if b then return b end
+    b = CreateFrame("Button", nil, body)
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    b.hl = b:CreateTexture(nil, "BACKGROUND")
+    b.hl:SetPoint("TOPLEFT", -4, 2)
+    b.hl:SetPoint("BOTTOMRIGHT", 4, -2)
+    SetColor(b.hl, C_GOLD, 0.10)
+    b.hl:Hide()
+
+    -- Gold pulse when the quest becomes ready to turn in.
+    b.flash = b:CreateTexture(nil, "BACKGROUND", nil, 1)
+    b.flash:SetAllPoints(b.hl)
+    SetColor(b.flash, C_GREEN, 0.35)
+    b.flash:SetAlpha(0)
+    local ag = b.flash:CreateAnimationGroup()
+    local a1 = ag:CreateAnimation("Alpha"); a1:SetFromAlpha(0); a1:SetToAlpha(1); a1:SetDuration(0.25); a1:SetOrder(1)
+    local a2 = ag:CreateAnimation("Alpha"); a2:SetFromAlpha(1); a2:SetToAlpha(0); a2:SetDuration(0.9);  a2:SetOrder(2)
+    ag:SetScript("OnFinished", function() b.flash:SetAlpha(0) end)
+    b.flashAnim = ag
+
+    -- Soft fade-in for a newly accepted quest.
+    local fade = b:CreateAnimationGroup()
+    local f1 = fade:CreateAnimation("Alpha"); f1:SetFromAlpha(0); f1:SetToAlpha(1); f1:SetDuration(0.35)
+    b.fadeAnim = fade
+
+    b.level = b:CreateFontString(nil, "OVERLAY")
+    b.level:SetJustifyH("LEFT")
+    b.level:SetWordWrap(false)
+    b.title = b:CreateFontString(nil, "OVERLAY")
+    b.title:SetJustifyH("LEFT")
+    b.title:SetWordWrap(false)
+    b.tag = b:CreateFontString(nil, "OVERLAY")
+    b.tag:SetJustifyH("RIGHT")
+    b.tag:SetWordWrap(false)
+    b.mark = b:CreateTexture(nil, "OVERLAY")
+    b.mark:SetSize(12, 12)
+
+    b.bar = CreateFrame("StatusBar", nil, b)
+    b.bar:SetStatusBarTexture(BAR_TEX)
+    b.bar:SetStatusBarColor(C_GOLD[1], C_GOLD[2], C_GOLD[3], 0.9)
+    b.bar:SetMinMaxValues(0, 1)
+    b.bar:SetHeight(3)
+    b.bar.bg = b.bar:CreateTexture(nil, "BACKGROUND")
+    b.bar.bg:SetAllPoints()
+    b.bar.bg:SetColorTexture(1, 1, 1, 0.08)
+
+    b.lines = {}
+
+    b:SetScript("OnClick", function(self, button)
+        local q = self.quest
+        if not q then return end
+        if button == "RightButton" then
+            QuestMenu(self, q)
+        elseif IsShiftKeyDown() then
+            LinkQuest(q)
+        elseif IsControlKeyDown() then
+            TogglePin(q)
+        else
+            OpenQuest(q)
+        end
+    end)
+    b:SetScript("OnEnter", function(self)
+        self.hl:Show()
+        self.title:SetTextColor(C_YELLOW[1], C_YELLOW[2], C_YELLOW[3], 1)
+        if self.quest then QuestTooltip(self, self.quest) end
+    end)
+    b:SetScript("OnLeave", function(self)
+        self.hl:Hide()
+        if self.titleColor then self.title:SetTextColor(unpack(self.titleColor)) end
+        GameTooltip:Hide()
+    end)
+    questPool[i] = b
+    return b
+end
+
+local function GetLine(b, i)
+    local ln = b.lines[i]
+    if ln then return ln end
+    ln = {}
+    ln.dot = b:CreateTexture(nil, "OVERLAY")
+    ln.dot:SetSize(3, 3)
+    ln.fs = b:CreateFontString(nil, "OVERLAY")
+    ln.fs:SetJustifyH("LEFT")
+    ln.fs:SetWordWrap(true)
+    b.lines[i] = ln
+    return ln
+end
+
+-- Fills a block and lays out its inside. Returns its height. Only touches
+-- the block's own regions: safe in combat.
+local function FillQuestBlock(b, q, width)
+    local qSize, oSize = Opt("questFontSize"), Opt("objectiveFontSize")
+    local titleH = qSize + 5
+    b.quest = q
+
+    local x = 0
+    if Opt("showLevel") and q.level > 0 then
+        Font(b.level, FONT_BOLD, qSize)
+        b.level:SetText(q.level)
+        b.level:SetTextColor(DifficultyColor(q.level))
+        b.level:ClearAllPoints()
+        b.level:SetPoint("TOPLEFT", b, "TOPLEFT", 0, -1)
+        b.level:SetWidth(LEVEL_W + 4)
+        b.level:Show()
+        x = LEVEL_W + 4
+    else
+        b.level:Hide()
+    end
+
+    -- Right side: tag, or a check / cross for finished / failed quests.
+    local rightW = 0
+    b.mark:Hide()
+    b.tag:Hide()
+    if q.failed or (q.complete and not Opt("separateComplete")) then
+        b.mark:SetTexture(q.failed and FAIL_TEX or CHECK_TEX)
+        b.mark:ClearAllPoints()
+        b.mark:SetPoint("TOPRIGHT", b, "TOPRIGHT", 0, -1)
+        b.mark:Show()
+        rightW = 16
+    elseif Opt("showTags") and q.tag then
+        Font(b.tag, FONT, math.max(qSize - 2, 8))
+        b.tag:SetText(q.tag)
+        b.tag:SetTextColor(C_DIM[1], C_DIM[2], C_DIM[3], 1)
+        b.tag:ClearAllPoints()
+        b.tag:SetPoint("TOPRIGHT", b, "TOPRIGHT", 0, -2)
+        b.tag:Show()
+        rightW = math.min(b.tag:GetStringWidth() + 6, width * 0.4)
+        b.tag:SetWidth(rightW)
+    end
+
+    Font(b.title, FONT_BOLD, qSize)
+    b.title:ClearAllPoints()
+    b.title:SetPoint("TOPLEFT", b, "TOPLEFT", x, -1)
+    b.title:SetWidth(math.max(width - x - rightW - 2, 40))
+    b.title:SetText(q.title)
+    local tc
+    if q.failed then
+        tc = { C_RED[1], C_RED[2], C_RED[3], 1 }
+    elseif Opt("titleByDifficulty") then
+        local r, g, bl = DifficultyColor(q.level)
+        tc = { r, g, bl, 1 }
+    else
+        tc = { C_TEXT[1], C_TEXT[2], C_TEXT[3], 1 }
+    end
+    b.titleColor = tc
+    b.title:SetTextColor(unpack(tc))
+
+    local y = -titleH
+    local indent = (x > 0) and x or 8
+
+    if Opt("showProgressBar") and q.counted and not q.complete and not q.failed then
+        b.bar:ClearAllPoints()
+        b.bar:SetPoint("TOPLEFT", b, "TOPLEFT", indent, y + 1)
+        b.bar:SetPoint("TOPRIGHT", b, "TOPRIGHT", 0, y + 1)
+        b.bar:SetValue(q.progress)
+        b.bar:Show()
+        y = y - 4
+    else
+        b.bar:Hide()
+    end
+
+    -- Objective lines
+    local lines = {}
+    if q.failed then
+        lines[1] = { text = T("ot_failed", "Failed"), color = C_RED }
+    elseif q.complete then
+        local text = T("ot_ready", "Ready to turn in")
+        if GetQuestLogCompletionText and q.logIndex then
+            local ok, t = pcall(GetQuestLogCompletionText, q.logIndex)
+            if ok and type(t) == "string" and t ~= "" and not Secret(t) then text = t end
+        end
+        lines[1] = { text = text, color = C_GREEN }
+    else
+        local hideDone = Opt("hideCompletedObjectives")
+        for _, o in ipairs(q.objectives) do
+            if not (hideDone and o.done) then
+                lines[#lines + 1] = { text = o.text, color = o.done and C_GREEN or C_OBJ, done = o.done }
+            end
+        end
+    end
+
+    local lineW = math.max(width - indent - 8, 40)
+    for i, info in ipairs(lines) do
+        local ln = GetLine(b, i)
+        Font(ln.fs, FONT, oSize)
+        ln.fs:SetWidth(lineW)
+        ln.fs:SetText(info.text)
+        ln.fs:SetTextColor(info.color[1], info.color[2], info.color[3], info.done and 0.8 or 1)
+        ln.fs:ClearAllPoints()
+        ln.fs:SetPoint("TOPLEFT", b, "TOPLEFT", indent + 8, y)
+        ln.fs:Show()
+        SetColor(ln.dot, info.done and C_GREEN or C_GOLD, info.done and 0.8 or 0.9)
+        ln.dot:ClearAllPoints()
+        ln.dot:SetPoint("TOPLEFT", b, "TOPLEFT", indent + 1, y - math.floor(oSize / 2))
+        ln.dot:Show()
+        local h = ln.fs:GetStringHeight()
+        if not h or h < oSize then h = oSize + 1 end
+        y = y - h - 2
+    end
+    for i = #lines + 1, #b.lines do
+        b.lines[i].fs:Hide()
+        b.lines[i].dot:Hide()
+    end
+
+    local height = -y + 2
+    if q.item and height < ITEM_SIZE + 2 then height = ITEM_SIZE + 2 end
+    return height
+end
+
+-- =====================================================================
+-- QUEST ITEM BUTTONS (secure)
+-- =====================================================================
+
+local function GetItemButton(i)
+    local b = itemPool[i]
+    if b then return b end
+    b = CreateFrame("Button", "TomoMod_QuestItemButton" .. i, root, "SecureActionButtonTemplate")
+    b:SetSize(ITEM_SIZE, ITEM_SIZE)
+    b:RegisterForClicks("AnyUp", "AnyDown")
+    b:SetAttribute("type", "item")
+    local bg = b:CreateTexture(nil, "BACKGROUND")
+    bg:SetPoint("TOPLEFT", -1, 1)
+    bg:SetPoint("BOTTOMRIGHT", 1, -1)
+    SetColor(bg, C_BRONZE, 1)
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetAllPoints()
+    b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    b.cd = CreateFrame("Cooldown", nil, b, "CooldownFrameTemplate")
+    b.cd:SetAllPoints()
+    b.count = b:CreateFontString(nil, "OVERLAY")
+    Font(b.count, FONT_BOLD, 10)
+    b.count:SetPoint("BOTTOMRIGHT", 1, 0)
+    local hl = b:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetAllPoints()
+    hl:SetColorTexture(1, 1, 1, 0.18)
+    b:SetScript("OnEnter", function(self)
+        if not self.link then return end
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetHyperlink(self.link)
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    b:Hide()
+    itemPool[i] = b
+    return b
+end
+
+local function UpdateItemState()
+    for _, b in ipairs(itemPool) do
+        if b:IsShown() and b.logIndex then
+            if GetQuestLogSpecialItemCooldown then
+                local start, duration, enable = GetQuestLogSpecialItemCooldown(b.logIndex)
+                if start and duration and not Secret(start) and not Secret(duration) then
+                    if CooldownFrame_Set then
+                        CooldownFrame_Set(b.cd, start, duration, enable)
+                    else
+                        b.cd:SetCooldown(start, duration)
+                    end
+                end
+            end
+            if IsQuestLogSpecialItemInRange then
+                local r = IsQuestLogSpecialItemInRange(b.logIndex)
+                if r == 0 then b.icon:SetVertexColor(0.9, 0.25, 0.25) else b.icon:SetVertexColor(1, 1, 1) end
+            end
+        end
+    end
+end
+
+local itemTicker
+local function UpdateItemTicker()
+    local want = state.itemsShown > 0
+    if want and not itemTicker then
+        itemTicker = C_Timer.NewTicker(0.3, UpdateItemState)
+    elseif not want and itemTicker then
+        itemTicker:Cancel()
+        itemTicker = nil
+    end
+end
+
+-- Out of combat only.
+local function PlaceItemButtons(placements)
+    local side = Opt("itemSide")
+    for i, p in ipairs(placements) do
+        local b = GetItemButton(i)
+        b:SetAttribute("item", "item:" .. p.item.itemID)
+        b.link, b.logIndex = p.item.link, p.item.logIndex
+        b.icon:SetTexture(p.item.icon)
+        local charges = tonumber(p.item.charges)
+        b.count:SetText((charges and charges > 1) and charges or "")
+        b:ClearAllPoints()
+        if side == "right" then
+            b:SetPoint("TOPLEFT", root, "TOPRIGHT", 5, p.y)
+        else
+            b:SetPoint("TOPRIGHT", root, "TOPLEFT", -5, p.y)
+        end
+        b:Show()
+    end
+    for i = #placements + 1, #itemPool do
+        local b = itemPool[i]
+        b:Hide()
+        b.link, b.logIndex = nil, nil
+    end
+    state.itemsShown = #placements
+    UpdateItemState()
+    UpdateItemTicker()
+end
+
+-- =====================================================================
+-- LAYOUT
+-- =====================================================================
+
+local function Signature(model)
+    local cs = CS()
+    local parts = { cs.minimized and "m" or "", state.scroll }
+    for _, sec in ipairs(model.sections) do
+        parts[#parts + 1] = sec.key .. (IsFolded(sec) and "-" or "")
+        if not IsFolded(sec) then
+            for _, q in ipairs(sec.quests) do
+                parts[#parts + 1] = q.id .. ":" .. #q.objectives .. (q.complete and "c" or "")
+                    .. (q.failed and "f" or "") .. (q.item and "i" or "")
+            end
+        end
+    end
+    return table.concat(parts, "|")
+end
+
+local function ApplyAlpha()
+    if not root then return end
+    local a = 1
+    if state.emptyHidden then
+        a = 0
+    elseif InCombatLockdown() then
+        a = Opt("combatAlpha") or 1
+    end
+    root:SetAlpha(a)
+end
+
+local function SetEmptyHidden(hidden)
+    state.emptyHidden = hidden
+    hdr:EnableMouse(not hidden)
+    hdr.menu:EnableMouse(not hidden)
+    if hidden then body:Hide() end
+    ApplyAlpha()
+end
+
+local function MaxBodyHeight()
+    local m = Opt("maxHeight") or 0
+    if m > 0 then return m end
+    local bottom = root:GetBottom()
+    if not bottom then return 600 end
+    return math.max(bottom - 30, 120)
+end
+
+local function UpdateHeaderTexts(model)
+    local cs = CS()
+    hdr.fold:SetFolded(cs.minimized and true or false)
+    local maxQ = (C_QuestLog and C_QuestLog.GetMaxNumQuestsCanAccept and C_QuestLog.GetMaxNumQuestsCanAccept())
+        or MAX_QUESTLOG_QUESTS or 25
+    hdr.count:SetText((model and model.total or 0) .. "/" .. maxQ)
+end
+
+local function Layout(model, inCombat)
+    local width = Opt("width")
+    local inner = width - PAD * 2
+    local cs = CS()
+    local catSize = Opt("categoryFontSize")
+    local maxH = MaxBodyHeight()
+    local maxQuests = Opt("maxQuestsShown") or 0
+
+    for i = 1, sectionUsed do sectionPool[i]:Hide() end
+    for i = 1, questUsed do
+        local b = questPool[i]
+        b:Hide()
+        b.quest = nil
+    end
+    sectionUsed, questUsed = 0, 0
+    wipe(blockByID)
+
+    UpdateHeaderTexts(model)
+
+    local y = -6
+    local entry, overflow, drawnQuests = 0, 0, 0
+    local placements, newSeen = {}, {}
+    local full = false
+    local firstPass = not state.rendered
+
+    local function room(h) return (-y + h) <= maxH end
+
+    if not cs.minimized then
+        for _, sec in ipairs(model.sections) do
+            local folded = IsFolded(sec)
+            entry = entry + 1
+            if entry > state.scroll and not full then
+                local rowH = catSize + 8
+                if room(rowH) then
+                    sectionUsed = sectionUsed + 1
+                    local r = GetSectionRow(sectionUsed)
+                    r.key = sec.key
+                    r:ClearAllPoints()
+                    r:SetPoint("TOPLEFT", body, "TOPLEFT", PAD, y)
+                    r:SetSize(inner, rowH)
+                    r.icon:SetFolded(folded)
+                    r.icon:SetColor(sec.color, 0.95)
+                    Font(r.label, FONT_BLACK, catSize)
+                    r.label:SetText(sec.label)
+                    r.label:SetTextColor(sec.color[1], sec.color[2], sec.color[3], 1)
+                    r.label:ClearAllPoints()
+                    if sec.here then
+                        r.here:ClearAllPoints()
+                        r.here:SetPoint("LEFT", r, "LEFT", 15, 0)
+                        r.here:Show()
+                        r.label:SetPoint("LEFT", r, "LEFT", 25, 0)
+                    else
+                        r.here:Hide()
+                        r.label:SetPoint("LEFT", r, "LEFT", 15, 0)
+                    end
+                    Font(r.right, FONT, math.max(catSize - 1, 8))
+                    local right = tostring(#sec.quests)
+                    if sec.range then right = sec.range .. "   " .. right end
+                    r.right:SetText(right)
+                    r.right:SetTextColor(C_DIM[1], C_DIM[2], C_DIM[3], 1)
+                    r.label:SetPoint("RIGHT", r.right, "LEFT", -6, 0)
+                    SetColor(r.line, sec.color, 0.35)
+                    r.line:SetAlpha(0.45)
+                    r:Show()
+                    y = y - rowH - 3
+                else
+                    full = true
+                end
+            end
+            if not folded then
+                for _, q in ipairs(sec.quests) do
+                    entry = entry + 1
+                    if maxQuests > 0 and drawnQuests >= maxQuests then
+                        overflow = overflow + 1
+                    elseif entry <= state.scroll then
+                        -- scrolled past
+                    elseif full then
+                        overflow = overflow + 1
+                    else
+                        questUsed = questUsed + 1
+                        local b = GetQuestBlock(questUsed)
+                        b:SetWidth(inner - 2)
+                        local h = FillQuestBlock(b, q, inner - 2)
+                        if room(h) then
+                            b:ClearAllPoints()
+                            b:SetPoint("TOPLEFT", body, "TOPLEFT", PAD + 2, y)
+                            b:SetHeight(h)
+                            b:Show()
+                            blockByID[q.id] = b
+                            newSeen[q.id] = true
+                            drawnQuests = drawnQuests + 1
+                            if not firstPass and not state.seen[q.id] then b.fadeAnim:Play() end
+                            if state.wasComplete[q.id] == false and q.complete then b.flashAnim:Play() end
+                            if q.item then
+                                placements[#placements + 1] = { item = q.item, y = -HEADER_H + y }
+                            end
+                            y = y - h - 5
+                        else
+                            questUsed = questUsed - 1
+                            b.quest = nil
+                            full = true
+                            overflow = overflow + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Footer: what did not fit, or an empty-state line.
+    local footer = body.footer
+    if overflow > 0 then
+        footer:SetText(string.format(T("ot_more", "%d more quest(s) - scroll to see them"), overflow))
+        footer:ClearAllPoints()
+        footer:SetPoint("TOPLEFT", body, "TOPLEFT", PAD, y - 2)
+        footer:SetPoint("TOPRIGHT", body, "TOPRIGHT", -PAD, y - 2)
+        footer:Show()
+        y = y - footer:GetStringHeight() - 4
+    elseif model.shown == 0 and not cs.minimized then
+        footer:SetText(T("ot_empty", "No quest to show"))
+        footer:ClearAllPoints()
+        footer:SetPoint("TOPLEFT", body, "TOPLEFT", PAD, y - 2)
+        footer:SetPoint("TOPRIGHT", body, "TOPRIGHT", -PAD, y - 2)
+        footer:Show()
+        y = y - footer:GetStringHeight() - 4
+    else
+        footer:Hide()
+    end
+
+    -- Remember completion states for the next flash.
+    for _, sec in ipairs(model.sections) do
+        for _, q in ipairs(sec.quests) do state.wasComplete[q.id] = q.complete end
+    end
+    state.seen = newSeen
+    state.rendered = true
+    state.overflow = overflow
+
+    local bodyH = -y + 4
+    local drawnSomething = sectionUsed > 0 or questUsed > 0 or footer:IsShown()
+    if cs.minimized or not drawnSomething then
+        body:Hide()
+    else
+        body:SetHeight(bodyH)
+        body:Show()
+    end
+
+    -- Empty tracker: hide (by alpha, see header).
+    local empty = model.shown == 0
+    SetEmptyHidden(empty and Opt("hideWhenEmpty") and not isUnlocked)
+
+    if inCombat then
+        if #placements > 0 or state.itemsShown > 0 then state.needLayout = true end
+    else
+        PlaceItemButtons(placements)
+    end
+
+    if mover then
+        mover:ClearAllPoints()
+        mover:SetPoint("TOPLEFT", root, "TOPLEFT")
+        mover:SetPoint("BOTTOMRIGHT", body:IsShown() and body or root, "BOTTOMRIGHT")
+    end
+end
+
+-- In combat with item buttons on screen: refresh what each drawn block
+-- says without moving anything.
+local function UpdateInPlace(model)
+    UpdateHeaderTexts(model)
+    local width = Opt("width") - PAD * 2 - 2
+    for _, sec in ipairs(model.sections) do
+        for _, q in ipairs(sec.quests) do
+            local b = blockByID[q.id]
+            if b then
+                local wasComplete = state.wasComplete[q.id]
+                FillQuestBlock(b, q, width)
+                if wasComplete == false and q.complete then b.flashAnim:Play() end
+                state.wasComplete[q.id] = q.complete
+            end
+        end
+    end
+end
+
+local function Refresh()
+    if not active or not root then return end
+    local model = BuildModel()
+    SyncAutoFold(model)
+    state.model = model
+    local sig = Signature(model)
+    if InCombatLockdown() and state.itemsShown > 0 then
+        UpdateInPlace(model)
+        if sig ~= state.sig then state.needLayout = true end
+        return
+    end
+    Layout(model, InCombatLockdown())
+    state.sig = sig
+end
+
+local refreshQueued = false
+local function RunQueuedRefresh()
+    refreshQueued = false
+    Refresh()
+end
+
+RequestRefresh = function()
+    if refreshQueued then return end
+    refreshQueued = true
+    C_Timer.After(0.05, RunQueuedRefresh)
+end
+OT.Refresh = RequestRefresh
+
+-- Distance sort re-sorts while you move (out of combat).
+local distTicker
+function OT.UpdateTicker()
+    local want = active and Opt("questSort") == "distance"
+        and C_QuestLog and C_QuestLog.GetDistanceSqToQuest ~= nil
+    if want and not distTicker then
+        distTicker = C_Timer.NewTicker(3, function()
+            if not InCombatLockdown() then RequestRefresh() end
+        end)
+    elseif not want and distTicker then
+        distTicker:Cancel()
+        distTicker = nil
+    end
+end
+
+local function ToggleMinimized()
+    local cs = CS()
+    cs.minimized = (not cs.minimized) or nil
+    state.scroll = 0
+    RequestRefresh()
+end
+OT.ToggleMinimized = ToggleMinimized
+
+-- =====================================================================
+-- FRAMES
+-- =====================================================================
+
+local function ApplyLook()
+    if not root then return end
+    local a = Opt("bgAlpha") or 0.65
+    SetColor(root.bg, C_BG, math.min(a + 0.2, 1))
+    SetColor(body.bg, C_BG, a)
+    local showBorder = Opt("showBorder")
+    for _, t in ipairs(border.lines) do t:SetShown(showBorder) end
+    Font(hdr.title, FONT_BLACK, Opt("headerFontSize"))
+    Font(hdr.count, FONT, math.max(Opt("headerFontSize") - 2, 8))
+    Font(body.footer, FONT, math.max(Opt("objectiveFontSize") - 1, 8))
+end
+
+local function CreateFrames()
+    if root then return end
+
+    root = CreateFrame("Frame", "TomoMod_QuestTracker", UIParent)
+    root:SetFrameStrata("LOW")
+    root:SetFrameLevel(10)
+    root:SetHeight(HEADER_H)
+    root:SetClampedToScreen(true)
+    root:SetMovable(true)
+    root.bg = root:CreateTexture(nil, "BACKGROUND")
+    root.bg:SetAllPoints()
+    local accent = root:CreateTexture(nil, "ARTWORK")
     accent:SetHeight(1)
-    accent:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 18, 0)
-    accent:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 0)
+    accent:SetPoint("BOTTOMLEFT")
+    accent:SetPoint("BOTTOMRIGHT")
+    SetColor(accent, C_GOLD, 0.6)
 
-    local chev = f:CreateFontString(nil, "OVERLAY")
-    chev:SetFont(ADDON_FONT_BLACK, 13, "OUTLINE")
-    chev:SetPoint("LEFT", f, "LEFT", 6, 0)
-    chev:SetText("-")
-
-    local label = f:CreateFontString(nil, "OVERLAY")
-    label:SetFont(ADDON_FONT_BLACK, 12, "OUTLINE")
-    label:SetPoint("LEFT", chev, "RIGHT", 6, 0)
-
-    local count = f:CreateFontString(nil, "OVERLAY")
-    count:SetFont(ADDON_FONT, 11, "OUTLINE")
-    count:SetPoint("RIGHT", f, "RIGHT", -6, 0)
-    count:SetTextColor(0.65, 0.65, 0.70, 0.95)
-
-    f:SetScript("OnEnter", function() accent:SetColorTexture(1, 1, 1, 0.25) end)
-    f:SetScript("OnLeave", function() accent:SetColorTexture(1, 1, 1, 0.10) end)
-
-    bucketFrames[key] = { frame = f, chev = chev, label = label, count = count, accent = accent }
-    return bucketFrames[key]
-end
-
-local function ClassifyBlock(block)
-    -- Prefer block.id (Blizzard sets it for quest blocks), fall back to questID or parent walk
-    local qid = block.id or block.questID
-    if (not qid) or qid == 0 then
-        qid = GetBlockQuestID(block)
-    end
-    if qid and qid > 0 then
-        local cat = GetQuestCategory(qid)
-        -- Fold rare/unsupported categories into broader buckets
-        if cat == "CALLING" then return "DAILY" end
-        if cat == "PREY" or cat == "DELVES" or cat == "SCENARIO" or cat == "ADVENTURE" then
-            return "OTHER"
-        end
-        return cat or "DEFAULT"
-    end
-    return "OTHER"
-end
-
--- =====================================
--- SPECIAL MODULES (scenario / delve / bonus objectives / widgets)
--- =====================================
-
--- Module containers we never break into buckets: their internals are anchored
--- to each other and come apart when re-parented, so they move as one block.
-local function IsSpecialModule(f)
-    if not f or not f.GetName then return false end
-    local n = f:GetName()
-    if not n then return false end
-    return (n:find("BonusObjective", 1, true)
-         or n:find("Scenario",       1, true)
-         or n:find("UIWidget",       1, true)
-         or n:find("Delve",          1, true)) ~= nil
-end
-
--- "Is shown" is not a content test: Blizzard keeps several module containers
--- alive and shown with nothing inside them. Look for something actually
--- rendered -- a non-empty FontString or a status bar -- inside the subtree.
--- IsShown, never IsVisible: the panel itself may currently be hidden by
--- "hide when empty", and IsVisible would then report every module as empty,
--- which would keep the panel hidden forever.
-local function ModuleHasVisibleContent(f, depth)
-    depth = depth or 0
-    if not f or depth > 5 then return false end
-    if f.IsShown and not f:IsShown() then return false end
-    if f.IsObjectType and f:IsObjectType("StatusBar") then return true end
-    -- select() over the varargs instead of { ... }: this walk descends five
-    -- levels over a tree that reaches a couple of hundred frames in a delve or
-    -- scenario, and every node allocated two throwaway tables. The other
-    -- { :GetChildren() } sites in this file are one-shot layout passes and are
-    -- deliberately left alone.
-    if f.GetRegions then
-        local n = select("#", f:GetRegions())
-        for i = 1, n do
-            local r = select(i, f:GetRegions())
-            if r and r.IsObjectType and r:IsObjectType("FontString") and r:IsShown() then
-                local txt = r:GetText()
-                if txt and txt ~= "" then return true end
-            end
-        end
-    end
-    if f.GetChildren then
-        local n = select("#", f:GetChildren())
-        for i = 1, n do
-            local c = select(i, f:GetChildren())
-            if c and ModuleHasVisibleContent(c, depth + 1) then return true end
-        end
-    end
-    return false
-end
-
--- True when a scenario / delve / bonus-objective module is on screen with real
--- content in it. That content lives outside the quest-block collection (those
--- subtrees are deliberately skipped), so counting blocks alone reads a delve
--- run -- criteria tracked, often no quest at all -- as an empty tracker.
--- Depth mirrors the layout walk (walkForSkipped): Blizzard does not always
--- hang these modules straight off the tracker.
-local function HasSpecialModuleContent(parent, depth)
-    depth = depth or 0
-    if not parent or not parent.GetChildren or depth > 2 then return false end
-    local n = select("#", parent:GetChildren())
-    for i = 1, n do
-        local child = select(i, parent:GetChildren())
-        if child and IsSpecialModule(child) then
-            if child:IsShown() and ModuleHasVisibleContent(child, 0) then
-                return true
-            end
-        elseif child and not child.HeaderText and HasSpecialModuleContent(child, depth + 1) then
-            return true
-        end
-    end
-    return false
-end
-
-LayoutBuckets = function()
-    if _tmInLayout then return end
-    _tmInLayout = true
-    _tmHiddenModules = {}   -- reset each pass
-    _strayBars = {}
-    if not bucketEnabled then
-        -- Re-show any blocks we may have hidden, hide bucket headers
-        for _, bf in pairs(bucketFrames) do bf.frame:Hide() end
-        HideZoneLabels()
-        _tmInLayout = false
-        return
-    end
-    if InCombatLockdown() then _tmInLayout = false; MarkLayoutPending(); return end
-    if not skinFrame or not headerBar then _tmInLayout = false; return end
-
-    -- Out of combat now: anything alpha-suppressed during the fight goes back to
-    -- its own alpha before the pass measures and repositions it.
-    RestoreCombatSuppressedAlpha()
-
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then _tmInLayout = false; return end
-
-    -- Collect quest blocks from BOTH the Blizzard tracker AND our skinFrame
-    -- (blocks already re-parented in previous passes live under skinFrame).
-    -- We deliberately skip BonusObjective / Scenario module subtrees: they
-    -- render rich reward previews (Delves, M+ scenarios) whose internal anchors
-    -- break when re-parented.  WorldQuest is intentionally NOT skipped here so
-    -- individual WQ quest blocks are collected and placed in the WORLD bucket.
-    -- The now-empty WQ module frame is hidden separately by HideWorldQuestModules.
-    local function shouldSkipSubtree(frame)
-        if not frame or not frame.GetName then return false end
-        local n = frame:GetName()
-        if not n then return false end
-        if n:find("BonusObjective", 1, true)
-            or n:find("Scenario", 1, true)
-            or n:find("UIWidget", 1, true) then
-            return true
-        end
-        return false
-    end
-
-    -- Detect blocks that embed a reward / dungeon / item preview popup
-    -- (Delves, weekly M+ vault, certain campaign quests). Their internal
-    -- anchors break when re-parented, producing the visible overlap.
-    local function HasRewardPreview(f, depth)
-        if depth > 4 or not f then return false end
-        if f.GetName then
-            local n = f:GetName()
-            if n and (
-                n:find("Reward", 1, true)
-                or n:find("ItemPreview", 1, true)
-                or n:find("DungeonScore", 1, true)
-                or n:find("Loot", 1, true)
-            ) then return true end
-        end
-        -- Field-based detection (template-set table members)
-        if f.RewardsFrame or f.ItemPreviewFrame or f.itemPreviewPool then
-            return true
-        end
-        if f.GetChildren then
-            for _, c in ipairs({ f:GetChildren() }) do
-                if HasRewardPreview(c, depth + 1) then return true end
-            end
-        end
-        return false
-    end
-
-    local function collectAll(root, depth, out, seen)
-        if not root or depth > 6 then return end
-        if root == headerBar then return end
-        if shouldSkipSubtree(root) then return end
-        -- A frame with non-empty HeaderText is a quest block
-        if root.HeaderText and root.HeaderText.GetText then
-            local txt = root.HeaderText:GetText()
-            if txt and txt ~= "" and not seen[root] then
-                -- Skip blocks with embedded reward popups (Delves etc.)
-                if not HasRewardPreview(root, 0) then
-                    seen[root] = true
-                    out[#out + 1] = root
-                end
-            end
-        end
-        if root.GetChildren then
-            for _, c in ipairs({ root:GetChildren() }) do
-                if not c._tmBucket then
-                    collectAll(c, depth + 1, out, seen)
-                end
-            end
-        end
-    end
-
-    local blocks, seen = {}, {}
-    collectAll(tracker, 0, blocks, seen)
-    collectAll(skinFrame, 0, blocks, seen)
-
-    -- Emptiness is decided further down, once the scenario / delve modules
-    -- have been placed: they carry content of their own that never shows up
-    -- in `blocks`, so a delve with no tracked quest is not an empty tracker.
-
-    -- Group by bucket key
-    local groups = {}
-    for _, b in ipairs(blocks) do
-        local key = ClassifyBlock(b)
-        groups[key] = groups[key] or {}
-        table.insert(groups[key], b)
-    end
-
-    -- Hide Blizzard module headers (per-zone titles become redundant with buckets).
-    -- We scan BOTH the tracker AND skinFrame because a re-parented block can
-    -- carry a child header along with it (notably the Profession recipe tracker
-    -- which embeds the "Métiers" header inside the block hierarchy).
-    local function HideModuleHeaders(frame, depth)
-        if depth > 6 or not frame then return end
-        if frame._tmBucket then return end
-        if IsModuleHeader(frame) then
-            frame:SetAlpha(0)
-            frame:SetHeight(0.01)
-            if frame.Hide then frame:Hide() end
-        end
-        local children = { frame:GetChildren() }
-        for _, c in ipairs(children) do HideModuleHeaders(c, depth + 1) end
-    end
-    HideModuleHeaders(tracker, 0)
-    HideModuleHeaders(skinFrame, 0)
-
-    -- Layout: vertical stack inside skinFrame below headerBar
-    local headerBarH = (headerBar:GetHeight() or 28)
-    local PAD_LEFT_HEADER = 4
-    local PAD_LEFT_BLOCK  = 32     -- leave room for the quest icon on the left
-    local PAD_RIGHT       = 6
-    local TOP_GAP         = 6
-    local BLOCK_GAP       = 4
-    local BUCKET_GAP      = 6
-
-    local yStart  = -(headerBarH + TOP_GAP)
-    local yOffset = yStart
-
-    -- ── STEP 1: Scenario / Delve / BonusObjective modules FIRST (top) ─────────
-    -- Mirrors Blizzard's default order: active scenario/delve sits above quests.
-    local function reanchorSkippedModule(f, yCursor)
-        if not f or not f.IsShown or not f:IsShown() then return yCursor end
-        if not IsSpecialModule(f) then return yCursor end
-        -- A shown module is not necessarily a filled one. Placing an empty
-        -- container would reserve the 40px minimum below for nothing, and --
-        -- worse -- would make the panel read as "has content" and stay on
-        -- screen forever, which is the giant empty panel all over again.
-        if not ModuleHasVisibleContent(f, 0) then return yCursor end
-        -- Stash original anchor + parent once so DisableBuckets can restore.
-        if not f._tmOriginalAnchor then
-            local p, parent, rp, x, y = f:GetPoint(1)
-            if p then
-                f._tmOriginalAnchor = { p, parent, rp, x, y }
-            else
-                f._tmOriginalAnchor = false
-            end
-            f._tmOriginalParent2 = f:GetParent()
-        end
-        f:SetParent(skinFrame)
-        f:SetFrameStrata("MEDIUM")
-        f:SetFrameLevel(skinFrame:GetFrameLevel() + 5)
-        f:ClearAllPoints()
-        f:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  PAD_LEFT_HEADER, yCursor)
-        f:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -PAD_RIGHT,      yCursor)
-
-        -- Save our anchor Y so the SetPoint hook can re-apply it.
-        f._tmAnchorY   = yCursor
-        f._tmAnchorL   = PAD_LEFT_HEADER
-        f._tmAnchorR   = PAD_RIGHT
-
-        -- Hook SetPoint once on this module frame so that any time Blizzard
-        -- repositions it (e.g. tracker:Update() called by opening the Quest Journal),
-        -- we immediately restore our anchor in the same WoW tick — before the GPU
-        -- renders the frame — eliminating the one-frame flicker entirely.
-        if not f._tmPositionHooked then
-            f._tmPositionHooked = true
-            hooksecurefunc(f, "SetPoint", function(self)
-                if _tmInLayout then return end          -- we caused this call, ignore
-                if not self._tmAnchorY or not skinFrame then return end
-                -- Blizzard tried to reposition us — override immediately.
-                _tmInLayout = true
-                self:ClearAllPoints()
-                self:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  self._tmAnchorL or 4,  self._tmAnchorY)
-                self:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -(self._tmAnchorR or 6), self._tmAnchorY)
-                _tmInLayout = false
-            end)
-        end
-
-        ScanAndStyle(f, 0)
-        if f.Layout then pcall(f.Layout, f) end
-        local h = f:GetHeight() or 0
-        if h < 40  then h = 40  end
-        if h > 240 then h = 240 end
-        return yCursor - h - BLOCK_GAP
-    end
-
-    local function walkForSkipped(parent, depth)
-        depth = depth or 0
-        if not parent or not parent.GetChildren or depth > 2 then return end
-        for _, child in ipairs({ parent:GetChildren() }) do
-            -- WorldQuest module frames: WQ blocks are now collected individually
-            -- into the WORLD bucket; just suppress the now-empty module container.
-            local cn = child.GetName and child:GetName()
-            if cn and cn:find("WorldQuest", 1, true) then
-                if child:IsShown() then
-                    child:SetAlpha(0)
-                    _tmHiddenModules[#_tmHiddenModules + 1] = child
-                end
-            elseif IsSpecialModule(child) then
-                yOffset = reanchorSkippedModule(child, yOffset)
-            elseif child ~= headerBar and not child._tmBucket and not child.HeaderText then
-                -- Blizzard does not always hang its module frames straight off
-                -- the tracker, so look a couple of levels down instead of
-                -- assuming they are direct children. Quest blocks (HeaderText)
-                -- and our own bucket frames are never descended into: a widget
-                -- living inside a block belongs to that block, not to us.
-                walkForSkipped(child, depth + 1)
-            end
-        end
-    end
-    -- Walk both tracker and skinFrame (modules migrate to skinFrame on subsequent passes).
-    walkForSkipped(tracker)
-    walkForSkipped(skinFrame)
-
-    -- ── Orphan StatusBar sweep (used by STEP 4, and by the delve-only exit) ───
-    -- Module-level progress bars (WQ weekly progress, enemy forces, etc.) are
-    -- sometimes parented to BlocksFrame rather than to a specific quest block, so
-    -- block:Hide() doesn't reach them.  SetIgnoreParentAlpha on them also bypasses
-    -- the WQ module SetAlpha(0) guard, leaving a floating "0%" bar.
-    -- All active blocks are now under skinFrame; any StatusBar still in the
-    -- original tracker subtree is orphaned and should be hidden.
-    --
-    -- Returns the reparented frame a bar ultimately belongs to, or nil when
-    -- the bar is genuinely orphaned.
-    --
-    -- A bar sits several steps away from its block. ObjectiveTrackerProgressBar-
-    -- Template is a *container* Frame holding the real StatusBar as its `Bar`
-    -- child, and that child is anchored to the container, not to the block.
-    -- The container itself is parented to the module's own ContentsFrame
-    -- (ObjectiveTrackerModuleMixin:AcquireFrame does SetParent(self.ContentsFrame))
-    -- and is only *anchored* to the block. So reading the bar's own anchor
-    -- landed on the container -- which never sits under skinFrame -- and every
-    -- quest progress bar was swept away, leaving the mob tooltip as the only
-    -- way to follow progress.
-    --
-    -- Walking parents and anchor targets together reaches the block whatever
-    -- the nesting: parent hop to the container, anchor hop to the block.
-    local function LiveHostOf(bar)
-        local seen, queue, count, i = {}, { bar }, 1, 1
-        while i <= count and i <= 32 do
-            local cur = queue[i]
-            i = i + 1
-            if cur and not seen[cur] then
-                seen[cur] = true
-                -- Nearest host first: a tagged block, then any frame we
-                -- reparented directly under skinFrame (scenario / delve
-                -- modules carry no bucket key), then skinFrame itself.
-                -- Returning skinFrame too early would gate visibility on the
-                -- whole panel instead of on the block that owns the bar.
-                if cur._tmBucketKey then return cur end
-                if cur.GetParent and cur:GetParent() == skinFrame then return cur end
-                if cur == skinFrame then return cur end
-                -- Reaching the untouched tracker tree means this branch is
-                -- orphaned; don't expand through it.
-                if cur ~= tracker then
-                    if cur.GetParent then
-                        local parent = cur:GetParent()
-                        if parent then count = count + 1; queue[count] = parent end
-                    end
-                    local numPoints = cur.GetNumPoints and cur:GetNumPoints() or 0
-                    for pi = 1, numPoints do
-                        local _, relTo = cur:GetPoint(pi)
-                        if relTo then count = count + 1; queue[count] = relTo end
-                    end
-                end
-            end
-        end
-        return nil
-    end
-
-    local function HideStrayBars(f, d)
-        if not f or d > 8 then return end
-        if f == skinFrame or f._tmBucket then return end
-        if f:IsObjectType("StatusBar") then
-            -- A bar hidden by an earlier pass has to be reconsidered here too.
-            -- Looking only at bars that are currently shown made this a
-            -- one-way trip: collapsing a bucket hid its progress bar, and
-            -- expanding it again re-ran this sweep, which skipped the bar
-            -- because it was no longer shown. Nothing ever brought it back.
-            -- `_tmStrayHidden` marks the bars WE hid, so a bar Blizzard is
-            -- legitimately keeping hidden is still none of our business.
-            if f:IsShown() or f._tmStrayHidden then
-                -- Keep bars owned by a tracked, expanded block; hide everything
-                -- else (empty WQ module progress, floating "0%" bars, bars whose
-                -- block is collapsed or hidden) exactly as before.
-                local host = LiveHostOf(f)
-                if host and host:IsVisible() then
-                    if f._tmStrayHidden then
-                        f._tmStrayHidden = nil
-                        f:Show()
-                    end
-                    -- These bars are not children of the block, so the per-block
-                    -- ScanAndStyle pass never reaches them. Style them here so a
-                    -- progress bar matches the rest of the tracker.
-                    StyleStatusBar(f)
-                else
-                    if f:IsShown() then f:Hide() end
-                    f._tmStrayHidden = true
-                    _strayBars[#_strayBars + 1] = f
-                end
-                return  -- no need to recurse into a progress bar
-            end
-        end
-        if f.GetChildren then
-            for _, c in ipairs({ f:GetChildren() }) do HideStrayBars(c, d + 1) end
-        end
-    end
-
-    -- ── Emptiness verdict ─────────────────────────────────────────────────────
-    -- yOffset only moves when a scenario / delve / bonus module was actually
-    -- placed, which is exactly the "content Blizzard owns" case.
-    local hasSpecial = (yOffset < yStart)
-    _tmHasContent = (#blocks > 0) or hasSpecial
-
-    if #blocks == 0 then
-        for _, bf in pairs(bucketFrames) do bf.frame:Hide() end
-        HideZoneLabels()
-        if hasSpecial then
-            -- A delve or a scenario with no quest tracked alongside it: the
-            -- panel keeps only what STEP 1 placed. Sweeping stray bars here
-            -- too, since the criteria bars now live under skinFrame and the
-            -- ones left behind in Blizzard's tree are the floating "0%" kind.
-            HideStrayBars(tracker, 0)
-            local totalH = math.abs(yOffset) + 10
-            if totalH < 60 then totalH = 60 end
-            skinFrame:SetHeight(totalH)
-            skinFrame._tmLayoutH = totalH
-        elseif skinFrame and headerBar then
-            -- [fix] This early return used to leave the height computed by
-            -- CreateOrUpdateBackground in place. That measurement walks
-            -- Blizzard's own children and keeps the lowest visible bottom --
-            -- and some of those containers stay shown at nearly full height
-            -- with nothing tracked, which is why an empty tracker showed a
-            -- panel spanning most of the screen. Collapse to the header.
-            skinFrame:SetHeight((headerBar:GetHeight() or 28) + 16)
-            skinFrame._tmLayoutH = (headerBar:GetHeight() or 28) + 16
-        end
-        -- The pass completed, it just had nothing to place.
-        _tmPlacedCount = 0
-        _tmPendingLayout = false
-        _tmInLayout = false
-        _tmSilenceHook = _tmSilenceHook + 1
-        C_Timer.After(0.20, function()
-            _tmSilenceHook = math.max(0, _tmSilenceHook - 1)
-        end)
-        return
-    end
-
-    -- ── STEP 2: Quest buckets BELOW the scenario/delve block ──────────────────
-    if yOffset < yStart then
-        yOffset = yOffset - BUCKET_GAP   -- extra gap between delve and first bucket
-    end
-
-    -- [1.2.9] Unfinished quests ("Quests" bucket) grouped by zone, in the
-    -- order of the quest log, each zone under a small gold sub-header.
-    -- Quests ready to turn in keep their own bucket.
-    local zoneMap = (S().groupByZone ~= false) and QuestZoneMap() or nil
-    local zoneUsed = 0
-    local ZONE_H = 18
-
-    for _, key in ipairs(BUCKET_ORDER) do
-        local group = groups[key]
-        if group and #group > 0 then
-            local bf = GetOrCreateBucket(key)
-            if bf then
-                local color = QUEST_TITLE_COLORS[key] or QUEST_TITLE_COLORS.DEFAULT
-                local collapsed = IsBucketCollapsed(key)
-
-                -- Zone of each block, then a stable sort by log order.
-                local zoned = zoneMap and key == "DEFAULT" and not collapsed and not IsMinimized()
-                local zoneOf, zoneCount = {}, {}
-                if zoned then
-                    local pos = {}
-                    for i, block in ipairs(group) do
-                        local qid = block.id or block.questID or GetBlockQuestID(block)
-                        local z = qid and zoneMap[qid]
-                        zoneOf[block] = z or { zone = nil, order = 9999 }
-                        pos[block] = i
-                        local name = zoneOf[block].zone or ""
-                        zoneCount[name] = (zoneCount[name] or 0) + 1
-                    end
-                    table.sort(group, function(a, b)
-                        local oa, ob = zoneOf[a].order, zoneOf[b].order
-                        if oa ~= ob then return oa < ob end
-                        return pos[a] < pos[b]
-                    end)
-                end
-
-                bf.chev:SetText(collapsed and "+" or "-")
-                bf.chev:SetTextColor(color[1], color[2], color[3], 1)
-                bf.label:SetText(BucketLabel(key))
-                bf.label:SetTextColor(color[1], color[2], color[3], 1)
-                bf.count:SetText(tostring(#group))
-
-                bf.frame:ClearAllPoints()
-                bf.frame:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  PAD_LEFT_HEADER,  yOffset)
-                bf.frame:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -PAD_RIGHT,       yOffset)
-                if IsMinimized() then
-                    bf.frame:Hide()           -- folded: only the main header stays
-                else
-                    bf.frame:Show()
-                    yOffset = yOffset - 22
-                end
-
-                if collapsed then
-                    for _, block in ipairs(group) do
-                        block._tmBucketKey = key
-                        -- Install a one-shot Show hook so Blizzard's own
-                        -- re-Show during its next layout pass can't make the
-                        -- block reappear under a collapsed bucket header.
-                        if not block._tmShowHooked then
-                            block._tmShowHooked = true
-                            hooksecurefunc(block, "Show", function(self)
-                                if not bucketEnabled then return end
-                                if not IsBlockCollapsed(self) then return end
-                                -- [COMBAT] Blizzard can re-Show this block during an
-                                -- in-combat quest update; self:Hide() on a protected
-                                -- tracker block would taint. Alpha is not protected,
-                                -- so keep it off screen and let the deferred pass do
-                                -- the real Hide once the lockdown lifts.
-                                if InCombatLockdown() then
-                                    CombatSuppressAlpha(self)
-                                    return
-                                end
-                                self:Hide()
-                            end)
-                        end
-                        block:Hide()
-
-                        -- Masque item button + bouton "recherche de groupe" (right-edge
-                        -- frames pooles, parentes au ContentsFrame : block:Hide() ne les
-                        -- couvre pas). Voir HideBlockButtons pour le detail du garde.
-                        HideBlockButtons(block)
-                    end
-                else
-                    local lastZone = false
-                    for _, block in ipairs(group) do
-                        block._tmBucketKey = key
-                        -- Zone sub-header when the zone changes.
-                        if zoned then
-                            local z = zoneOf[block].zone or ""
-                            if z ~= lastZone then
-                                lastZone = z
-                                zoneUsed = zoneUsed + 1
-                                local zl = GetZoneLabel(zoneUsed)
-                                if zl then
-                                    zl.zone = z
-                                    zl.icon:SetTexture(IsZoneCollapsed(z) and "Interface\\Buttons\\UI-PlusButton-Up" or "Interface\\Buttons\\UI-MinusButton-Up")
-                                    zl.label:SetText(z ~= "" and z or BL("ot_zone_other", "Other"))
-                                    zl.count:SetText(tostring(zoneCount[z] or 0))
-                                    zl:ClearAllPoints()
-                                    zl:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  PAD_LEFT_HEADER + 18, yOffset)
-                                    zl:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -PAD_RIGHT,           yOffset)
-                                    zl:Show()
-                                    yOffset = yOffset - ZONE_H
-                                end
-                            end
-                        end
-                        block._tmZoneKey = zoned and (zoneOf[block].zone or "") or nil
-                        -- One pass through the block; "break" skips it when its
-                        -- zone is folded (Lua 5.1 has no continue).
-                        repeat
-                        if block._tmZoneKey and IsZoneCollapsed(block._tmZoneKey) then
-                            if not block._tmShowHooked then
-                                block._tmShowHooked = true
-                                hooksecurefunc(block, "Show", function(self)
-                                    if not bucketEnabled then return end
-                                    if not IsBlockCollapsed(self) then return end
-                                    if InCombatLockdown() then
-                                        CombatSuppressAlpha(self)
-                                        return
-                                    end
-                                    self:Hide()
-                                end)
-                            end
-                            block:Hide()
-                            HideBlockButtons(block)
-                            break
-                        end
-                        if not block._tmShowHooked then
-                            block._tmShowHooked = true
-                            hooksecurefunc(block, "Show", function(self)
-                                if not bucketEnabled then return end
-                                if not IsBlockCollapsed(self) then return end
-                                -- [COMBAT] Blizzard can re-Show this block during an
-                                -- in-combat quest update; self:Hide() on a protected
-                                -- tracker block would taint. Alpha is not protected,
-                                -- so keep it off screen and let the deferred pass do
-                                -- the real Hide once the lockdown lifts.
-                                if InCombatLockdown() then
-                                    CombatSuppressAlpha(self)
-                                    return
-                                end
-                                self:Hide()
-                            end)
-                        end
-                        if block:GetParent() ~= skinFrame then
-                            if not block._tmOriginalParent then
-                                block._tmOriginalParent = block:GetParent()
-                            end
-                            block:SetParent(skinFrame)
-                        end
-                        block:SetFrameStrata("MEDIUM")
-                        block:SetFrameLevel(skinFrame:GetFrameLevel() + 5)
-                        block:SetIgnoreParentAlpha(true)
-                        block:SetAlpha(1)
-                        block:ClearAllPoints()
-                        block:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  PAD_LEFT_BLOCK, yOffset)
-                        block:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -PAD_RIGHT,    yOffset)
-
-                        -- Save anchor so the SetPoint hook can restore it when
-                        -- Blizzard repositions the block (e.g. quest journal open).
-                        block._tmAnchorY = yOffset
-                        block._tmAnchorL = PAD_LEFT_BLOCK
-                        block._tmAnchorR = PAD_RIGHT
-
-                        -- Install once: intercept any external SetPoint call and
-                        -- immediately restore our anchor in the same WoW tick.
-                        if not block._tmPositionHooked then
-                            block._tmPositionHooked = true
-                            hooksecurefunc(block, "SetPoint", function(self)
-                                if _tmInLayout then return end
-                                if not self._tmAnchorY or not skinFrame then return end
-                                _tmInLayout = true
-                                self:ClearAllPoints()
-                                self:SetPoint("TOPLEFT",  skinFrame, "TOPLEFT",  self._tmAnchorL or PAD_LEFT_BLOCK, self._tmAnchorY)
-                                self:SetPoint("TOPRIGHT", skinFrame, "TOPRIGHT", -(self._tmAnchorR or PAD_RIGHT),   self._tmAnchorY)
-                                _tmInLayout = false
-                            end)
-                        end
-
-                        block:Show()
-
-                        -- Re-affiche item button + bouton "recherche de groupe" qu'on avait
-                        -- masques a la reduction (uniquement les notres ; cf. ShowBlockButtons).
-                        ShowBlockButtons(block)
-
-                        -- Restyle this block (its HeaderText + objective lines)
-                        ScanAndStyle(block, 0)
-
-                        -- Force the block to recalculate its height based on visible lines
-                        if block.Layout then pcall(block.Layout, block) end
-
-                        -- Always measure the deepest visible descendant bottom — Blizzard's
-                        -- block:GetHeight() is unreliable for profession recipe blocks and
-                        -- other compound blocks that nest reagent lines several levels deep.
-                        local bh = block:GetHeight() or 0
-                        local top = block:GetTop()
-                        local bottom
-                        local function deepestBottom(f, d)
-                            if d > 8 or not f or not f.IsShown or not f:IsShown() then return end
-                            local b = f.GetBottom and f:GetBottom()
-                            if b and (not bottom or b < bottom) then bottom = b end
-                            if f.GetRegions then
-                                for _, r in ipairs({ f:GetRegions() }) do
-                                    if r.IsShown and r:IsShown() and r.GetBottom then
-                                        local rb = r:GetBottom()
-                                        if rb and (not bottom or rb < bottom) then bottom = rb end
-                                    end
-                                end
-                            end
-                            if f.GetChildren then
-                                for _, c in ipairs({ f:GetChildren() }) do deepestBottom(c, d + 1) end
-                            end
-                        end
-                        deepestBottom(block, 0)
-                        if top and bottom then
-                            local measured = top - bottom
-                            if measured > bh then bh = measured end
-                        end
-                        if bh < 30 then bh = 30 end
-
-                        yOffset = yOffset - bh - BLOCK_GAP
-                        until true
-                    end
-                end
-                yOffset = yOffset - BUCKET_GAP
-            end
-        end
-    end
-
-    -- Hide bucket headers that are no longer used
-    for k, bf in pairs(bucketFrames) do
-        if not groups[k] then bf.frame:Hide() end
-    end
-    HideZoneLabels(zoneUsed + 1)
-
-    -- ── STEP 3: Suppress WorldQuest module containers (now empty after re-parenting) ──
-    -- WQ module frames are nested inside BlocksFrame (not direct children of tracker),
-    -- so walkForSkipped can't reach them. We walk the tracker tree here to find them.
-    local function HideWorldQuestModules(frame, depth)
-        if not frame or depth > 5 then return end
-        if frame._tmBucket then return end
-        local fn = frame.GetName and frame:GetName()
-        if fn and fn:find("WorldQuest", 1, true) then
-            -- Only hide if Blizzard still has it shown at its original position
-            -- (i.e. it wasn't already reparented by us).
-            if frame:GetParent() ~= skinFrame then
-                frame:SetAlpha(0)
-                _tmHiddenModules[#_tmHiddenModules + 1] = frame
-            end
-            return  -- don't recurse into it
-        end
-        if frame.GetChildren then
-            for _, c in ipairs({ frame:GetChildren() }) do
-                HideWorldQuestModules(c, depth + 1)
-            end
-        end
-    end
-    HideWorldQuestModules(tracker, 0)
-
-    -- ── STEP 4: Hide orphan StatusBars left in the original tracker tree ────────
-    -- (HideStrayBars is defined above STEP 2 because the delve-only branch of
-    -- the emptiness verdict runs this same sweep and returns before this point.)
-    HideStrayBars(tracker, 0)
-
-    -- Resize skinFrame to fit our layout
-    local totalH = math.abs(yOffset) + 10
-    if totalH < 60 then totalH = 60 end
-    skinFrame:SetHeight(totalH)
-    skinFrame._tmLayoutH = totalH
-
-    -- How many blocks this pass actually placed under skinFrame. Read by the
-    -- in-combat suppression: with nothing placed there is nothing to overlap.
-    _tmPlacedCount = 0
-    for _, b in ipairs(blocks) do
-        if b.GetParent and b:GetParent() == skinFrame then
-            _tmPlacedCount = _tmPlacedCount + 1
-        end
-    end
-
-    _tmPendingLayout = false
-    _tmInLayout = false
-    -- Keep the silence window open for a few frames so Blizzard's own deferred
-    -- MarkDirty/OnUpdate reactions (caused by our SetParent/SetPoint/Layout)
-    -- don't immediately requeue another pump.
-    _tmSilenceHook = _tmSilenceHook + 1
-    C_Timer.After(0.20, function()
-        _tmSilenceHook = math.max(0, _tmSilenceHook - 1)
+    -- Header click area: left folds everything, right opens the quick menu.
+    hdr = CreateFrame("Button", nil, root)
+    hdr:SetAllPoints()
+    hdr:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    hdr.fold = CreateFoldIcon(hdr, 9, C_GOLD)
+    hdr.fold:SetPoint("LEFT", hdr, "LEFT", 9, 0)
+    hdr.title = hdr:CreateFontString(nil, "OVERLAY")
+    hdr.title:SetPoint("LEFT", hdr, "LEFT", 24, 0)
+    hdr.title:SetTextColor(C_TEXT[1], C_TEXT[2], C_TEXT[3], 1)
+    hdr.title:SetText(T("ot_header_title", "QUESTS"))
+    hdr.count = hdr:CreateFontString(nil, "OVERLAY")
+    hdr.count:SetTextColor(C_DIM[1], C_DIM[2], C_DIM[3], 1)
+    hdr:SetScript("OnClick", function(self, button)
+        if button == "RightButton" then QuickMenu(self) else ToggleMinimized() end
     end)
-end
-
-local function DisableBuckets()
-    bucketEnabled = false
-    for _, bf in pairs(bucketFrames) do bf.frame:Hide() end
-    HideZoneLabels()
-    -- Restore any re-parented quest blocks to their original parent so Blizzard regains control
-    if InCombatLockdown() then MarkLayoutPending(); return end
-    RestoreCombatSuppressedAlpha()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    local blocks = {}
-    CollectQuestBlocks(tracker, 0, blocks)
-    -- Non-bucket mode: blocks go back to their Blizzard parent, so the
-    -- tracker really is where they live and this count is meaningful.
-    -- Quest blocks are not the whole story though: a delve or a scenario
-    -- tracks its criteria in its own module, with no quest block anywhere,
-    -- and hiding the panel there takes the delve progress off screen.
-    -- Both parents: a module re-parented by a previous bucketed pass is still
-    -- under skinFrame until restoreSkipped puts it back at the end of this call.
-    _tmHasContent = (#blocks > 0)
-        or HasSpecialModuleContent(tracker)
-        or HasSpecialModuleContent(skinFrame)
-    for _, b in ipairs(blocks) do
-        if b._tmOriginalParent then
-            b:SetParent(b._tmOriginalParent)
-            b._tmOriginalParent = nil
-            b:ClearAllPoints()
-        end
-    end
-    -- Restore any WorldQuest module frames we hid (alpha=0) this session.
-    for _, f in ipairs(_tmHiddenModules) do
-        f:SetAlpha(1)
-    end
-    _tmHiddenModules = {}
-
-    -- Restore orphan status bars hidden by HideStrayBars.
-    for _, bar in ipairs(_strayBars) do
-        bar._tmStrayHidden = nil
-        bar:Show()
-    end
-    _strayBars = {}
-
-    -- Restore the original anchors of any skipped subtree (delves scenario,
-    -- bonus objectives, UI widgets) we re-anchored under skinFrame.
-    local function restoreSkipped(parent)
-        if not parent or not parent.GetChildren then return end
-        for _, child in ipairs({ parent:GetChildren() }) do
-            if child._tmOriginalAnchor ~= nil then
-                if child._tmOriginalParent2 then
-                    child:SetParent(child._tmOriginalParent2)
-                    child._tmOriginalParent2 = nil
-                end
-                child:ClearAllPoints()
-                if type(child._tmOriginalAnchor) == "table" then
-                    local p, parent2, rp, x, y = unpack(child._tmOriginalAnchor)
-                    if p and parent2 then
-                        child:SetPoint(p, parent2, rp, x, y)
-                    end
-                end
-                child._tmOriginalAnchor = nil
-            end
-        end
-    end
-    restoreSkipped(tracker)
-    restoreSkipped(skinFrame)
-end
-
-local function RefreshBucketsEnabled()
-    local s = S()
-    bucketEnabled = s and (s.buckets ~= false) or false
-end
-
--- =====================================
--- MASTER UPDATE
--- =====================================
-
--- =====================================
--- TRACKER ROOM (1.2.7)
--- =====================================
--- Blizzard only builds the quest blocks that fit in ObjectiveTrackerFrame's
--- own height (ObjectiveTrackerModuleMixin:CanFitBlock against the container's
--- GetAvailableHeight). That height comes from UpdateHeight: the space down to
--- the bottom of the screen while Edit Mode thinks the tracker is in its default
--- place, else the Edit Mode "Height" slider (400 to 1000). Blocks that do not
--- fit are never created, so the bucket layout cannot place them and
--- maxQuestsShown = 0 ("no limit") still showed only the first ten or so quests
--- (player report). The container is not mouse-enabled and our panel draws its
--- own background, so giving it a lot of room changes nothing on screen; it only
--- lets Blizzard build every watched quest.
-local TRACKER_ROOM = 4000
--- Height Blizzard last gave the tracker (before our lift). Saved positions are
--- measured and applied at this height, as they were before 1.2.7.
-local naturalTrackerH
-
--- The tracker is anchored by whatever point the saved position (or Edit Mode)
--- uses: RIGHT, CENTER, BOTTOMLEFT... Growing it to 4000 around such a point
--- pushed its top edge, and the skin anchored to it, far above the screen: the
--- whole tracker vanished. Re-anchor by TOPLEFT at the current spot first so
--- the extra room only grows downwards. GetLeft/GetTop and the SetPoint offsets
--- are both in the tracker's own scale, from the screen's bottom-left corner.
-local function PinTrackerTop(tracker)
-    local left, top = tracker:GetLeft(), tracker:GetTop()
-    if not left or not top then return false end
-    local wasApplying = _tmApplyingPosition
-    _tmApplyingPosition = true
-    tracker:ClearAllPoints()
-    tracker:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
-    _tmApplyingPosition = wasApplying
-    return true
-end
-
-local function IsTrackerLifted(tracker)
-    return (tracker:GetHeight() or 0) >= TRACKER_ROOM
-end
-
--- [1.2.8] Can the container's size and anchor be changed right now?
--- Up to 1.2.7 the room was refused in combat. But Blizzard keeps resizing the
--- container during a fight: UpdateHeight runs from OnShow and from
--- ManageFramePositions (shapeshift, pet bar, vehicle...), puts the height back
--- to ~800, and the blocks that no longer fit are released -- the tracker
--- suddenly showed only a few quests, then all of them again after combat
--- (player reports). ObjectiveTrackerFrame is not a protected frame (no secure
--- template anchored to it; ApplyPosition already re-anchors it in combat from
--- the SetPoint hook without a blocked action), so its height may be set back
--- in combat as well. Only if the client ever reports it protected do we wait
--- for the end of the fight, as before.
-local function CanTouchTracker(tracker)
-    if not InCombatLockdown() then return true end
-    if tracker.IsForbidden and tracker:IsForbidden() then return false end
-    if tracker.IsProtected and tracker:IsProtected() then return false end
-    return true
-end
-
--- Puts Blizzard's height back (anchor untouched), so a saved anchor resolves
--- against the frame it was saved from.
-local function DropTrackerRoom(tracker)
-    if not IsTrackerLifted(tracker) or not naturalTrackerH then return end
-    if not CanTouchTracker(tracker) then return end
-    tracker:SetHeight(naturalTrackerH)
-end
-
-local function LiftTrackerRoom()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker or not IsEnabled() or QuestieOwnsTracker() then return end
-    if IsTrackerLifted(tracker) then return end
-    -- Runs in combat too (see CanTouchTracker). Called from the UpdateHeight
-    -- hook, it lands in the same tick as Blizzard's SetHeight, before the
-    -- dirty Update of the next frame: Blizzard rebuilds at full room and no
-    -- block is released. A block that does get created mid-fight is kept off
-    -- screen by SuppressUnplacedBlocksInCombat until the deferred layout.
-    if not CanTouchTracker(tracker) then MarkLayoutPending(); return end
-    naturalTrackerH = tracker:GetHeight()
-    if not PinTrackerTop(tracker) then return end
-    tracker:SetHeight(TRACKER_ROOM)
-end
-OT.LiftTrackerRoom = LiftTrackerRoom
-
-local _tmQuestieDown = false
-
-local function OnTrackerUpdate()
-    if not IsEnabled() then return end
-    if _tmInLayout then return end
-
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-
-    -- Questie's tracker switched on after TomoMod had skinned Blizzard's:
-    -- undo the skin and the extra room once, then stay out of the way.
-    if QuestieOwnsTracker() then
-        if not _tmQuestieDown then
-            _tmQuestieDown = true
-            if OT.Disable then OT.Disable() end
-            DropTrackerRoom(tracker)
-            QuestieNotice()
-        end
-        return
-    end
-    if _tmQuestieDown then
-        -- Questie's tracker switched back off: skin Blizzard's again.
-        _tmQuestieDown = false
-        CreateOrUpdateBackground()
-        CreateOrUpdateHeader()
-        HideBlizzardHeader()
-    end
-
-    -- In M+: hide the entire skin and let Blizzard's challenge UI take over
-    if IsInMythicPlus() then
-        if skinFrame then skinFrame:Hide() end
-        if headerBar then headerBar:Hide() end
-        return
-    end
-
-    -- Reset font dedup and category cache so settings/status changes apply
-    wipe(styledFonts)
-    wipe(questCategoryCache)
-
-    CreateOrUpdateBackground()
-    CreateOrUpdateHeader()
-    HideBlizzardHeader()
-    ScanAndStyle(tracker, 0)
-    UpdateQuestCount()
-    RefreshBucketsEnabled()
-
-    -- [fix 3.6.1] Under lockdown the layout below cannot run at all. Rather than
-    -- letting a block Blizzard just created paint over the bucket stack for the
-    -- rest of the fight, take it off screen with alpha (unprotected) and record
-    -- that a real pass is owed. Nothing here touches _tmHasContent: leaving the
-    -- panel exactly as the last successful pass left it is better than deriving
-    -- a verdict from a tree we are not allowed to reorganise.
-    if InCombatLockdown() then
-        if bucketEnabled then SuppressUnplacedBlocksInCombat() end
-        SuppressOverLimitInCombat()
-        -- Blizzard may have shrunk the container during the fight.
-        LiftTrackerRoom()
-        MarkLayoutPending()
-        return
-    end
-
-    -- Also owed after a fight: UpdateHeight may have run during it.
-    LiftTrackerRoom()
-
-    if bucketEnabled then
-        LayoutBuckets()
-    else
-        DisableBuckets()
-    end
-    -- [FIX] maxQuestsShown must apply regardless of layout mode — previously it
-    -- was only enforced when buckets were disabled, so the slider had no effect
-    -- at all in the (default) bucketed layout.
-    LimitDisplayedQuests()
-
-    -- Visibility, driven by the layout passes rather than by guessing from
-    -- Blizzard's frame tree (see _tmHasContent).
-    if skinFrame then
-        local s = S()
-        local hasContent = _tmHasContent and tracker:IsShown()
-
-        if hasContent then
-            skinFrame:Show()
-            if headerBar then headerBar:Show() end
-        elseif s.hideWhenEmpty then
-            skinFrame:Hide()
-            if headerBar then headerBar:Hide() end
-        end
-    end
-end
-
--- =====================================
--- HOOKS
--- =====================================
-
-local function InstallHooks()
-    if isHooked then return end
-    isHooked = true
-
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-
-    -- Hook known layout methods
-    for _, method in ipairs({ "Update", "SetShown", "Show", "MarkDirty" }) do
-        if tracker[method] then
-            hooksecurefunc(tracker, method, function()
-                PumpUpdateSoon()
-            end)
-        end
-    end
-
-    -- Blizzard recomputes the tracker height on show and on every Edit Mode
-    -- change; give the room back each time (see LiftTrackerRoom).
-    if tracker.UpdateHeight then
-        hooksecurefunc(tracker, "UpdateHeight", LiftTrackerRoom)
-    end
-
-    -- Sync visibility: skinFrame is parented to UIParent, not tracker
-    hooksecurefunc(tracker, "Hide", function()
-        if skinFrame then skinFrame:Hide() end
-        if headerBar then headerBar:Hide() end
+    hdr:SetScript("OnEnter", function(self)
+        hdr.fold:SetColor(C_YELLOW)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(T("ot_qm_title", "Quest tracker"), C_GOLD[1], C_GOLD[2], C_GOLD[3])
+        GameTooltip:AddLine(T("ot_hdr_hint_fold", "Left click: fold / unfold"), 0.7, 0.7, 0.7)
+        GameTooltip:AddLine(T("ot_hdr_hint_menu", "Right click: display and sort"), 0.7, 0.7, 0.7)
+        GameTooltip:Show()
+    end)
+    hdr:SetScript("OnLeave", function()
+        hdr.fold:SetColor(C_GOLD)
+        GameTooltip:Hide()
     end)
 
-    -- [MOVER FIX] Blizzard's Edit Mode manager (and other UI code, e.g. opening
-    -- the Quest Journal or resizing action bars) can call SetPoint on the tracker
-    -- at any time and silently override the position saved via our own mover,
-    -- even though IsUserPlaced() is overridden to return true. Re-assert our
-    -- saved anchor immediately (same tick) any time anyone else calls SetPoint
-    -- on the tracker — matching the pattern already used for module/block frames.
-    if not tracker._tmPositionHooked then
-        tracker._tmPositionHooked = true
-        hooksecurefunc(tracker, "SetPoint", function()
-            if _tmApplyingPosition then return end
-            if not OT.ApplyPosition then return end
-            -- Never fight an active Blizzard Edit Mode session: while the user
-            -- drags the tracker in native Edit Mode, Blizzard calls SetPoint to
-            -- follow the cursor. Re-asserting our saved anchor here would cancel
-            -- every move and freeze the tracker in place (reported bug). Let Edit
-            -- Mode own the position; SavePosition picks it up when the user exits.
-            if EditModeManagerFrame and EditModeManagerFrame.IsEditModeActive
-                and EditModeManagerFrame:IsEditModeActive() then
-                return
-            end
-            _tmApplyingPosition = true
-            OT.ApplyPosition()
-            _tmApplyingPosition = false
-        end)
+    -- Menu button: three dots drawn with textures.
+    local menu = CreateFrame("Button", nil, hdr)
+    menu:SetSize(20, HEADER_H)
+    menu:SetPoint("RIGHT", hdr, "RIGHT", -4, 0)
+    menu:SetFrameLevel(hdr:GetFrameLevel() + 2)
+    menu.dots = {}
+    for i = 1, 3 do
+        local d = menu:CreateTexture(nil, "OVERLAY")
+        d:SetSize(3, 3)
+        d:SetPoint("CENTER", menu, "CENTER", (i - 2) * 5, 0)
+        SetColor(d, C_GOLD)
+        menu.dots[i] = d
     end
-
-    -- [MOVER FIX] The hook above deliberately stands down while Blizzard's own
-    -- Edit Mode is running, so the tracker can be dragged there -- but nothing
-    -- ever wrote that new position back to our database. The comment above
-    -- promised SavePosition would pick it up on exit; it never did. So a
-    -- tracker moved through native Edit Mode looked fine until the next
-    -- reload, where ApplyPosition snapped it back to the last anchor our own
-    -- mover had saved. Capture it when the session ends, one frame later, once
-    -- Blizzard has finished settling its layout.
-    if EditModeManagerFrame and type(EditModeManagerFrame.ExitEditMode) == "function"
-        and not tracker._tmEditModeHooked then
-        tracker._tmEditModeHooked = true
-        hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function()
-            C_Timer.After(0, function()
-                if not (OT.SavePosition and OT.ApplyPosition) then return end
-                OT.SavePosition()
-                _tmApplyingPosition = true
-                OT.ApplyPosition()
-                _tmApplyingPosition = false
-            end)
-        end)
-    end
-
-    -- Event-driven updates
-    local evFrame = CreateFrame("Frame")
-    evFrame:RegisterEvent("QUEST_LOG_UPDATE")
-    evFrame:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
-    evFrame:RegisterEvent("QUEST_ACCEPTED")
-    evFrame:RegisterEvent("QUEST_REMOVED")
-    evFrame:RegisterEvent("QUEST_TURNED_IN")
-    evFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    evFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    evFrame:RegisterEvent("TRACKED_ACHIEVEMENT_UPDATE")
-    evFrame:RegisterEvent("CHALLENGE_MODE_START")
-    evFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
-    evFrame:RegisterEvent("CHALLENGE_MODE_RESET")
-    -- [fix 3.6.1] The missing half of every InCombatLockdown() guard in this
-    -- file. Without it, work skipped during a fight was skipped for good.
-    evFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-
-    local lastUpdate = 0
-    local trailingQueued = false
-
-    local function FireUpdate()
-        lastUpdate = GetTime()
-        PumpUpdateSoon()
-    end
-
-    evFrame:SetScript("OnEvent", function(_, event)
-        if event == "PLAYER_REGEN_ENABLED" then
-            -- Combat exit bypasses the throttle entirely: this is the one moment
-            -- the deferred layout is allowed to run, and a 0.25s window shared
-            -- with the quest-event burst that usually accompanies it would drop
-            -- exactly the pass we are waiting for.
-            if _tmPendingDisable then
-                _tmPendingDisable = false
-                if OT.Disable then OT.Disable() end
-                return
-            end
-            if _tmPendingLayout or next(_tmCombatAlpha) then
-                FireUpdate()
-                -- PumpUpdateSoon drops the request while the post-layout silence
-                -- window is open. That window is what stops the hook feedback
-                -- loop, so re-check shortly after instead of forcing past it.
-                C_Timer.After(0.30, function()
-                    if InCombatLockdown() then return end
-                    if _tmPendingLayout or next(_tmCombatAlpha) then
-                        PumpUpdateSoon()
-                    end
-                end)
-            end
-            return
-        end
-
-        local now = GetTime()
-        if now - lastUpdate < 0.25 then
-            -- [fix 3.6.1] The throttle used to drop the event outright. A quest
-            -- accepted inside another event's window therefore never reached the
-            -- layout, and nothing replayed it. Coalesce to the trailing edge
-            -- instead of discarding.
-            if not trailingQueued then
-                trailingQueued = true
-                C_Timer.After(0.25 - (now - lastUpdate), function()
-                    trailingQueued = false
-                    FireUpdate()
-                end)
-            end
-            return
-        end
-        FireUpdate()
+    menu:SetScript("OnClick", function(self) QuickMenu(self) end)
+    menu:SetScript("OnEnter", function(self)
+        for _, d in ipairs(self.dots) do SetColor(d, C_YELLOW) end
     end)
-end
-
--- =====================================
--- MOVER / EDITMODE INTEGRATION
--- =====================================
-
-local moverOverlay
-local isMoverLocked = true
-local positionApplied = false
-
-local function ApplyPosition()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    if QuestieOwnsTracker() then return end
-    local db = S()
-    -- Mark as user-placed so Blizzard's UIParent_UpdateTopFramesOverObjectiveTracker
-    -- and the Edit Mode manager stop repositioning it.
-    if tracker.SetMovable then tracker:SetMovable(true) end
-    -- [fix] Clamping was set on ObjectiveTrackerFrame, whose height is
-    -- Blizzard's and far exceeds the visible content. Its bottom edge sits
-    -- at or past the bottom of the screen, so the engine refused every
-    -- downward drag while still allowing up/left/right. Off by default;
-    -- "Reset position" in the settings (Skins > Quest tracker) and
-    -- /tmf tracker reset are the way back if the panel ends up somewhere
-    -- unreachable (OT.ResetPosition, 1.3.4).
-    if tracker.SetClampedToScreen then tracker:SetClampedToScreen(false) end
-    tracker.IsUserPlaced = function() return true end
-
-    -- Resolve the anchor at Blizzard's height, then LiftTrackerRoom pins the
-    -- top edge and adds the room (see PinTrackerTop).
-    DropTrackerRoom(tracker)
-
-    -- Scale BEFORE the anchor: SetPoint offsets are read in the frame's own
-    -- coordinate space, so scaling afterwards silently shifts a frame that was
-    -- just placed. Anchoring first and scaling second moved the tracker a
-    -- little further away on every apply pass.
-    if db.scale and db.scale > 0 then
-        tracker:SetScale(db.scale)
-    end
-
-    local pos = db.position
-    if pos and (pos.point or pos.anchor) then
-        -- V4's LayoutEngine migrates point/relativePoint into point/anchor and
-        -- stamps refW/refH for resolution-independent positions. This module
-        -- used to keep reading the deleted relativePoint key, so after a reload
-        -- it silently fell back to pos.point and could jump to another anchor.
-        if TomoMod_Layout and TomoMod_Layout.MigratePosition then
-            TomoMod_Layout.MigratePosition(pos)
-        end
-        local point = pos.point or pos.anchor or "BOTTOMLEFT"
-        local relativePoint = pos.anchor or pos.relativePoint or pos.relPoint or pos.relTo or point
-        local x, y = pos.x or 0, pos.y or 0
-        if TomoMod_Layout and TomoMod_Layout.Rescale then
-            x, y = TomoMod_Layout.Rescale(x, y, pos.refW, pos.refH,
-                UIParent:GetWidth(), UIParent:GetHeight())
-        end
-
-        -- Layout.Save stores UIParent-space coordinates. ObjectiveTracker can
-        -- have its own scale, so SetPoint offsets must be converted back into
-        -- the tracker's coordinate space for an exact save/apply round trip.
-        local ratio = tracker:GetEffectiveScale() / UIParent:GetEffectiveScale()
-        if not (ratio and ratio > 0) then ratio = 1 end
-        tracker:ClearAllPoints()
-        tracker:SetPoint(point, UIParent, relativePoint, x / ratio, y / ratio)
-    end
-    positionApplied = true
-    LiftTrackerRoom()
-end
-OT.ApplyPosition = ApplyPosition
-
-local function SavePosition()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    local db = S()
-    db.position = db.position or {}
-    -- Measure the frame at Blizzard's height: at 4000 its centre is far below
-    -- the screen and Layout.Save would pick a wrong anchor from it. Pin the top
-    -- first (a drag can leave any anchor) so shrinking keeps the top in place.
-    if IsTrackerLifted(tracker) and naturalTrackerH and CanTouchTracker(tracker) then
-        PinTrackerTop(tracker)
-        DropTrackerRoom(tracker)
-    end
-    if TomoMod_Layout and TomoMod_Layout.Save then
-        TomoMod_Layout.Save(db.position, tracker)
-        LiftTrackerRoom()
-        return
-    end
-
-    -- Legacy fallback when the core layout engine is unavailable.
-    local left, bottom = tracker:GetLeft(), tracker:GetBottom()
-    if not left or not bottom then return end
-    local scale = tracker:GetEffectiveScale() / UIParent:GetEffectiveScale()
-    db.position.point = "BOTTOMLEFT"
-    db.position.relativePoint = "BOTTOMLEFT"
-    db.position.x = left * scale
-    db.position.y = bottom * scale
-end
-OT.SavePosition = SavePosition
-
-local function CreateMoverOverlay()
-    if moverOverlay then return moverOverlay end
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-
-    moverOverlay = CreateFrame("Frame", "TomoModObjectiveTrackerMover", UIParent, "BackdropTemplate")
-    moverOverlay:SetFrameStrata("HIGH")
-    moverOverlay:SetFrameLevel(200)
-    -- Rendu unifie du mode edition : degrade azur vers blanc et libelle azur
-    -- avec contour noir. Une seule definition, dans Core/Utils.lua.
-    if TomoMod_Utils and TomoMod_Utils.StyleMoverOverlay then
-        TomoMod_Utils.StyleMoverOverlay(moverOverlay, (TomoMod_Layout and TomoMod_Layout.Label("objectiveTracker")))
-    end
-    moverOverlay:SetAllPoints(skinFrame or tracker)
-    moverOverlay:EnableMouse(true)
-    moverOverlay:SetMovable(true)
-    moverOverlay:RegisterForDrag("LeftButton")
-    moverOverlay:SetScript("OnDragStart", function()
-        tracker:SetMovable(true)
-        tracker:StartMoving()
+    menu:SetScript("OnLeave", function(self)
+        for _, d in ipairs(self.dots) do SetColor(d, C_GOLD) end
     end)
-    moverOverlay:SetScript("OnDragStop", function()
-        tracker:StopMovingOrSizing()
-        SavePosition()
-        ApplyPosition()
+    hdr.menu = menu
+    hdr.count:SetPoint("RIGHT", menu, "LEFT", -2, 0)
+
+    body = CreateFrame("Frame", nil, root)
+    body:SetPoint("TOPLEFT", root, "BOTTOMLEFT", 0, 0)
+    body:SetPoint("TOPRIGHT", root, "BOTTOMRIGHT", 0, 0)
+    body:SetHeight(40)
+    body.bg = body:CreateTexture(nil, "BACKGROUND")
+    body.bg:SetAllPoints()
+    body:EnableMouseWheel(true)
+    body:SetScript("OnMouseWheel", function(_, delta)
+        if InCombatLockdown() and state.itemsShown > 0 then return end
+        local before = state.scroll
+        state.scroll = math.max(0, state.scroll - delta)
+        -- Stop when the end is already on screen.
+        if delta < 0 and (state.overflow or 0) == 0 then state.scroll = before end
+        if state.scroll ~= before then Refresh() end
     end)
-    -- Mouse wheel = scale adjust (90% .. 150%)
-    moverOverlay:EnableMouseWheel(true)
-    moverOverlay:SetScript("OnMouseWheel", function(_, delta)
-        local db = S()
-        local s = (db.scale or 1.0) + (delta > 0 and 0.05 or -0.05)
-        if s < 0.6 then s = 0.6 elseif s > 1.8 then s = 1.8 end
-        db.scale = s
-        ApplyPosition()
-        if moverOverlay._label then
-            moverOverlay:UpdateScaleLabel(s)
-        end
+    body.footer = body:CreateFontString(nil, "OVERLAY")
+    body.footer:SetJustifyH("LEFT")
+    body.footer:SetTextColor(C_DIM[1], C_DIM[2], C_DIM[3], 1)
+
+    -- Border around header and body together.
+    border = CreateFrame("Frame", nil, root)
+    border:SetPoint("TOPLEFT", root, "TOPLEFT", 0, 0)
+    border:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", 0, 0)
+    border:SetFrameLevel(root:GetFrameLevel() + 5)
+    border.lines = AddBorder(border, C_BRONZE, 0.85)
+    body:HookScript("OnHide", function()
+        border:ClearAllPoints()
+        border:SetPoint("TOPLEFT", root, "TOPLEFT")
+        border:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT")
+    end)
+    body:HookScript("OnShow", function()
+        border:ClearAllPoints()
+        border:SetPoint("TOPLEFT", root, "TOPLEFT")
+        border:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT")
     end)
 
-    -- Reuse the unified, localized mover label instead of drawing a second
-    -- hardcoded English label over it.
-    moverOverlay._label = moverOverlay._tmMoverText
+    -- Item buttons are created on the first out-of-combat layout, so the
+    -- pool exists before any fight.
+    ApplyLook()
+end
 
-    function moverOverlay:UpdateScaleLabel(scale)
-        if not self.SetMoverLabel then return end
-        local base = (TomoMod_Layout and TomoMod_Layout.Label("objectiveTracker")) or "Objective Tracker"
-        self:SetMoverLabel(("%s  -  %d%%"):format(base, math.floor((scale or 1) * 100 + 0.5)))
+-- =====================================================================
+-- BLIZZARD TRACKER
+-- =====================================================================
+
+local hiddenParent
+local origParents = {}
+local blizzHidden = false
+
+local function BlizzardTrackers()
+    local list = {}
+    for _, name in ipairs({ "ObjectiveTrackerFrame", "QuestWatchFrame", "WatchFrame" }) do
+        local f = rawget(_G, name)
+        if type(f) == "table" and f.SetParent then list[#list + 1] = f end
     end
-
-    moverOverlay:Hide()
-    return moverOverlay
+    return list
 end
 
-function OT.IsLocked()
-    return isMoverLocked
-end
-
-function OT.SetLocked(value)
-    isMoverLocked = value and true or false
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    if not positionApplied then ApplyPosition() end
-    if isMoverLocked then
-        if moverOverlay then moverOverlay:Hide() end
-        SavePosition()
-        ApplyPosition()
-    else
-        if not moverOverlay then CreateMoverOverlay() end
-        if moverOverlay then
-            local db = S()
-            if moverOverlay._label then
-                moverOverlay:UpdateScaleLabel((db.scale or 1.0))
-            end
-            moverOverlay:Show()
-        end
+local function HideBlizzardTracker()
+    if blizzHidden then return end
+    if InCombatLockdown() then state.needBlizz = true return end
+    hiddenParent = hiddenParent or CreateFrame("Frame")
+    hiddenParent:Hide()
+    for _, f in ipairs(BlizzardTrackers()) do
+        if origParents[f] == nil then origParents[f] = f:GetParent() or UIParent end
+        f:SetParent(hiddenParent)
     end
+    blizzHidden = true
+    state.needBlizz = false
 end
 
-function OT.ToggleLock()
-    OT.SetLocked(not isMoverLocked)
+local function RestoreBlizzardTracker()
+    if not blizzHidden then return end
+    if InCombatLockdown() then return end
+    for f, parent in pairs(origParents) do f:SetParent(parent) end
+    wipe(origParents)
+    blizzHidden = false
 end
 
--- =====================================
--- RESET POSITION (1.3.4)
--- The tracker is not clamped to the screen (see ApplyPosition), and its
--- place is TMF's own (objectiveTracker.position), re-applied on every load:
--- Blizzard's Edit Mode reset does not bring it back. A player who dragged it
--- off screen (or whose Edit Mode change pushed it out) had no way back but
--- a /run. This puts the default place and a 100 % scale back, live.
--- In combat the move waits for the end of the fight (the tracker can carry
--- protected quest item buttons).
--- =====================================
-local resetWaiter
+-- =====================================================================
+-- POSITION / MOVER
+-- =====================================================================
 
 local function DefaultPosition()
     local def = TomoMod_Defaults and TomoMod_Defaults.objectiveTracker
@@ -2694,118 +1669,261 @@ local function DefaultPosition()
     return { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 }
 end
 
-local function ApplyResetPosition()
-    if not isInitialized or not IsEnabled() then return end
-    ApplyPosition()
-    if moverOverlay and moverOverlay:IsShown() and moverOverlay.UpdateScaleLabel then
-        moverOverlay:UpdateScaleLabel(1)
+local function ApplyPosition()
+    if not root then return end
+    if InCombatLockdown() then state.needPosition = true return end
+    state.needPosition = false
+    local db = S()
+    root:SetScale((db.scale and db.scale > 0) and db.scale or 1)
+    root:SetWidth(Opt("width"))
+    local pos = db.position
+    root:ClearAllPoints()
+    if type(pos) == "table" and (pos.point or pos.anchor) then
+        if TomoMod_Layout and TomoMod_Layout.MigratePosition then TomoMod_Layout.MigratePosition(pos) end
+        local point = pos.point or pos.anchor or "TOPRIGHT"
+        local rel = pos.anchor or pos.relativePoint or point
+        local x, y = pos.x or 0, pos.y or 0
+        if TomoMod_Layout and TomoMod_Layout.Rescale then
+            x, y = TomoMod_Layout.Rescale(x, y, pos.refW, pos.refH, UIParent:GetWidth(), UIParent:GetHeight())
+        end
+        local ratio = root:GetEffectiveScale() / UIParent:GetEffectiveScale()
+        if not (ratio and ratio > 0) then ratio = 1 end
+        root:SetPoint(point, UIParent, rel, x / ratio, y / ratio)
+    else
+        root:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -110, -260)
     end
 end
+OT.ApplyPosition = ApplyPosition
+
+local function SavePosition()
+    if not root then return end
+    local db = S()
+    db.position = db.position or {}
+    if TomoMod_Layout and TomoMod_Layout.Save then
+        TomoMod_Layout.Save(db.position, root)
+        return
+    end
+    local left, top = root:GetLeft(), root:GetTop()
+    if not left or not top then return end
+    local scale = root:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    db.position.point, db.position.relativePoint = "TOPLEFT", "BOTTOMLEFT"
+    db.position.x, db.position.y = left * scale, top * scale
+end
+OT.SavePosition = SavePosition
+
+local function CreateMover()
+    if mover or not root then return mover end
+    mover = CreateFrame("Frame", "TomoModObjectiveTrackerMover", UIParent, "BackdropTemplate")
+    mover:SetFrameStrata("HIGH")
+    mover:SetFrameLevel(200)
+    if TomoMod_Utils and TomoMod_Utils.StyleMoverOverlay then
+        TomoMod_Utils.StyleMoverOverlay(mover, TomoMod_Layout and TomoMod_Layout.Label and TomoMod_Layout.Label("objectiveTracker"))
+    end
+    mover:SetPoint("TOPLEFT", root, "TOPLEFT")
+    mover:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT")
+    mover:EnableMouse(true)
+    mover:RegisterForDrag("LeftButton")
+    mover:SetScript("OnDragStart", function()
+        if InCombatLockdown() then return end
+        root:StartMoving()
+    end)
+    mover:SetScript("OnDragStop", function()
+        root:StopMovingOrSizing()
+        if InCombatLockdown() then return end
+        SavePosition()
+        ApplyPosition()
+    end)
+    mover:EnableMouseWheel(true)
+    function mover:UpdateScaleLabel(scale)
+        if not self.SetMoverLabel then return end
+        local base = (TomoMod_Layout and TomoMod_Layout.Label and TomoMod_Layout.Label("objectiveTracker")) or "Quest tracker"
+        self:SetMoverLabel(("%s  -  %d %%"):format(base, math.floor((scale or 1) * 100 + 0.5)))
+    end
+    mover:SetScript("OnMouseWheel", function(self, delta)
+        if InCombatLockdown() then return end
+        local db = S()
+        local s = (db.scale or 1) + (delta > 0 and 0.05 or -0.05)
+        db.scale = math.min(math.max(s, 0.6), 1.8)
+        ApplyPosition()
+        self:UpdateScaleLabel(db.scale)
+    end)
+    mover:Hide()
+    return mover
+end
+
+function OT.IsLocked() return not isUnlocked end
+
+function OT.SetLocked(value)
+    if not root then return end
+    isUnlocked = not value
+    if isUnlocked then
+        CreateMover()
+        mover:UpdateScaleLabel(S().scale or 1)
+        mover:Show()
+    else
+        if mover then mover:Hide() end
+        if not InCombatLockdown() then
+            SavePosition()
+            ApplyPosition()
+        end
+    end
+    RequestRefresh()
+end
+
+function OT.ToggleLock() OT.SetLocked(isUnlocked) end
 
 --- Back to the default place and scale. Returns "now" or "after_combat".
 function OT.ResetPosition()
     local db = S()
     db.position = DefaultPosition()
     db.scale = 1.0
+    if not root then return "now" end
     if InCombatLockdown() then
-        if not resetWaiter then
-            resetWaiter = CreateFrame("Frame")
-            resetWaiter:SetScript("OnEvent", function(self)
-                self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-                ApplyResetPosition()
-            end)
-        end
-        resetWaiter:RegisterEvent("PLAYER_REGEN_ENABLED")
+        state.needPosition = true
         return "after_combat"
     end
-    ApplyResetPosition()
+    ApplyPosition()
+    if mover and mover:IsShown() then mover:UpdateScaleLabel(1) end
     return "now"
 end
 
 local function RegisterWithMovers()
     if not TomoMod_Movers or not TomoMod_Movers.RegisterEntry then return end
     TomoMod_Movers.RegisterEntry({
-        label    = (TomoMod_L and TomoMod_L["mover_objectivetracker"]) or "Objective Tracker",
+        label    = T("mover_objectivetracker", "Quest tracker"),
         unlock   = function() OT.SetLocked(false) end,
         lock     = function() OT.SetLocked(true) end,
-        isActive = function()
-            return TomoModForeverDB and TomoModForeverDB.objectiveTracker and TomoModForeverDB.objectiveTracker.enabled
-        end,
+        isActive = function() return Opt("enabled") and active end,
     })
 end
 
--- =====================================
--- PUBLIC API
--- =====================================
+-- =====================================================================
+-- EVENTS
+-- =====================================================================
 
-function OT.ApplySettings()
-    if not isInitialized then return end
-    if not IsEnabled() then
+local ev = CreateFrame("Frame")
+
+local function OnCombatEnd()
+    if state.needDisable then
+        state.needDisable = false
         OT.Disable()
         return
     end
-    ApplyPosition()
-    OnTrackerUpdate()
+    if not active then return end
+    if state.needBlizz then HideBlizzardTracker() end
+    if state.needPosition then ApplyPosition() end
+    state.needLayout = false
+    state.sig = nil
+    ApplyAlpha()
+    Refresh()
 end
 
--- Internal handle used by PumpUpdateSoon to call OnTrackerUpdate without recursion.
-OT._OnTrackerUpdate = OnTrackerUpdate
+ev:SetScript("OnEvent", function(_, event, ...)
+    if event == "PLAYER_REGEN_DISABLED" then
+        ApplyAlpha()
+        return
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        OnCombatEnd()
+        return
+    elseif event == "UNIT_QUEST_LOG_CHANGED" then
+        if ... ~= "player" then return end
+    elseif event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" then
+        Forget((...))
+    elseif event == "BAG_UPDATE_COOLDOWN" then
+        UpdateItemState()
+        return
+    end
+    if active then RequestRefresh() end
+end)
+
+local EVENTS = {
+    "QUEST_LOG_UPDATE", "QUEST_WATCH_LIST_CHANGED", "QUEST_ACCEPTED",
+    "QUEST_REMOVED", "QUEST_TURNED_IN", "UNIT_QUEST_LOG_CHANGED",
+    "ZONE_CHANGED", "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED_INDOORS",
+    "PLAYER_ENTERING_WORLD", "PLAYER_LEVEL_UP", "PLAYER_REGEN_DISABLED",
+    "PLAYER_REGEN_ENABLED", "BAG_UPDATE_COOLDOWN",
+}
+
+local function RegisterEvents()
+    for _, e in ipairs(EVENTS) do pcall(ev.RegisterEvent, ev, e) end
+end
+
+-- =====================================================================
+-- PUBLIC API
+-- =====================================================================
+
+local questieNoticeShown = false
+local function QuestieNotice()
+    if questieNoticeShown then return end
+    questieNoticeShown = true
+    print("|cffffd100TomoModForever|r " .. T("ot_questie_standdown",
+        "Questie draws the quest tracker: TMF's tracker stands down."))
+end
+
+function OT.ApplySettings()
+    if not isInitialized then return end
+    if not Opt("enabled") then
+        OT.Disable()
+        return
+    end
+    if not active then
+        OT.Enable()
+        return
+    end
+    ApplyLook()
+    ApplyPosition()
+    OT.UpdateTicker()
+    state.sig = nil
+    Refresh()
+end
 
 function OT.Enable()
-    local tracker = ObjectiveTrackerFrame
-    if not tracker then return end
-    if QuestieOwnsTracker() then QuestieNotice(); return end
-
-    CreateOrUpdateBackground()
-    CreateOrUpdateHeader()
-    HideBlizzardHeader()
-    InstallHooks()
+    if QuestieOwnsTracker() then QuestieNotice() return end
+    CreateFrames()
+    active = true
+    state.needDisable = false
+    HideBlizzardTracker()
+    RegisterEvents()
+    ApplyLook()
     ApplyPosition()
-
-    C_Timer.After(0.5, OnTrackerUpdate)
+    if not InCombatLockdown() then root:Show() end
+    OT.UpdateTicker()
+    state.sig = nil
+    Refresh()
 end
 
 function OT.Disable()
-    if skinFrame then skinFrame:Hide() end
-    if headerBar then headerBar:Hide() end
-
-    DisableBuckets()
-
-    if InCombatLockdown() then _tmPendingDisable = true; return end
-    _tmPendingDisable = false
-    RestoreCombatSuppressedAlpha()
-    RestoreNativeAlphaLocks()
+    active = false
+    OT.UpdateTicker()
+    if not root then return end
+    if InCombatLockdown() then
+        -- root holds secure buttons: hide it after the fight.
+        state.needDisable = true
+        root:SetAlpha(0)
+        return
+    end
+    for _, b in ipairs(itemPool) do b:Hide() end
+    state.itemsShown = 0
+    UpdateItemTicker()
+    if mover then mover:Hide() end
+    root:Hide()
+    RestoreBlizzardTracker()
 end
 
 function OT.SetEnabled(value)
-    if not TomoModForeverDB or not TomoModForeverDB.objectiveTracker then return end
-    TomoModForeverDB.objectiveTracker.enabled = value
-    if value then
-        OT.Enable()
-        isInitialized = true
-    else
-        OT.Disable()
-    end
+    SetOpt("enabled", value and true or false)
+    isInitialized = true
+    if value then OT.Enable() else OT.Disable() end
 end
 
 function OT.Initialize()
     if isInitialized then return end
-    if not IsEnabled() then return end
-    -- Questie's tracker in use: nothing is installed on Blizzard's tracker.
-    -- If it is switched off later in Questie, a /reload brings TomoMod back.
-    if QuestieOwnsTracker() then QuestieNotice(); return end
-
-    local attempts = 0
-    local function TryInit()
-        attempts = attempts + 1
-        if ObjectiveTrackerFrame then
-            OT.Enable()
-            isInitialized = true
-            RegisterWithMovers()
-        elseif attempts < 30 then
-            C_Timer.After(0.5, TryInit)
-        end
-    end
-
-    C_Timer.After(0.3, TryInit)
+    isInitialized = true
+    ev:RegisterEvent("PLAYER_REGEN_ENABLED")
+    if not Opt("enabled") then return end
+    if QuestieOwnsTracker() then QuestieNotice() return end
+    OT.Enable()
+    RegisterWithMovers()
+    -- The quest log is often still empty at login: one more pass shortly.
+    C_Timer.After(2, RequestRefresh)
 end
