@@ -73,7 +73,7 @@ local DEFAULTS = {
     objectiveFontSize = 11,
     maxQuestsShown = 0,
     maxHeight = 0,
-    displayMode = "all",        -- "all" | "watched"
+    displayMode = "watched",    -- "watched" (journal check boxes) | "all"
     questSort = "level",        -- "level" | "name" | "progress" | "distance"
     zoneSort = "level",         -- "level" | "name" | "log"
     groupByZone = true,
@@ -395,13 +395,13 @@ local function BuildModel()
 
     local visible, hidden = {}, 0
     for _, q in ipairs(quests) do
+        -- "watched" follows the check boxes of the quest log: unticking a
+        -- quest there removes it here, a pin only moves it to the top.
         local show
-        if cs.pinned[q.id] then
-            show = true
-        elseif mode == "watched" then
+        if mode == "watched" then
             show = q.watched
         else
-            show = not cs.hidden[q.id]
+            show = cs.pinned[q.id] or not cs.hidden[q.id]
         end
         if show then
             if useDistance then q.distance = Distance(q.id) end
@@ -749,8 +749,8 @@ local function QuickMenu(owner)
 
         local show = m:CreateButton(T("ot_qm_show", "Show"))
         for _, e in ipairs({
-            { "all",     T("ot_qm_show_all", "Every quest in the log") },
-            { "watched", T("ot_qm_show_watched", "Watched quests only") },
+            { "watched", T("ot_qm_show_watched", "Quests ticked in the quest log") },
+            { "all",     T("ot_qm_show_all", "Every quest, ignoring the quest log boxes") },
         }) do
             show:CreateRadio(e[2], function() return Opt("displayMode") == e[1] end,
                 function() SetAndRefresh("displayMode", e[1]) end)

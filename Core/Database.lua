@@ -112,7 +112,7 @@ TomoMod_Defaults = {
         objectiveFontSize = 11,
         maxQuestsShown = 0,
         maxHeight = 0,            -- 0 = down to the bottom of the screen
-        displayMode = "all",      -- "all" (whole log) | "watched"
+        displayMode = "watched",  -- "watched" (quest log check boxes) | "all"
         questSort = "level",      -- "level" | "name" | "progress" | "distance"
         zoneSort = "level",       -- "level" | "name" | "log"
         groupByZone = true,
@@ -1809,6 +1809,14 @@ local function TomoMod_RunMigrations()
                 ot.position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 }
             end
         end
+    end
+
+    -- [1.3.5] The tracker follows the quest log check boxes by default:
+    -- unticking a quest in the log has to remove it from the tracker.
+    if not done.questTrackerWatched then
+        done.questTrackerWatched = true
+        local ot = TomoModForeverDB.objectiveTracker
+        if type(ot) == "table" then ot.displayMode = "watched" end
     end
 
     if not done.otHideWhenEmpty then

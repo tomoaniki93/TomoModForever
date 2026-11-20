@@ -1,4 +1,4 @@
--- TomoModForever 1.3.5: the new quest tracker (TMF draws its own tracker).
+﻿-- TomoModForever 1.3.5: the new quest tracker (TMF draws its own tracker).
 -- No "+", guillemets or bullets in these strings: the font may not carry them.
 
 TomoMod_RegisterLocale("enUS", {
@@ -34,8 +34,8 @@ TomoMod_RegisterLocale("enUS", {
     -- Quick menu (header)
     ["ot_qm_title"] = "Quest tracker",
     ["ot_qm_show"] = "Show",
-    ["ot_qm_show_all"] = "Every quest in the log",
-    ["ot_qm_show_watched"] = "Watched quests only",
+    ["ot_qm_show_all"] = "Every quest, ignoring the quest log boxes",
+    ["ot_qm_show_watched"] = "Quests ticked in the quest log",
     ["ot_qm_sort"] = "Sort quests",
     ["ot_sort_level"] = "By level",
     ["ot_sort_name"] = "By name (A-Z)",
@@ -77,7 +77,7 @@ TomoMod_RegisterLocale("enUS", {
     -- What's new
     ["wn_135_tracker"] = "New - Quest tracker rebuilt from scratch: TMF now draws its own. Quests are grouped by zone, the zone you are in comes first and the others fold by themselves; finished quests gather in a Ready to turn in section at the top.",
     ["wn_135_sort"] = "New - Quest tracker: sort by level, name (A-Z) or progress; the quest level takes its difficulty colour (grey, green, yellow, orange, red), finished objectives turn green. Right click the title for every display option.",
-    ["wn_135_clicks"] = "New - Quest tracker: click a quest to open it, Shift click to link it, Ctrl click to pin it to the top; right click to share, hide, abandon or set the arrow. Every quest of the log is shown, no more watch limit.",
+    ["wn_135_clicks"] = "New - Quest tracker: click a quest to open it, Shift click to link it, Ctrl click to pin it to the top; right click to share, hide, abandon or set the arrow. The tracker follows the check boxes of the quest log: untick a quest there and it leaves the tracker.",
     ["wn_135_items"] = "New - Quest tracker: quest item buttons with cooldown and range, a title bar that can no longer leave the screen, and an opacity in combat.",
 })
 
@@ -111,8 +111,8 @@ TomoMod_RegisterLocale("frFR", {
     ["ot_menu_abandon"] = "Abandonner la quête...",
     ["ot_qm_title"] = "Suivi des quêtes",
     ["ot_qm_show"] = "Afficher",
-    ["ot_qm_show_all"] = "Toutes les quêtes du journal",
-    ["ot_qm_show_watched"] = "Seulement les quêtes suivies",
+    ["ot_qm_show_all"] = "Toutes les quêtes, sans tenir compte des cases du journal",
+    ["ot_qm_show_watched"] = "Quêtes cochées dans le journal",
     ["ot_qm_sort"] = "Trier les quêtes",
     ["ot_sort_level"] = "Par niveau",
     ["ot_sort_name"] = "Par nom (A-Z)",
@@ -152,7 +152,7 @@ TomoMod_RegisterLocale("frFR", {
     ["opt_ot_combat_alpha"] = "Opacité en combat",
     ["wn_135_tracker"] = "Nouveau - Suivi des quêtes entièrement refait : TMF dessine maintenant le sien. Les quêtes sont regroupées par zone, celle où tu es passe en premier et les autres se replient toutes seules ; les quêtes terminées se rangent dans une section À rendre en haut.",
     ["wn_135_sort"] = "Nouveau - Suivi des quêtes : tri par niveau, par nom (A-Z) ou par progression ; le niveau prend la couleur de difficulté (gris, vert, jaune, orange, rouge), les objectifs terminés passent en vert. Clic droit sur le titre pour toutes les options d'affichage.",
-    ["wn_135_clicks"] = "Nouveau - Suivi des quêtes : clic sur une quête pour l'ouvrir, clic avec Maj pour la lier, clic avec Ctrl pour l'épingler en haut ; clic droit pour partager, masquer, abandonner ou mettre la flèche. Toutes les quêtes du journal sont affichées, plus de limite de suivi.",
+    ["wn_135_clicks"] = "Nouveau - Suivi des quêtes : clic sur une quête pour l'ouvrir, clic avec Maj pour la lier, clic avec Ctrl pour l'épingler en haut ; clic droit pour partager, masquer, abandonner ou mettre la flèche. Le suivi suit les cases du journal des quêtes : décoche une quête et elle quitte le suivi.",
     ["wn_135_items"] = "Nouveau - Suivi des quêtes : boutons des objets de quête avec recharge et portée, une barre de titre qui ne peut plus sortir de l'écran, et une opacité en combat.",
 })
 
@@ -186,8 +186,8 @@ TomoMod_RegisterLocale("deDE", {
     ["ot_menu_abandon"] = "Quest abbrechen...",
     ["ot_qm_title"] = "Questverfolgung",
     ["ot_qm_show"] = "Anzeigen",
-    ["ot_qm_show_all"] = "Alle Quests im Log",
-    ["ot_qm_show_watched"] = "Nur verfolgte Quests",
+    ["ot_qm_show_all"] = "Alle Quests, Kästchen im Questlog ignorieren",
+    ["ot_qm_show_watched"] = "Im Questlog angehakte Quests",
     ["ot_qm_sort"] = "Quests sortieren",
     ["ot_sort_level"] = "Nach Stufe",
     ["ot_sort_name"] = "Nach Name (A-Z)",
@@ -227,7 +227,7 @@ TomoMod_RegisterLocale("deDE", {
     ["opt_ot_combat_alpha"] = "Deckkraft im Kampf",
     ["wn_135_tracker"] = "Neu - Questverfolgung komplett neu gebaut: TMF zeichnet jetzt seine eigene. Quests sind nach Zone gruppiert, deine aktuelle Zone steht oben und die anderen klappen sich selbst ein; erledigte Quests sammeln sich oben im Bereich Bereit zur Abgabe.",
     ["wn_135_sort"] = "Neu - Questverfolgung: Sortierung nach Stufe, Name (A-Z) oder Fortschritt; die Stufe nimmt die Schwierigkeitsfarbe an (grau, grün, gelb, orange, rot), erledigte Ziele werden grün. Rechtsklick auf den Titel für alle Anzeigeoptionen.",
-    ["wn_135_clicks"] = "Neu - Questverfolgung: Klick auf eine Quest öffnet sie, Umschalt-Klick verlinkt sie, Strg-Klick heftet sie oben an; Rechtsklick zum Teilen, Ausblenden, Abbrechen oder für den Pfeil. Alle Quests des Logs werden gezeigt, kein Verfolgungslimit mehr.",
+    ["wn_135_clicks"] = "Neu - Questverfolgung: Klick auf eine Quest öffnet sie, Umschalt-Klick verlinkt sie, Strg-Klick heftet sie oben an; Rechtsklick zum Teilen, Ausblenden, Abbrechen oder für den Pfeil. Die Verfolgung folgt den Kästchen im Questlog: Haken entfernen und die Quest verschwindet.",
     ["wn_135_items"] = "Neu - Questverfolgung: Schaltflächen für Questgegenstände mit Abklingzeit und Reichweite, eine Titelleiste, die den Bildschirm nicht mehr verlassen kann, und eine Deckkraft im Kampf.",
 })
 
@@ -261,8 +261,8 @@ TomoMod_RegisterLocale("esES", {
     ["ot_menu_abandon"] = "Abandonar la misión...",
     ["ot_qm_title"] = "Seguimiento de misiones",
     ["ot_qm_show"] = "Mostrar",
-    ["ot_qm_show_all"] = "Todas las misiones del registro",
-    ["ot_qm_show_watched"] = "Solo las misiones seguidas",
+    ["ot_qm_show_all"] = "Todas las misiones, sin tener en cuenta las casillas del registro",
+    ["ot_qm_show_watched"] = "Misiones marcadas en el registro",
     ["ot_qm_sort"] = "Ordenar misiones",
     ["ot_sort_level"] = "Por nivel",
     ["ot_sort_name"] = "Por nombre (A-Z)",
@@ -302,7 +302,7 @@ TomoMod_RegisterLocale("esES", {
     ["opt_ot_combat_alpha"] = "Opacidad en combate",
     ["wn_135_tracker"] = "Nuevo - Seguimiento de misiones rehecho desde cero: TMF dibuja ahora el suyo. Las misiones se agrupan por zona, la tuya va primero y las demás se pliegan solas; las misiones terminadas se reúnen arriba en una sección Listas para entregar.",
     ["wn_135_sort"] = "Nuevo - Seguimiento de misiones: orden por nivel, nombre (A-Z) o progreso; el nivel toma el color de dificultad (gris, verde, amarillo, naranja, rojo) y los objetivos cumplidos pasan a verde. Clic derecho en el título para todas las opciones.",
-    ["wn_135_clicks"] = "Nuevo - Seguimiento de misiones: clic en una misión para abrirla, clic con Mayús para enlazarla, clic con Ctrl para fijarla arriba; clic derecho para compartir, ocultar, abandonar o poner la flecha. Se muestran todas las misiones del registro, sin límite de seguimiento.",
+    ["wn_135_clicks"] = "Nuevo - Seguimiento de misiones: clic en una misión para abrirla, clic con Mayús para enlazarla, clic con Ctrl para fijarla arriba; clic derecho para compartir, ocultar, abandonar o poner la flecha. El seguimiento sigue las casillas del registro: desmarca una misión y sale del seguimiento.",
     ["wn_135_items"] = "Nuevo - Seguimiento de misiones: botones de objetos de misión con reutilización y alcance, una barra de título que ya no puede salir de la pantalla y una opacidad en combate.",
 })
 
@@ -336,8 +336,8 @@ TomoMod_RegisterLocale("itIT", {
     ["ot_menu_abandon"] = "Abbandona la missione...",
     ["ot_qm_title"] = "Tracciamento missioni",
     ["ot_qm_show"] = "Mostra",
-    ["ot_qm_show_all"] = "Tutte le missioni del registro",
-    ["ot_qm_show_watched"] = "Solo le missioni tracciate",
+    ["ot_qm_show_all"] = "Tutte le missioni, ignorando le caselle del registro",
+    ["ot_qm_show_watched"] = "Missioni spuntate nel registro",
     ["ot_qm_sort"] = "Ordina le missioni",
     ["ot_sort_level"] = "Per livello",
     ["ot_sort_name"] = "Per nome (A-Z)",
@@ -377,7 +377,7 @@ TomoMod_RegisterLocale("itIT", {
     ["opt_ot_combat_alpha"] = "Opacità in combattimento",
     ["wn_135_tracker"] = "Nuovo - Tracciamento missioni rifatto da zero: TMF ora disegna il proprio. Le missioni sono raggruppate per zona, la tua viene per prima e le altre si comprimono da sole; le missioni completate si raccolgono in alto in una sezione Da consegnare.",
     ["wn_135_sort"] = "Nuovo - Tracciamento missioni: ordine per livello, nome (A-Z) o avanzamento; il livello prende il colore di difficoltà (grigio, verde, giallo, arancione, rosso), gli obiettivi completati diventano verdi. Clic destro sul titolo per tutte le opzioni.",
-    ["wn_135_clicks"] = "Nuovo - Tracciamento missioni: clic su una missione per aprirla, clic con Maiusc per collegarla, clic con Ctrl per fissarla in alto; clic destro per condividere, nascondere, abbandonare o mettere la freccia. Tutte le missioni del registro sono mostrate, niente più limite di tracciamento.",
+    ["wn_135_clicks"] = "Nuovo - Tracciamento missioni: clic su una missione per aprirla, clic con Maiusc per collegarla, clic con Ctrl per fissarla in alto; clic destro per condividere, nascondere, abbandonare o mettere la freccia. Il tracciamento segue le caselle del registro: togli la spunta e la missione esce dal tracciamento.",
     ["wn_135_items"] = "Nuovo - Tracciamento missioni: pulsanti degli oggetti di missione con ricarica e portata, una barra del titolo che non può più uscire dallo schermo e un'opacità in combattimento.",
 })
 
@@ -411,8 +411,8 @@ TomoMod_RegisterLocale("ptBR", {
     ["ot_menu_abandon"] = "Abandonar a missão...",
     ["ot_qm_title"] = "Rastreador de missões",
     ["ot_qm_show"] = "Mostrar",
-    ["ot_qm_show_all"] = "Todas as missões do registro",
-    ["ot_qm_show_watched"] = "Só as missões rastreadas",
+    ["ot_qm_show_all"] = "Todas as missões, ignorando as caixas do registro",
+    ["ot_qm_show_watched"] = "Missões marcadas no registro",
     ["ot_qm_sort"] = "Ordenar missões",
     ["ot_sort_level"] = "Por nível",
     ["ot_sort_name"] = "Por nome (A-Z)",
@@ -452,6 +452,6 @@ TomoMod_RegisterLocale("ptBR", {
     ["opt_ot_combat_alpha"] = "Opacidade em combate",
     ["wn_135_tracker"] = "Novo - Rastreador de missões refeito do zero: o TMF agora desenha o seu. As missões ficam agrupadas por zona, a sua vem primeiro e as outras se recolhem sozinhas; as missões concluídas se juntam no topo numa seção Prontas para entregar.",
     ["wn_135_sort"] = "Novo - Rastreador de missões: ordem por nível, nome (A-Z) ou progresso; o nível ganha a cor de dificuldade (cinza, verde, amarelo, laranja, vermelho) e os objetivos concluídos ficam verdes. Clique direito no título para todas as opções.",
-    ["wn_135_clicks"] = "Novo - Rastreador de missões: clique numa missão para abri-la, clique com Shift para o link, clique com Ctrl para fixá-la no topo; clique direito para compartilhar, ocultar, abandonar ou pôr a seta. Todas as missões do registro aparecem, sem limite de rastreamento.",
+    ["wn_135_clicks"] = "Novo - Rastreador de missões: clique numa missão para abri-la, clique com Shift para o link, clique com Ctrl para fixá-la no topo; clique direito para compartilhar, ocultar, abandonar ou pôr a seta. O rastreador segue as caixas do registro: desmarque uma missão e ela sai do rastreador.",
     ["wn_135_items"] = "Novo - Rastreador de missões: botões de itens de missão com recarga e alcance, uma barra de título que não pode mais sair da tela e uma opacidade em combate.",
 })

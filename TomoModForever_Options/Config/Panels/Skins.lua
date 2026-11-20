@@ -477,9 +477,9 @@ local function BuildObjectiveTrackerTab(parent)
     local _, ny = W.CreateSubLabel(c, L["opt_ot_content"], y)
     y = ny
     Dropdown("displayMode", L["opt_ot_show"], {
-        { value = "all",     text = L["ot_qm_show_all"] },
         { value = "watched", text = L["ot_qm_show_watched"] },
-    }, "all")
+        { value = "all",     text = L["ot_qm_show_all"] },
+    }, "watched")
     local sorts = {
         { value = "level",    text = L["ot_sort_level"] },
         { value = "name",     text = L["ot_sort_name"] },
