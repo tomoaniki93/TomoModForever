@@ -2,6 +2,7 @@
 -- No "+", guillemets or bullets in these strings: the font may not carry them.
 
 TomoMod_RegisterLocale("enUS", {
+    ["wn_135_trainer"] = "Fixed - Class trainer reminder: it only comes at even levels now (54 yes, 53 no), on level up and at login. A spell left unlearned brought it back at the next odd level.",
     -- Tracker
     ["ot_header_title"] = "QUESTS",
     ["ot_section_pinned"] = "Pinned",
@@ -82,6 +83,7 @@ TomoMod_RegisterLocale("enUS", {
 })
 
 TomoMod_RegisterLocale("frFR", {
+    ["wn_135_trainer"] = "Corrigé - Rappel du maître de classe : il ne vient plus qu'aux niveaux pairs (54 oui, 53 non), à la montée de niveau comme à la connexion. Un sort non appris le faisait revenir au niveau impair suivant.",
     ["ot_header_title"] = "QUÊTES",
     ["ot_section_pinned"] = "Épinglées",
     ["ot_section_complete"] = "À rendre",
@@ -157,6 +159,7 @@ TomoMod_RegisterLocale("frFR", {
 })
 
 TomoMod_RegisterLocale("deDE", {
+    ["wn_135_trainer"] = "Behoben - Erinnerung an den Klassenlehrer: Sie kommt jetzt nur noch auf geraden Stufen (54 ja, 53 nein), beim Stufenaufstieg und beim Einloggen. Ein nicht gelernter Zauber brachte sie auf der nächsten ungeraden Stufe zurück.",
     ["ot_header_title"] = "QUESTS",
     ["ot_section_pinned"] = "Angeheftet",
     ["ot_section_complete"] = "Bereit zur Abgabe",
@@ -232,6 +235,7 @@ TomoMod_RegisterLocale("deDE", {
 })
 
 TomoMod_RegisterLocale("esES", {
+    ["wn_135_trainer"] = "Corregido - Recordatorio del instructor de clase: ahora solo aparece en niveles pares (54 sí, 53 no), al subir de nivel y al conectarse. Un hechizo sin aprender lo hacía volver en el siguiente nivel impar.",
     ["ot_header_title"] = "MISIONES",
     ["ot_section_pinned"] = "Fijadas",
     ["ot_section_complete"] = "Listas para entregar",
@@ -307,6 +311,7 @@ TomoMod_RegisterLocale("esES", {
 })
 
 TomoMod_RegisterLocale("itIT", {
+    ["wn_135_trainer"] = "Corretto - Promemoria dell'istruttore di classe: ora arriva solo ai livelli pari (54 sì, 53 no), al passaggio di livello e all'accesso. Un incantesimo non appreso lo faceva tornare al livello dispari successivo.",
     ["ot_header_title"] = "MISSIONI",
     ["ot_section_pinned"] = "Fissate",
     ["ot_section_complete"] = "Da consegnare",
@@ -382,6 +387,7 @@ TomoMod_RegisterLocale("itIT", {
 })
 
 TomoMod_RegisterLocale("ptBR", {
+    ["wn_135_trainer"] = "Corrigido - Lembrete do instrutor de classe: agora só aparece nos níveis pares (54 sim, 53 não), ao subir de nível e ao entrar no jogo. Um feitiço não aprendido o trazia de volta no nível ímpar seguinte.",
     ["ot_header_title"] = "MISSÕES",
     ["ot_section_pinned"] = "Fixadas",
     ["ot_section_complete"] = "Prontas para entregar",

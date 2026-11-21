@@ -69,6 +69,7 @@ CHANGELOG = {
             L["wn_135_sort"],
             L["wn_135_clicks"],
             L["wn_135_items"],
+            L["wn_135_trainer"],
         },
     },
     {

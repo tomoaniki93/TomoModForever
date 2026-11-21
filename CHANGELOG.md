@@ -22,6 +22,10 @@ Player reports: quests in no particular order, colours that mean nothing, the Re
 - **Changed** - Migration `questTrackerV2`: the bucket keys (`buckets`, `bucketsCollapsed`, `zonesCollapsed`, `minimized`) are dropped. A saved position anchored by its top is kept; any other goes back to the default corner (it was measured on Blizzard's frame, up to 4000 px high).
 - Questie: unchanged, TMF stands down when Questie draws the tracker.
 
+#### Class trainer reminder
+
+- **Fixed** - The reminder showed on every level up as soon as a spell was waiting, so a spell left unlearned at 52 brought it back at 53. `Remind` now returns at odd levels, on level up and at login alike (54 yes, 53 no). The move-mode preview is unchanged.
+
 ## ####################################
 
 ## CHANGELOG 1.3.4

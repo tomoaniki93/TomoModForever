@@ -578,6 +578,10 @@ end
 local function Remind(level, fromLogin)
     local db = DB()
     if not (db and db.enabled) then return end
+    -- [1.3.5] Forever trainers teach every second level: the reminder only
+    -- comes at even levels (54 yes, 53 no), at login too. A spell left
+    -- unlearned at 52 used to bring it back at 53.
+    if (tonumber(level) or 1) % 2 ~= 0 then return end
     if InCombatLockdown() then
         TR._pending = { level, fromLogin }
         return
@@ -585,7 +589,7 @@ local function Remind(level, fromLogin)
     local list = Pending(level)
     if #list > 0 then
         Show(level, list)
-    elseif not fromLogin and db.genericReminder and not Cache().scanned and not HasBuiltIn() and level % 2 == 0 then
+    elseif not fromLogin and db.genericReminder and not Cache().scanned and not HasBuiltIn() then
         Show(level, list)
     end
 end
