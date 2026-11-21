@@ -125,6 +125,12 @@ local function T(key, fallback)
     return v
 end
 
+-- [1.3.6] Global animation level (TomoMod_Utils.AnimLevel).
+local function AnimAny()
+    local U = TomoMod_Utils
+    return not (U and U.AnimAny) or U.AnimAny()
+end
+
 local function Secret(v)
     return issecretvalue ~= nil and issecretvalue(v) or false
 end
@@ -1355,8 +1361,8 @@ local function Layout(model, inCombat)
                             blockByID[q.id] = b
                             newSeen[q.id] = true
                             drawnQuests = drawnQuests + 1
-                            if not firstPass and not state.seen[q.id] then b.fadeAnim:Play() end
-                            if state.wasComplete[q.id] == false and q.complete then b.flashAnim:Play() end
+                            if not firstPass and not state.seen[q.id] and AnimAny() then b.fadeAnim:Play() end
+                            if state.wasComplete[q.id] == false and q.complete and AnimAny() then b.flashAnim:Play() end
                             if q.item then
                                 placements[#placements + 1] = { item = q.item, y = -HEADER_H + y }
                             end
@@ -1438,7 +1444,7 @@ local function UpdateInPlace(model)
             if b then
                 local wasComplete = state.wasComplete[q.id]
                 FillQuestBlock(b, q, width)
-                if wasComplete == false and q.complete then b.flashAnim:Play() end
+                if wasComplete == false and q.complete and AnimAny() then b.flashAnim:Play() end
                 state.wasComplete[q.id] = q.complete
             end
         end

@@ -1046,8 +1046,28 @@ function U.Pulse(region, lo, hi, period)
 end
 
 --- A short horizontal shake (interrupted cast, error).
+-- ---------------------------------------------------------------------
+-- [1.3.6] Global animation level (TomoModForeverDB.animations.level)
+--   "full"    everything
+--   "reduced" fades and short feedback only: no movement, scale, shake,
+--             looping pulse, sweep or flying icon
+--   "none"    frames appear and disappear at once
+-- Every animated module asks here before playing.
+-- ---------------------------------------------------------------------
+function U.AnimLevel()
+    local a = TomoModForeverDB and TomoModForeverDB.animations
+    local level = type(a) == "table" and a.level
+    if level == "reduced" or level == "none" then return level end
+    return "full"
+end
+--- Movement, scale, shake, pulse, sweep: only at "full".
+function U.AnimFull() return U.AnimLevel() == "full" end
+--- Fades and short feedback: "full" and "reduced".
+function U.AnimAny() return U.AnimLevel() ~= "none" end
+
 function U.Shake(frame, px, duration)
     if not (frame and frame.CreateAnimationGroup) then return end
+    if not U.AnimFull() then return end
     local ag = frame._tmShake
     if not ag then
         ag = frame:CreateAnimationGroup()
@@ -1069,6 +1089,7 @@ end
 --- Grows to `scale` and settles back: a "pop" for badges and icons.
 function U.Pop(region, scale, duration)
     if not (region and region.CreateAnimationGroup) then return end
+    if not U.AnimFull() then return end
     local ag = region._tmPop
     if not ag then
         ag = region:CreateAnimationGroup()

@@ -340,6 +340,9 @@ end
 local flyPool = {}
 local function Fly(fromFrame, toFrame, icon)
     if not (fromFrame and icon) then return end
+    -- [1.3.6] A flying icon is movement: only at the "full" animation level.
+    local U = TomoMod_Utils
+    if U and U.AnimFull and not U.AnimFull() then return end
     local f
     for _, x in ipairs(flyPool) do if not x:IsShown() then f = x; break end end
     if not f then

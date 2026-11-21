@@ -49,6 +49,16 @@ end
 
 local function DB() return TomoModForeverDB and TomoModForeverDB.bagAlert end
 
+-- [1.3.6] Global animation level (TomoMod_Utils.AnimLevel).
+local function AnimAny()
+    local U = TomoMod_Utils
+    return not (U and U.AnimAny) or U.AnimAny()
+end
+local function AnimFull()
+    local U = TomoMod_Utils
+    return not (U and U.AnimFull) or U.AnimFull()
+end
+
 local function Plain(v)
     if issecretvalue and issecretvalue(v) then return nil end
     return v
@@ -130,6 +140,12 @@ end
 local function StartFadeOut()
     if not banner or banner.fadeOut:IsPlaying() then return end
     banner.holdLeft = nil
+    if not AnimAny() then
+        banner:Hide()
+        banner.pulse:Stop()
+        banner.glow:SetAlpha(0)
+        return
+    end
     banner.fadeOut:Play()
 end
 
@@ -150,9 +166,11 @@ local function OnUpdate(self, elapsed)
         self.tick:SetPoint("CENTER", self.bar, "LEFT", w * (self.threshold or 90) / 100, 0)
         if self.countT >= COUNT_TIME then
             self.countT = nil
-            if self.alarm then
+            if self.alarm and AnimFull() then
                 self.shake:Play()
                 self.pulse:Play()
+            elseif self.alarm then
+                self.glow:SetAlpha(1)
             end
         end
     end
@@ -371,7 +389,8 @@ local function Play(s, silent)
     banner.threshold = threshold
     banner.target = s.pct
     banner.alarm = s.pct >= threshold or s.free == 0
-    banner.countT = 0
+    -- No count-up without animations: straight to the value.
+    banner.countT = AnimAny() and 0 or COUNT_TIME
     banner.holdLeft = db.duration or 7
 
     banner.fadeOut:Stop()
@@ -380,7 +399,7 @@ local function Play(s, silent)
     banner.glow:SetAlpha(0)
     banner:SetAlpha(1)
     banner:Show()
-    banner.intro:Play()
+    if AnimAny() then banner.intro:Play() end
 
     if db.sound and not silent then
         PlaySound((SOUNDKIT and SOUNDKIT.IG_BACKPACK_OPEN) or 862, "Master")

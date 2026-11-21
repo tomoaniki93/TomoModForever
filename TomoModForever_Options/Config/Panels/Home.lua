@@ -221,6 +221,20 @@ K.RegisterPage({
                 c:Done()
             end
 
+            -- [1.3.6] Global animation level, read by every animated module.
+            c = page:Card(T("Animations", "Animations"))
+            c:Seg(T("Animations de l'interface", "Interface animations"), "animations.level", {
+                { text = T("Complètes", "Full"),    value = "full" },
+                { text = T("Réduites", "Reduced"),  value = "reduced" },
+                { text = T("Aucune", "None"),       value = "none" },
+            }, function()
+                local CF = TomoMod_Campfire
+                if CF and CF.ApplySettings then CF.ApplySettings() end
+            end, 3)
+            c:Info(T("Complètes : tout est animé. Réduites : seulement des fondus courts, sans mouvement, rebond ni clignotement. Aucune : tout apparaît et disparaît d'un coup. Vaut pour TMF entier : montée de niveau, notifications, suivi des quêtes, alertes, campement, fenêtre des options.",
+                     "Full: everything moves. Reduced: short fades only, no movement, bounce or blinking. None: everything appears and disappears at once. Applies to all of TMF: level up, notifications, quest tracker, alerts, camp, options window."))
+            c:Done()
+
             c = page:Card(T("Besoin d'aide ?", "Need help?"))
             c:Pair(function(l)
                 l:Button(T("Relancer l'assistant", "Run the setup wizard"), function()

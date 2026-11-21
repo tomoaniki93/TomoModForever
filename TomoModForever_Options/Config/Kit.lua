@@ -103,7 +103,12 @@ function K.GuiDB()
 end
 
 -- Window animations (page glide, toast, tiles). On unless turned off.
-function K.Animated() return K.GuiDB().animations ~= false end
+function K.Animated()
+    -- [1.3.6] "No animation" at the global level also stills the window.
+    local U = TomoMod_Utils
+    if U and U.AnimAny and not U.AnimAny() then return false end
+    return K.GuiDB().animations ~= false
+end
 
 -- ---------------------------------------------------------------------
 -- Toast (the shell gives us a host FontString)

@@ -322,6 +322,15 @@ local function QuestieProfile()
     return nil
 end
 
+--- [1.3.6] Questie adds quest progress to tooltips (its "enableTooltips"
+--- option, on by default): QuestTooltip.lua stands down.
+function Compat.QuestieOwnsTooltips()
+    if not Compat.QuestieLoaded() then return false end
+    local p = QuestieProfile()
+    if not p then return true end
+    return p.enableTooltips ~= false
+end
+
 --- Questie's tracker replaces Blizzard's.
 function Compat.QuestieOwnsTracker()
     if not Compat.QuestieLoaded() then return false end

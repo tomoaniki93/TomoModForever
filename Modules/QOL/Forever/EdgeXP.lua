@@ -526,19 +526,30 @@ end
 
 function XP.PlayLevelUp(level)
     if not bar then return end
+    local U = TomoMod_Utils
+    local full = not (U and U.AnimFull) or U.AnimFull()
+    local any  = not (U and U.AnimAny) or U.AnimAny()
     local b = CreateBurst()
-    b.move:SetOffset((bar:GetWidth() or 1920) + 260, 0)
-    b.sweep:Show()
-    if b.sweepAG:IsPlaying() then b.sweepAG:Stop() end
-    b.sweepAG:Play()
-    b.titleFS:SetText(string.format(T("Niveau %d !", "Level %d!"), level or UnitLevel("player") or 1))
-    b.title:Show()
-    if b.titleAG:IsPlaying() then b.titleAG:Stop() end
-    b.titleAG:Play()
+    if full then
+        b.move:SetOffset((bar:GetWidth() or 1920) + 260, 0)
+        b.sweep:Show()
+        if b.sweepAG:IsPlaying() then b.sweepAG:Stop() end
+        b.sweepAG:Play()
+    end
+    -- [1.3.6] The level-up celebration (Toasts.lua) draws the big title
+    -- when it is on; the bar keeps its sweep and its badge flash.
+    local TS = TomoMod_Toasts
+    local owned = TS and TS.OwnsLevelUp and TS.OwnsLevelUp()
+    if not owned and any then
+        b.titleFS:SetText(string.format(T("Niveau %d !", "Level %d!"), level or UnitLevel("player") or 1))
+        b.title:Show()
+        if b.titleAG:IsPlaying() then b.titleAG:Stop() end
+        b.titleAG:Play()
+    end
     -- Scaling a backdrop frame tears its border into long lines, so the
     -- number pops on its own and the badge gets a golden flash instead.
     if TomoMod_Utils.Pop and badge then TomoMod_Utils.Pop(badge.text, 1.8, 0.6) end
-    if badge and badge.flashAG then
+    if badge and badge.flashAG and any then
         if badge.flashAG:IsPlaying() then badge.flashAG:Stop() end
         badge.flash:Show()
         badge.flashAG:Play()

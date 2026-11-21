@@ -65,6 +65,10 @@ CHANGELOG = {
     {
         version = "1.3.6",
         highlights = {
+            L["wn_136_levelup"],
+            L["wn_136_toasts"],
+            L["wn_136_tooltip"],
+            L["wn_136_anim"],
             L["wn_136_memory"],
             L["wn_136_diag"],
         },

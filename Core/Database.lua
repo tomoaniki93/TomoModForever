@@ -690,6 +690,47 @@ TomoMod_Defaults = {
         alertCount = true,        -- disposable items in the bag space banner
     },
 
+    -- [1.3.6] Global animation level, read by every animated module
+    -- (TomoMod_Utils.AnimLevel): "full" | "reduced" | "none".
+    animations = {
+        level = "full",
+    },
+
+    -- [1.3.6] Notifications (Toasts.lua): small bronze banners stacked at
+    -- the top of the screen. Each kind can be switched off.
+    toasts = {
+        enabled = true,
+        questDone = true,         -- quest turned in (XP, money)
+        questReady = true,        -- every objective of a quest done
+        loot = true,
+        lootQuality = 3,          -- 2 = uncommon, 3 = rare, 4 = epic
+        reputation = true,        -- new standing with a faction
+        discovery = true,         -- new area discovered
+        spells = true,            -- spells learned (grouped at the trainer)
+        duration = 4,             -- seconds on screen (paused on mouseover)
+        maxShown = 4,
+        scale = 1.0,
+        position = { point = "TOP", relativePoint = "TOP", x = 0, y = -120 },
+    },
+
+    -- [1.3.6] Level-up celebration (Toasts.lua): ring, "Level N" and, at
+    -- even levels, the spells waiting at the class trainer.
+    levelUp = {
+        enabled = true,
+        showSpells = true,
+        scale = 1.0,
+    },
+
+    -- [1.3.6] Quest progress in tooltips (QuestTooltip.lua): monsters and
+    -- items that a quest of your log asks for. Stands down when Questie
+    -- adds its own tooltips.
+    questTooltip = {
+        enabled = true,
+        units = true,
+        items = true,
+        showDone = true,          -- also list objectives already done
+    },
+
     bagAlert = {
         enabled = true,
         threshold = 90,           -- % of slots used

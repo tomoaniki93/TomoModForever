@@ -48,6 +48,7 @@ unused_args = false
 -- Add a line here whenever you introduce a new TomoMod_* module global.
 globals = {
     "TomoMod_ProfileSafety", "TomoMod_InflateBounded",
+    "TomoMod_Toasts", "TomoMod_QuestTooltip",   -- 1.3.6
     "ClickCastFrames", "ColorPickerFrame", "CompanionStatusDB", "FCF_FadeInChatFrame",
     "FCF_FadeInScrollbar", "FCF_FadeOutChatFrame", "FCF_FadeOutScrollbar", "FCF_StartDragging",
     "FCF_StopDragging", "GetMinimapShape", "SLASH_COMPANIONSTATUS1", "SLASH_TOMOCDMDEBUG1",

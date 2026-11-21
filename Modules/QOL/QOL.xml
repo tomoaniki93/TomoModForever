@@ -49,6 +49,7 @@
     <!-- Modules: Quest -->
     <Include file="Quest\AutoQuest.lua" />
     <Include file="Quest\ObjectiveTracker.lua" />
+    <Include file="Quest\QuestTooltip.lua" />
 
     <!-- Modules: CVar Optimizer -->
     <Include file="Optimizations\CVarOptimizer.lua" />
@@ -62,6 +63,7 @@
     <Include file="Forever\FlightData.lua" />
     <Include file="Forever\FlightTimer.lua" />
     <Include file="Forever\BagAlert.lua" />
+    <Include file="Forever\Toasts.lua" />
     <Include file="Forever\Triage.lua" />
     <Include file="Forever\MapRevealData.lua" />
     <Include file="Forever\MapReveal.lua" />

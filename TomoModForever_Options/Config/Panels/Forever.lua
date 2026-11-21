@@ -403,6 +403,95 @@ K.RegisterPage({
 })
 
 -- ---------------------------------------------------------------------
+-- [1.3.6] Notifications and level-up celebration (Toasts.lua)
+-- ---------------------------------------------------------------------
+local function TSApply() Call("TomoMod_Toasts", "ApplySettings") end
+
+K.RegisterPage({
+    key = "toasts",
+    section = SECTION,
+    label = T("Notifications", "Notifications"),
+    kw = "notification notifications toast bandeau banner quete quest butin loot rare epique epic reputation decouverte discovery sort spell niveau level celebration animation",
+    locate = "TomoMod_ToastAnchor",
+    onHide = function() if TomoMod_Toasts and TomoMod_Toasts.IsPreview and TomoMod_Toasts.IsPreview() then TomoMod_Toasts.Preview(false) end end,
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Notifications", "Notifications"),
+                T("Des bandeaux bronze en haut de l'écran pour ce qui compte : quête rendue ou terminée, butin rare, nouvelle réputation, découverte, sorts appris. Et une vraie célébration à chaque niveau.",
+                  "Bronze banners at the top of the screen for what matters: quest turned in or complete, rare loot, new standing, discovery, spells learned. And a real celebration at every level."),
+                "TomoMod_ToastAnchor", T("Notifications", "Notifications"))
+
+            local c = page:Card(T("Montée de niveau", "Level up"))
+            c:Toggle(T("Célébration au centre de l'écran (anneau, Niveau N, étincelles)", "Celebration in the middle of the screen (ring, \"Level N\", embers)"), "levelUp.enabled", nil,
+                T("Quand elle est active, la barre d'XP garde son reflet doré et lui laisse le grand titre.",
+                  "While on, the XP bar keeps its golden sweep and leaves the big title to it."))
+            c:Toggle(T("Aux niveaux pairs : sorts qui t'attendent chez ton maître de classe", "At even levels: spells waiting at your class trainer"), "levelUp.showSpells", nil)
+            c:Slider(T("Taille", "Size"), "levelUp.scale", 0.6, 1.6, 0.05, nil, "%.2f")
+            c:Button(T("Tester l'animation", "Test the animation"), function()
+                local TSm = TomoMod_Toasts
+                if TSm and TSm.PlayLevelUp then TSm.PlayLevelUp(((UnitLevel("player") or 1) + 1)) end
+            end, 200)
+            c:Done()
+
+            c = page:Card(T("Notifications", "Notifications"))
+            ModuleToggle(c, "toasts", T("Afficher les notifications", "Show notifications"))
+            c:Button(T("Tester l'affichage", "Test the display"), function()
+                local TSm = TomoMod_Toasts
+                if TSm and TSm.Preview then TSm.Preview(not TSm.IsPreview()) end
+            end, 200, T("Affiche trois exemples. Recliquer pour cacher.", "Shows three samples. Click again to hide."))
+            c:Pair(function(l) l:Toggle(T("Quête rendue", "Quest turned in"), "toasts.questDone", nil) end,
+                   function(r) r:Toggle(T("Quête terminée", "Quest complete"), "toasts.questReady", nil) end)
+            c:Pair(function(l) l:Toggle(T("Butin", "Loot"), "toasts.loot", nil) end,
+                   function(r) r:Toggle(T("Nouvelle réputation", "New standing"), "toasts.reputation", nil) end)
+            c:Pair(function(l) l:Toggle(T("Découverte de zone", "Area discovered"), "toasts.discovery", nil) end,
+                   function(r) r:Toggle(T("Sorts appris", "Spells learned"), "toasts.spells", nil) end)
+            c:Seg(T("Butin à partir de", "Loot from"), "toasts.lootQuality", {
+                { text = T("Inhabituel", "Uncommon"), value = 2 },
+                { text = T("Rare", "Rare"),           value = 3 },
+                { text = T("Épique", "Epic"),         value = 4 },
+            }, nil, 3)
+            c:Done()
+
+            c = page:Card(T("Affichage", "Display"))
+            c:Slider(T("Taille", "Size"), "toasts.scale", 0.6, 1.6, 0.05, TSApply, "%.2f")
+            c:Slider(T("Durée à l'écran (s)", "Time on screen (s)"), "toasts.duration", 2, 12, 1, nil)
+            c:Slider(T("Nombre affiché en même temps", "Shown at the same time"), "toasts.maxShown", 1, 6, 1, nil)
+            c:Info(T("Clic gauche sur une quête : ouvrir le journal. Clic droit : fermer. Survol d'un butin : infobulle de l'objet. Pour les placer : bouton « Déplacer » en haut de la fenêtre. Les animations suivent le réglage de l'accueil (complètes, réduites, aucune).",
+                     "Left click a quest: open the log. Right click: close. Hover loot: item tooltip. To place them: \"Move\" button at the top of the window. Animations follow the setting on the home page (full, reduced, none)."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- [1.3.6] Quest progress in tooltips (QuestTooltip.lua)
+-- ---------------------------------------------------------------------
+local function QTApply() Call("TomoMod_QuestTooltip", "ApplySettings") end
+
+K.RegisterPage({
+    key = "questtooltip",
+    section = SECTION,
+    label = T("Quêtes dans les infobulles", "Quests in tooltips"),
+    kw = "infobulle tooltip quete quest objectif objective monstre monster mob objet item progression progress questie",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Quêtes dans les infobulles", "Quests in tooltips"),
+                T("Survole un monstre ou un objet demandé par une quête de ton journal : la quête et ta progression s'ajoutent à l'infobulle (Loup des bois tué : 3/8).",
+                  "Hover a monster or an item a quest of your log asks for: the quest and your progress are added to the tooltip (Forest Wolf slain: 3/8)."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "questTooltip", T("Ajouter la progression des quêtes aux infobulles", "Add quest progress to tooltips"))
+            c:Pair(function(l) l:Toggle(T("Monstres", "Monsters"), "questTooltip.units", QTApply) end,
+                   function(r) r:Toggle(T("Objets", "Items"), "questTooltip.items", QTApply) end)
+            c:Toggle(T("Montrer aussi les objectifs déjà terminés", "Also show objectives already done"), "questTooltip.showDone", QTApply)
+            c:Info(T("Le nom du monstre ou de l'objet doit être exactement celui de l'objectif : aucune supposition. Si Questie affiche déjà ses propres infobulles de quêtes, TMF se met en retrait pour ne pas doubler les lignes.",
+                     "The monster or item name must be exactly the objective's name: no guessing. If Questie already shows its own quest tooltips, TMF stands down so lines are not doubled."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
 -- Bag space banner
 -- ---------------------------------------------------------------------
 local function BAApply() Call("TomoMod_BagAlert", "ApplySettings") end

@@ -527,6 +527,21 @@ R.Define{
 }
 
 R.Define{
+    key = "toasts", label = "mod_toasts", group = "qol",
+    enabledPath = "toasts.enabled",
+    anchors = { { id = "toasts", path = "toasts.position", shape = "point_relativePoint", label = "mod_toasts" } },
+    global = "TomoMod_Toasts", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "questTooltip", label = "mod_questTooltip", group = "qol",
+    enabledPath = "questTooltip.enabled",
+    global = "TomoMod_QuestTooltip", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
     key = "trainerReminder", label = "mod_trainerReminder", group = "qol",
     enabledPath = "trainerReminder.enabled",
     anchors = { { id = "trainerReminder", path = "trainerReminder.position", shape = "point_relativePoint", label = "mod_trainerReminder" } },

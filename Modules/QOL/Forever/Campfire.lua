@@ -630,7 +630,9 @@ function CF.ApplySettings()
     local db = DB()
     if not (db and hud) then return end
     hud:SetScale(db.scale or 1)
-    local animated = db.animatedFlames ~= false
+    -- [1.3.6] Flames only at the "full" global animation level.
+    local U = TomoMod_Utils
+    local animated = db.animatedFlames ~= false and not (U and U.AnimFull and not U.AnimFull())
     hud.flames:SetShown(animated)
     -- With the flames on, the square icon stays out of sight unless the game
     -- cut it round; the dark disc and its warm heart carry the look.

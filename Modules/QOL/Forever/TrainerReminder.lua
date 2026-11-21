@@ -228,6 +228,9 @@ local function HasBuiltIn()
     return TomoMod_TrainerData and TomoMod_TrainerData[class] ~= nil
 end
 TR.Pending = function() return Pending(PlayerLevel()) end
+-- [1.3.6] For the level-up celebration (Toasts.lua): the new level is known
+-- from PLAYER_LEVEL_UP before UnitLevel catches up.
+TR.PendingFor = function(level) return Pending(PlayerLevel(level)) end
 
 -- ---------------------------------------------------------------------
 -- Trainer read
@@ -362,6 +365,8 @@ local function Hide()
     if not panel or not panel:IsShown() then return end
     if panel.fadeOut:IsPlaying() then return end
     panel.holdLeft = nil
+    local U = TomoMod_Utils
+    if U and U.AnimAny and not U.AnimAny() then panel:Hide() return end
     panel.fadeOut:Play()
 end
 
@@ -565,8 +570,9 @@ local function Show(level, list, silent)
     panel.fadeOut:Stop()
     panel:SetAlpha(1)
     panel:Show()
-    panel.intro:Play()
-    panel.glint:Play()
+    local U = TomoMod_Utils
+    if not (U and U.AnimAny) or U.AnimAny() then panel.intro:Play() end
+    if not (U and U.AnimFull) or U.AnimFull() then panel.glint:Play() end
     if db.sound and not silent then
         PlaySound((SOUNDKIT and SOUNDKIT.IG_SPELLBOOK_OPEN) or 829, "Master")
     end
