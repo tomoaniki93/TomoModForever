@@ -1647,14 +1647,52 @@ local function BlizzardTrackers()
     return list
 end
 
+-- The game puts its tracker back in the screen's managed-frame container
+-- (SetParent) whenever that layout is rebuilt, e.g. on quest turn-in or
+-- accept: it then showed over ours. A hook sends it back to the hidden
+-- parent, and it stays transparent while hidden as a second guard.
+local hooked = setmetatable({}, { __mode = "k" })
+local reparenting = false
+
+local function SendBack(f)
+    if not blizzHidden or reparenting then return end
+    if InCombatLockdown() then state.needBlizz = true return end
+    if f:GetParent() ~= hiddenParent then
+        reparenting = true
+        f:SetParent(hiddenParent)
+        reparenting = false
+    end
+end
+
+local function HookTracker(f)
+    if hooked[f] then return end
+    hooked[f] = true
+    hooksecurefunc(f, "SetParent", function(self, parent)
+        if reparenting or not blizzHidden or parent == hiddenParent then return end
+        origParents[self] = parent or origParents[self]
+        C_Timer.After(0, function() SendBack(self) end)
+    end)
+    if f.HookScript then
+        f:HookScript("OnShow", function(self)
+            if blizzHidden then C_Timer.After(0, function() SendBack(self) end) end
+        end)
+    end
+end
+
 local function HideBlizzardTracker()
-    if blizzHidden then return end
     if InCombatLockdown() then state.needBlizz = true return end
     hiddenParent = hiddenParent or CreateFrame("Frame")
     hiddenParent:Hide()
     for _, f in ipairs(BlizzardTrackers()) do
-        if origParents[f] == nil then origParents[f] = f:GetParent() or UIParent end
-        f:SetParent(hiddenParent)
+        local parent = f:GetParent()
+        if origParents[f] == nil and parent ~= hiddenParent then origParents[f] = parent or UIParent end
+        HookTracker(f)
+        if parent ~= hiddenParent then
+            reparenting = true
+            f:SetParent(hiddenParent)
+            reparenting = false
+        end
+        f:SetAlpha(0)
     end
     blizzHidden = true
     state.needBlizz = false
@@ -1663,9 +1701,14 @@ end
 local function RestoreBlizzardTracker()
     if not blizzHidden then return end
     if InCombatLockdown() then return end
-    for f, parent in pairs(origParents) do f:SetParent(parent) end
-    wipe(origParents)
     blizzHidden = false
+    reparenting = true
+    for f, parent in pairs(origParents) do
+        f:SetParent(parent)
+        f:SetAlpha(1)
+    end
+    reparenting = false
+    wipe(origParents)
 end
 
 -- =====================================================================
