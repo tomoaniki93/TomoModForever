@@ -871,6 +871,8 @@ K.RegisterPage({
 
             local o = page:Card(T("Confort", "Comfort"))
             o:Toggle(T("Double clic droit pour lancer (canne en main)", "Double right click to cast (pole in hand)"), "fishing.doubleClick", FIApply)
+            o:Info(T("Ligne à l'eau, le double clic droit ramène. Pendant la pêche, le ciblage du jeu porte jusqu'au bouchon : une main apparaît dessus quand il est ciblé.",
+                     "Line out, a double right click reels in. While fishing, the game's targeting reaches the bobber: a hand shows on it when it is targeted."))
             o:Toggle(T("Sons de pêche mis en avant", "Fishing sounds brought forward"), "fishing.sounds", FIApply)
             o:Info(T("Pendant la pêche, les effets sonores montent, la musique et l'ambiance se taisent. Tout revient 20 secondes après le dernier lancer. Rien ne se fait en combat.",
                      "While fishing, sound effects go up, music and ambience go quiet. Everything comes back 20 seconds after the last cast. Nothing happens in combat."))

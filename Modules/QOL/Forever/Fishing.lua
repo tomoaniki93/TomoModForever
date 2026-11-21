@@ -8,7 +8,9 @@
 --                 line is out the same key interacts with the bobber, which
 --                 the game's soft targeting picks up: press it when it bites.
 --   Double-click  pole in hand: a quick second right click on the world
---                 casts (out of combat).
+--                 casts, or reels in while the line is out (out of combat).
+--                 Soft interact is widened while fishing (60 yards, wide
+--                 arc, hand icon on the bobber), given back afterwards.
 --   Sounds        while fishing, effects up, music and ambience down, so the
 --                 splash is heard; everything goes back 20 seconds after the
 --                 last cast, and at logout.
@@ -135,7 +137,11 @@ local reelOwner = CreateFrame("Frame")
 local reeling = false
 -- Soft interact must reach the bobber: it lands well past the default
 -- 10 yards and not always straight ahead.
-local INTERACT_SET = { SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "30" }
+-- The hand icon over the bobber shows it is targeted.
+local INTERACT_SET = {
+    SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "60",
+    SoftTargetIconGameObject = "1", SoftTargetIconInteract = "1",
+}
 
 local function KeysOf(binding)
     local keys = { GetBindingKey(binding) }
@@ -144,9 +150,7 @@ end
 
 local function StartReel()
     local db = DB()
-    if not (db and db.reelIn) or InCombatLockdown() then return end
-    local keys = KeysOf(BINDING)
-    if #keys == 0 then return end
+    if not (db and (db.reelIn or db.doubleClick)) or InCombatLockdown() then return end
     if GetCVar and SetCVar then
         if not db.savedInteract then
             db.savedInteract = {}
@@ -154,7 +158,9 @@ local function StartReel()
         end
         for k, v in pairs(INTERACT_SET) do SetCVar(k, v) end
     end
-    for _, key in ipairs(keys) do SetOverrideBinding(reelOwner, true, key, "INTERACTTARGET") end
+    if db.reelIn then
+        for _, key in ipairs(KeysOf(BINDING)) do SetOverrideBinding(reelOwner, true, key, "INTERACTTARGET") end
+    end
     reeling = true
 end
 
@@ -215,20 +221,36 @@ local function ClearDoubleClick()
     end
 end
 
-local function OnWorldMouseDown(_, mouse)
+-- Clicks on the world only: no frame under the mouse.
+local function OnWorld()
+    if GetMouseFoci then
+        local f = GetMouseFoci()[1]
+        return f == nil or f == WorldFrame
+    end
+    local f = GetMouseFocus and GetMouseFocus()
+    return f == nil or f == WorldFrame
+end
+
+local function OnMouseDown(mouse)
     if mouse == "RightButton" then rightDownAt = GetTime() end
 end
 
--- A short right click (not a camera drag) arms the next right click for
--- 0.4 s: that one goes to the fishing key, down and up, so it acts whatever
--- edge the client uses.
-local function OnWorldMouseUp(_, mouse)
+-- A short right click on the world (not a camera drag) arms the next right
+-- click for 0.4 s. Line out: that click interacts (reels in). Otherwise it
+-- goes to the fishing key, down and up, so it acts whatever edge the client
+-- uses.
+local function OnMouseUp(mouse)
     local db = DB()
     if not (db and db.enabled and db.doubleClick) or mouse ~= "RightButton" then return end
     if dcSet or InCombatLockdown() or not PoleEquipped() then return end
-    if GetTime() - rightDownAt > 0.25 then return end
-    Refresh()
-    SetOverrideBindingClick(dcOwner, true, "BUTTON2", BUTTON_NAME)
+    if GetTime() - rightDownAt > 0.25 or (IsMouseButtonDown and IsMouseButtonDown("LeftButton")) then return end
+    if not OnWorld() then return end
+    if reeling then
+        SetOverrideBinding(dcOwner, true, "BUTTON2", "INTERACTTARGET")
+    else
+        Refresh()
+        SetOverrideBindingClick(dcOwner, true, "BUTTON2", BUTTON_NAME)
+    end
     dcSet = true
     C_Timer.After(0.4, ClearDoubleClick)
 end
@@ -244,8 +266,10 @@ local function IsFishingSpell(spellID)
 end
 
 local ev = CreateFrame("Frame")
-ev:SetScript("OnEvent", function(_, event, _, _, spellID)
+ev:SetScript("OnEvent", function(_, event, a1, _, spellID)
     local db = DB()
+    if event == "GLOBAL_MOUSE_DOWN" then OnMouseDown(a1) return end
+    if event == "GLOBAL_MOUSE_UP" then OnMouseUp(a1) return end
     if event == "PLAYER_LOGOUT" then
         RestoreSession()
         return
@@ -294,7 +318,6 @@ function FI.BoundKeys()
     return #keys > 0 and table.concat(keys, ", ") or nil
 end
 
-local worldHooked = false
 function FI.Initialize()
     local db = DB()
     if not db then return end
@@ -307,10 +330,8 @@ function FI.Initialize()
     ev:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player")
     ev:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
     ev:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
-    if not worldHooked and WorldFrame and WorldFrame.HookScript then
-        WorldFrame:HookScript("OnMouseDown", OnWorldMouseDown)
-        WorldFrame:HookScript("OnMouseUp", OnWorldMouseUp)
-        worldHooked = true
-    end
+    -- The world frame does not get right clicks (camera): global mouse events.
+    ev:RegisterEvent("GLOBAL_MOUSE_DOWN")
+    ev:RegisterEvent("GLOBAL_MOUSE_UP")
     Refresh()
 end
