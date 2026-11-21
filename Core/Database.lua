@@ -717,6 +717,7 @@ TomoMod_Defaults = {
     -- even levels, the spells waiting at the class trainer.
     levelUp = {
         enabled = true,
+        hideBlizzard = true,      -- hide the game's own level-up banner meanwhile
         showSpells = true,
         scale = 1.0,
     },

@@ -797,6 +797,49 @@ function TS.OwnsLevelUp()
     return ldb and ldb.enabled and true or false
 end
 
+-- The game's own level-up banner, hidden while ours plays: the classic
+-- LevelUpDisplay frame and/or the modern event toast, whichever this client
+-- has. Only during a short window after PLAYER_LEVEL_UP, so other toasts are
+-- left alone; nothing is unregistered, so turning the option off restores
+-- Blizzard's banner at once.
+local blizzWindowUntil = 0
+local function HidingBlizzard()
+    local ldb = LDB()
+    return ldb and ldb.enabled and ldb.hideBlizzard ~= false and GetTime() < blizzWindowUntil
+end
+
+local function HideBlizzardNow()
+    if not HidingBlizzard() then return end
+    local lud = _G.LevelUpDisplay
+    if lud and lud:IsShown() then lud:Hide() end
+    local etm = _G.EventToastManagerFrame
+    if etm and etm:IsShown() then
+        if etm.CloseActiveToasts then pcall(etm.CloseActiveToasts, etm) else etm:Hide() end
+    end
+end
+
+local blizzHooked = false
+local function HookBlizzardLevelUp()
+    if blizzHooked then return end
+    blizzHooked = true
+    local lud = _G.LevelUpDisplay
+    if lud and lud.HookScript then lud:HookScript("OnShow", HideBlizzardNow) end
+    local etm = _G.EventToastManagerFrame
+    if etm then
+        if etm.DisplayToast then hooksecurefunc(etm, "DisplayToast", HideBlizzardNow) end
+        if etm.HookScript then etm:HookScript("OnShow", HideBlizzardNow) end
+    end
+end
+
+local function OnLevelUpBlizzard()
+    blizzWindowUntil = GetTime() + 4
+    HookBlizzardLevelUp()
+    HideBlizzardNow()
+    -- The banner may come a frame or two after the event.
+    C_Timer.After(0.1, HideBlizzardNow)
+    C_Timer.After(0.5, HideBlizzardNow)
+end
+
 -- ---------------------------------------------------------------------
 -- Anchor, preview, public
 -- ---------------------------------------------------------------------
@@ -881,6 +924,7 @@ function TS.Initialize()
         if event == "PLAYER_LEVEL_UP" then
             local ldb = LDB()
             if ldb and ldb.enabled then
+                OnLevelUpBlizzard()
                 local level = tonumber(Plain(a1))
                 C_Timer.After(0.2, function() TS.PlayLevelUp(level) end)
             end

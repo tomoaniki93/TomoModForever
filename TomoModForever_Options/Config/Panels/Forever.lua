@@ -425,6 +425,8 @@ K.RegisterPage({
             c:Toggle(T("Célébration au centre de l'écran (anneau, Niveau N, étincelles)", "Celebration in the middle of the screen (ring, \"Level N\", embers)"), "levelUp.enabled", nil,
                 T("Quand elle est active, la barre d'XP garde son reflet doré et lui laisse le grand titre.",
                   "While on, the XP bar keeps its golden sweep and leaves the big title to it."))
+            c:Toggle(T("Masquer l'annonce de niveau du jeu", "Hide the game's level-up banner"), "levelUp.hideBlizzard", nil,
+                T("Évite que l'annonce de Blizzard se superpose à la célébration.", "Keeps Blizzard's banner from overlapping the celebration."))
             c:Toggle(T("Aux niveaux pairs : sorts qui t'attendent chez ton maître de classe", "At even levels: spells waiting at your class trainer"), "levelUp.showSpells", nil)
             c:Slider(T("Taille", "Size"), "levelUp.scale", 0.6, 1.6, 0.05, nil, "%.2f")
             c:Button(T("Tester l'animation", "Test the animation"), function()
