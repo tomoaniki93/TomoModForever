@@ -243,10 +243,10 @@ local CLASS_RESOURCES = {
     },
     -- PRIEST: all specs — Mana/Insanity in UF info bar, no class power
     ROGUE = {
-        default = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
-        [1] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
-        [2] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
-        [3] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 7 } },
+        default = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 5 } },
+        [1] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 5 } },
+        [2] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 5 } },
+        [3] = { classPower = { display = "points", powerType = POWER_COMBO_POINTS, label = "Combo Points", maxPoints = 5 } },
     },
 }
 
