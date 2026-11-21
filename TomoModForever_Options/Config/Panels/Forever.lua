@@ -786,3 +786,130 @@ K.RegisterPage({
         end)
     end,
 })
+
+-- ---------------------------------------------------------------------
+-- 1.3.6: Mana bar extras
+-- ---------------------------------------------------------------------
+local function MBApply2() Call("TomoMod_ManaBar", "ApplySettings") end
+
+K.RegisterPage({
+    key = "manabar",
+    section = SECTION,
+    label = T("Barre de mana", "Mana bar"),
+    kw = "mana regen regeneration cinq secondes five second rule 5sr tick cout cost sort spell prediction",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Barre de mana", "Mana bar"),
+                T("Sur la barre de mana de ton cadre de joueur : une étincelle parcourt la barre pendant les cinq secondes sans régénération après un sort, puis marque chaque tick de régénération. Pendant une incantation, la part de mana que le sort va coûter est surlignée.",
+                  "On your player frame mana bar: a spark runs along the bar during the five seconds without regeneration after a spell, then marks each regeneration tick. While casting, the mana the spell will cost is highlighted."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "manaBar", T("Ajouter ces repères à la barre de mana", "Add these marks to the mana bar"))
+            c:Toggle(T("Règle des cinq secondes", "Five-second rule"), "manaBar.fiveSecond", MBApply2)
+            c:Toggle(T("Ticks de régénération", "Regeneration ticks"), "manaBar.ticks", MBApply2)
+            c:Toggle(T("Coût du sort en cours", "Cost of the spell being cast"), "manaBar.costPrediction", MBApply2)
+            c:Button(T("Tester l'affichage", "Test the display"), function() Call("TomoMod_ManaBar", "Test") end, 200,
+                T("Lance l'étincelle des cinq secondes une fois.", "Runs the five-second spark once."))
+            c:Info(T("Utilise la barre de puissance du cadre de joueur TMF, quand elle montre du mana.",
+                     "Uses the TMF player frame power bar, when it shows mana."))
+            c:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- 1.3.6: Gathering and quest rewards
+-- ---------------------------------------------------------------------
+K.RegisterPage({
+    key = "gathertips",
+    section = SECTION,
+    label = T("Récolte et récompenses", "Gathering and rewards"),
+    kw = "herboristerie herbalism minage mining depecage skinning noeud node filon herbe competence skill recompense reward vente sell valeur value bourse",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Récolte et récompenses", "Gathering and rewards"),
+                T("Les infobulles des herbes, des filons et des bêtes à dépecer indiquent la compétence requise, colorée selon la tienne. Dans les récompenses de quête, une bourse marque l'objet qui se vend le plus cher.",
+                  "Tooltips of herbs, veins and skinnable beasts show the skill required, coloured against yours. In quest rewards, a purse marks the item that sells for the most."))
+
+            local c = page:Card(T("Récolte", "Gathering"))
+            ModuleToggle(c, "gatherTips", T("Compétence requise dans les infobulles", "Required skill in tooltips"))
+            c:Toggle(T("Aussi pour le dépeçage", "Also for skinning"), "gatherTips.skinning", nil)
+            c:Done()
+
+            local r = page:Card(T("Récompenses de quête", "Quest rewards"))
+            ModuleToggle(r, "questReward", T("Marquer la récompense qui vaut le plus chez le marchand", "Mark the reward worth the most at a vendor"))
+            r:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- 1.3.6: Fishing
+-- ---------------------------------------------------------------------
+local function FIApply() Call("TomoMod_Fishing", "ApplySettings") end
+
+K.RegisterPage({
+    key = "fishing",
+    section = SECTION,
+    label = T("Pêche", "Fishing"),
+    kw = "peche fishing canne pole appat lure bouchon bobber lancer cast ramener reel double clic sons sound touche key raccourci binding",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Pêche", "Fishing"),
+                T("Une seule touche pour pêcher : elle équipe la canne si tu n'en tiens pas, pose un appât si la canne n'en a plus, puis lance. Quand ça mord, la même touche ramène la ligne.",
+                  "One key to fish: it equips the pole when you hold none, applies a lure when the pole has none left, then casts. When it bites, the same key reels in."))
+
+            local c = page:Card(T("Touche de pêche", "Fishing key"))
+            ModuleToggle(c, "fishing", T("Activer les aides à la pêche", "Turn on the fishing helpers"))
+            c:Toggle(T("Poser un appât automatiquement", "Apply a lure automatically"), "fishing.lure", FIApply)
+            c:Toggle(T("Ramener avec la même touche", "Reel in with the same key"), "fishing.reelIn", FIApply)
+            local keys = TomoMod_Fishing and TomoMod_Fishing.BoundKeys and TomoMod_Fishing.BoundKeys()
+            c:Info(keys and (T("Touche actuelle : ", "Current key: ") .. keys)
+                or T("Choisis la touche dans Options, Raccourcis, Addons, TomoMod Forever.",
+                     "Pick the key in Options, Key Bindings, AddOns, TomoMod Forever."))
+            c:Done()
+
+            local o = page:Card(T("Confort", "Comfort"))
+            o:Toggle(T("Double clic droit pour lancer (canne en main)", "Double right click to cast (pole in hand)"), "fishing.doubleClick", FIApply)
+            o:Toggle(T("Sons de pêche mis en avant", "Fishing sounds brought forward"), "fishing.sounds", FIApply)
+            o:Info(T("Pendant la pêche, les effets sonores montent, la musique et l'ambiance se taisent. Tout revient 20 secondes après le dernier lancer. Rien ne se fait en combat.",
+                     "While fishing, sound effects go up, music and ambience go quiet. Everything comes back 20 seconds after the last cast. Nothing happens in combat."))
+            o:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- 1.3.6: World map markers
+-- ---------------------------------------------------------------------
+local function MMApply() Call("TomoMod_MapMarkers", "ApplySettings") end
+
+K.RegisterPage({
+    key = "mapmarkers",
+    section = SECTION,
+    label = T("Carte du monde", "World map"),
+    kw = "carte map marqueur marker vol flight donjon dungeon instance entree entrance bateau boat zeppelin transport fondu fade transparence behind",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Carte du monde", "World map"),
+                T("Des marqueurs sur la carte : points de vol, entrées de donjons, bateaux et zeppelins. Survole pour le nom, clique pour poser un point de passage.",
+                  "Markers on the map: flight points, dungeon entrances, boats and zeppelins. Hover for the name, click to set a waypoint."))
+
+            local c = page:Card(T("Marqueurs", "Markers"))
+            ModuleToggle(c, "mapMarkers", T("Afficher les marqueurs", "Show the markers"))
+            c:Toggle(T("Points de vol", "Flight points"), "mapMarkers.flightPoints", MMApply)
+            c:Toggle(T("Entrées de donjons", "Dungeon entrances"), "mapMarkers.dungeons", MMApply)
+            c:Toggle(T("Bateaux et zeppelins", "Boats and zeppelins"), "mapMarkers.transports", MMApply)
+            c:Info(T("Les entrées de donjons viennent du codex (/codex), tes corrections comprises.",
+                     "Dungeon entrances come from the codex (/codex), your corrections included."))
+            c:Done()
+
+            local o = page:Card(T("Confort", "Comfort"))
+            o:Toggle(T("Estomper la carte quand tu bouges", "Fade the map while moving"), "mapMarkers.mapFade", MMApply)
+            o:Toggle(T("Voir le jeu derrière la carte agrandie", "See the game behind the maximized map"), "mapMarkers.behind", MMApply)
+            o:Slider(T("Opacité du fond", "Backdrop opacity"), "mapMarkers.behindAlpha", 0, 1, 0.05, MMApply, "%.2f")
+            o:Toggle(T("Les clics traversent le fond", "Clicks go through the backdrop"), "mapMarkers.clickThrough", MMApply)
+            o:Done()
+        end)
+    end,
+})

@@ -1,0 +1,5 @@
+<Bindings>
+    <!-- 1.3.6: Fishing key (Modules/QOL/Forever/Fishing.lua). Names set in Lua. -->
+    <Binding name="CLICK TomoMod_FishingButton:LeftButton" header="TOMOMODFOREVER" category="ADDONS">
+    </Binding>
+</Bindings>

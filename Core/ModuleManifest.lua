@@ -542,6 +542,41 @@ R.Define{
 }
 
 R.Define{
+    key = "manaBar", label = "mod_manaBar", group = "qol",
+    enabledPath = "manaBar.enabled",
+    global = "TomoMod_ManaBar", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "gatherTips", label = "mod_gatherTips", group = "qol",
+    enabledPath = "gatherTips.enabled",
+    global = "TomoMod_GatherTips", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "questReward", label = "mod_questReward", group = "qol",
+    enabledPath = "questReward.enabled",
+    global = "TomoMod_QuestReward", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
+    key = "fishing", label = "mod_fishing", group = "qol",
+    enabledPath = "fishing.enabled",
+    global = "TomoMod_Fishing", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = false,
+}
+
+R.Define{
+    key = "mapMarkers", label = "mod_mapMarkers", group = "qol",
+    enabledPath = "mapMarkers.enabled",
+    global = "TomoMod_MapMarkers", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
     key = "trainerReminder", label = "mod_trainerReminder", group = "qol",
     enabledPath = "trainerReminder.enabled",
     anchors = { { id = "trainerReminder", path = "trainerReminder.position", shape = "point_relativePoint", label = "mod_trainerReminder" } },

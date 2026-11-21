@@ -731,6 +731,47 @@ TomoMod_Defaults = {
         showDone = true,          -- also list objectives already done
     },
 
+    -- [1.3.6] Mana bar extras (ManaBar.lua): five-second rule spark, regen
+    -- ticks, cost of the spell being cast. Player frame power bar only.
+    manaBar = {
+        enabled = true,
+        fiveSecond = true,
+        ticks = true,
+        costPrediction = true,
+    },
+
+    -- [1.3.6] Gathering skill in tooltips (GatherTips.lua).
+    gatherTips = {
+        enabled = true,
+        skinning = true,
+    },
+
+    -- [1.3.6] Purse on the quest reward that sells for the most.
+    questReward = {
+        enabled = true,
+    },
+
+    -- [1.3.6] Fishing helpers (Fishing.lua): one key, double-click, sounds.
+    fishing = {
+        enabled = true,
+        lure = true,              -- apply a lure when the pole has none
+        reelIn = true,            -- the key interacts with the bobber
+        doubleClick = false,
+        sounds = false,
+    },
+
+    -- [1.3.6] World map markers and comfort (MapMarkers.lua).
+    mapMarkers = {
+        enabled = true,
+        flightPoints = true,
+        dungeons = true,
+        transports = true,
+        mapFade = false,          -- game's mapFade CVar
+        behind = false,           -- see the game behind the maximized map
+        behindAlpha = 0.4,
+        clickThrough = false,
+    },
+
     bagAlert = {
         enabled = true,
         threshold = 90,           -- % of slots used

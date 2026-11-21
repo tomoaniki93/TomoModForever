@@ -64,6 +64,11 @@
     <Include file="Forever\FlightTimer.lua" />
     <Include file="Forever\BagAlert.lua" />
     <Include file="Forever\Toasts.lua" />
+    <Include file="Forever\ManaBar.lua" />
+    <Include file="Forever\GatherTips.lua" />
+    <Include file="Forever\QuestReward.lua" />
+    <Include file="Forever\Fishing.lua" />
+    <Include file="Forever\MapMarkers.lua" />
     <Include file="Forever\Triage.lua" />
     <Include file="Forever\MapRevealData.lua" />
     <Include file="Forever\MapReveal.lua" />

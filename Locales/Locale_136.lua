@@ -105,3 +105,71 @@ TomoMod_RegisterLocale("itIT", {
 TomoMod_RegisterLocale("ptBR", {
     ["wn_136_forever"] = "Novo - Estilo de quadros Forever: um visual oficial desenhado com a arte do WoW Forever (placa de bronze, anel do retrato, medalhão de nível), com o dragão de elites e raros, a marca de missão, a caveira para alvos muito acima de você e, no seu quadro, as espadas de combate e um brilho vermelho, dourado ou de ameaça. O visual antigo continua como clássico, em Quadros > Estilo comum. Inspirado no FlareUI (Malkkav).",
 })
+
+-- 1.3.6: mana bar, gathering, quest reward, fishing, world map
+TomoMod_RegisterLocale("enUS", {
+    ["mod_manaBar"] = "Mana bar",
+    ["mod_gatherTips"] = "Gathering tooltips",
+    ["mod_questReward"] = "Best quest reward",
+    ["mod_fishing"] = "Fishing",
+    ["mod_mapMarkers"] = "World map markers",
+    ["wn_136_mana"] = "New - Mana bar: on the player frame, a spark shows the five seconds without regeneration after a spell, then each regeneration tick; while casting, the mana the spell will cost is highlighted.",
+    ["wn_136_gather"] = "New - Herbs, veins and skinnable beasts show the skill required in their tooltip, coloured against yours. In quest rewards, a purse marks the item that sells for the most.",
+    ["wn_136_fishing"] = "New - Fishing: one key (Key Bindings, AddOns) equips the pole, applies a lure, casts, and reels in when it bites. Optional double right click to cast and fishing sounds brought forward.",
+    ["wn_136_map"] = "New - World map: flight points, dungeon entrances, boats and zeppelins (click: waypoint). Options to fade the map while moving and to see the game behind the maximized map.",
+})
+TomoMod_RegisterLocale("frFR", {
+    ["mod_manaBar"] = "Barre de mana",
+    ["mod_gatherTips"] = "Infobulles de récolte",
+    ["mod_questReward"] = "Meilleure récompense",
+    ["mod_fishing"] = "Pêche",
+    ["mod_mapMarkers"] = "Marqueurs de carte",
+    ["wn_136_mana"] = "Nouveau - Barre de mana : sur le cadre du joueur, une étincelle montre les cinq secondes sans régénération après un sort, puis chaque tick de régénération ; pendant une incantation, le mana que coûtera le sort est surligné.",
+    ["wn_136_gather"] = "Nouveau - Les herbes, filons et bêtes à dépecer indiquent la compétence requise dans leur infobulle, colorée selon la tienne. Dans les récompenses de quête, une bourse marque l'objet qui se vend le plus cher.",
+    ["wn_136_fishing"] = "Nouveau - Pêche : une touche (Raccourcis, Addons) équipe la canne, pose un appât, lance, puis ramène quand ça mord. En option : double clic droit pour lancer et sons de pêche mis en avant.",
+    ["wn_136_map"] = "Nouveau - Carte du monde : points de vol, entrées de donjons, bateaux et zeppelins (clic : point de passage). Options pour estomper la carte en mouvement et voir le jeu derrière la carte agrandie.",
+})
+TomoMod_RegisterLocale("deDE", {
+    ["mod_manaBar"] = "Manaleiste",
+    ["mod_gatherTips"] = "Sammel-Tooltips",
+    ["mod_questReward"] = "Beste Questbelohnung",
+    ["mod_fishing"] = "Angeln",
+    ["mod_mapMarkers"] = "Kartenmarkierungen",
+    ["wn_136_mana"] = "Neu - Manaleiste: Am Spielerrahmen zeigt ein Funke die fünf Sekunden ohne Regeneration nach einem Zauber, danach jeden Regenerationstick; beim Wirken werden die Manakosten des Zaubers hervorgehoben.",
+    ["wn_136_gather"] = "Neu - Kräuter, Erzadern und kürschnerbare Tiere zeigen die nötige Fertigkeit im Tooltip, gefärbt nach deiner. Bei Questbelohnungen markiert ein Beutel den Gegenstand mit dem höchsten Verkaufswert.",
+    ["wn_136_fishing"] = "Neu - Angeln: Eine Taste (Tastenbelegung, AddOns) legt die Angel an, bringt einen Köder an, wirft aus und holt ein, wenn etwas anbeißt. Optional Doppel-Rechtsklick zum Auswerfen und hervorgehobene Angelgeräusche.",
+    ["wn_136_map"] = "Neu - Weltkarte: Flugpunkte, Instanzeingänge, Schiffe und Zeppeline (Klick: Wegpunkt). Optionen zum Ausblenden der Karte beim Laufen und um das Spiel hinter der maximierten Karte zu sehen.",
+})
+TomoMod_RegisterLocale("esES", {
+    ["mod_manaBar"] = "Barra de maná",
+    ["mod_gatherTips"] = "Descripciones de recolección",
+    ["mod_questReward"] = "Mejor recompensa",
+    ["mod_fishing"] = "Pesca",
+    ["mod_mapMarkers"] = "Marcadores del mapa",
+    ["wn_136_mana"] = "Nuevo - Barra de maná: en el marco del jugador, una chispa muestra los cinco segundos sin regeneración tras un hechizo y luego cada tic de regeneración; al lanzar, se resalta el maná que costará el hechizo.",
+    ["wn_136_gather"] = "Nuevo - Hierbas, filones y bestias desollables muestran la habilidad necesaria en su descripción, coloreada según la tuya. En las recompensas de misión, una bolsa marca el objeto que se vende más caro.",
+    ["wn_136_fishing"] = "Nuevo - Pesca: una tecla (Asignación de teclas, Accesorios) equipa la caña, pone un cebo, lanza y recoge cuando pican. Opcional: doble clic derecho para lanzar y sonidos de pesca destacados.",
+    ["wn_136_map"] = "Nuevo - Mapa del mundo: puntos de vuelo, entradas de mazmorras, barcos y zepelines (clic: punto de ruta). Opciones para atenuar el mapa al moverte y ver el juego detrás del mapa ampliado.",
+})
+TomoMod_RegisterLocale("itIT", {
+    ["mod_manaBar"] = "Barra del mana",
+    ["mod_gatherTips"] = "Suggerimenti di raccolta",
+    ["mod_questReward"] = "Ricompensa migliore",
+    ["mod_fishing"] = "Pesca",
+    ["mod_mapMarkers"] = "Indicatori della mappa",
+    ["wn_136_mana"] = "Nuovo - Barra del mana: sul riquadro del giocatore, una scintilla mostra i cinque secondi senza rigenerazione dopo un incantesimo, poi ogni tick di rigenerazione; durante il lancio è evidenziato il mana che costerà l'incantesimo.",
+    ["wn_136_gather"] = "Nuovo - Erbe, vene e bestie scuoiabili mostrano l'abilità richiesta nel suggerimento, colorata rispetto alla tua. Nelle ricompense delle missioni, una borsa indica l'oggetto che si vende di più.",
+    ["wn_136_fishing"] = "Nuovo - Pesca: un tasto (Assegnazione tasti, AddOn) equipaggia la canna, applica un'esca, lancia e recupera quando abboccano. Opzionale: doppio clic destro per lanciare e suoni di pesca in evidenza.",
+    ["wn_136_map"] = "Nuovo - Mappa del mondo: punti di volo, ingressi delle spedizioni, navi e zeppelin (clic: punto di passaggio). Opzioni per sfumare la mappa in movimento e vedere il gioco dietro la mappa ingrandita.",
+})
+TomoMod_RegisterLocale("ptBR", {
+    ["mod_manaBar"] = "Barra de mana",
+    ["mod_gatherTips"] = "Dicas de coleta",
+    ["mod_questReward"] = "Melhor recompensa",
+    ["mod_fishing"] = "Pesca",
+    ["mod_mapMarkers"] = "Marcadores do mapa",
+    ["wn_136_mana"] = "Novo - Barra de mana: no quadro do jogador, uma faísca mostra os cinco segundos sem regeneração após um feitiço e depois cada tique de regeneração; ao lançar, o mana que o feitiço vai custar fica destacado.",
+    ["wn_136_gather"] = "Novo - Ervas, veios e feras esfoláveis mostram a perícia necessária na dica, colorida conforme a sua. Nas recompensas de missão, uma bolsa marca o item que vende pelo maior valor.",
+    ["wn_136_fishing"] = "Novo - Pesca: uma tecla (Atalhos, AddOns) equipa a vara, aplica uma isca, lança e recolhe quando fisgar. Opcional: duplo clique direito para lançar e sons de pesca em destaque.",
+    ["wn_136_map"] = "Novo - Mapa-múndi: pontos de voo, entradas de masmorras, barcos e zepelins (clique: ponto de referência). Opções para esmaecer o mapa ao andar e ver o jogo atrás do mapa ampliado.",
+})
