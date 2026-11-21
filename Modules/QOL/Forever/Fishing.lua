@@ -89,9 +89,11 @@ end
 -- The key
 -- ---------------------------------------------------------------------
 local button = CreateFrame("Button", BUTTON_NAME, UIParent, "SecureActionButtonTemplate")
--- Up only: one press runs the macro once (key release, and the release of
--- the double-click's second right click).
-button:RegisterForClicks("AnyUp")
+-- Both down and up: since the modern client, a binding click only acts on
+-- the edge the "ActionButtonUseKeyDown" option picks (down by default), so a
+-- button registered for one edge alone can do nothing. Exactly one of the
+-- two runs the macro.
+button:RegisterForClicks("AnyUp", "AnyDown")
 button:Hide()
 
 local function MacroText()
@@ -131,7 +133,9 @@ button:SetScript("PreClick", Refresh)
 -- ---------------------------------------------------------------------
 local reelOwner = CreateFrame("Frame")
 local reeling = false
-local softWas
+-- Soft interact must reach the bobber: it lands well past the default
+-- 10 yards and not always straight ahead.
+local INTERACT_SET = { SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "30" }
 
 local function KeysOf(binding)
     local keys = { GetBindingKey(binding) }
@@ -143,8 +147,13 @@ local function StartReel()
     if not (db and db.reelIn) or InCombatLockdown() then return end
     local keys = KeysOf(BINDING)
     if #keys == 0 then return end
-    if softWas == nil and GetCVar then softWas = GetCVar("SoftTargetInteract") end
-    if SetCVar then SetCVar("SoftTargetInteract", "3") end
+    if GetCVar and SetCVar then
+        if not db.savedInteract then
+            db.savedInteract = {}
+            for k in pairs(INTERACT_SET) do db.savedInteract[k] = GetCVar(k) end
+        end
+        for k, v in pairs(INTERACT_SET) do SetCVar(k, v) end
+    end
     for _, key in ipairs(keys) do SetOverrideBinding(reelOwner, true, key, "INTERACTTARGET") end
     reeling = true
 end
@@ -168,9 +177,9 @@ local function RestoreSession()
         for k, v in pairs(db.savedSound) do SetCVar(k, v) end
         db.savedSound = nil
     end
-    if softWas ~= nil and SetCVar and not InCombatLockdown() then
-        SetCVar("SoftTargetInteract", softWas)
-        softWas = nil
+    if db and type(db.savedInteract) == "table" and SetCVar and not InCombatLockdown() then
+        for k, v in pairs(db.savedInteract) do SetCVar(k, v) end
+        db.savedInteract = nil
     end
 end
 
@@ -196,7 +205,7 @@ end
 -- Double-click to cast
 -- ---------------------------------------------------------------------
 local dcOwner = CreateFrame("Frame")
-local lastRight = 0
+local rightDownAt = 0
 local dcSet = false
 
 local function ClearDoubleClick()
@@ -207,20 +216,21 @@ local function ClearDoubleClick()
 end
 
 local function OnWorldMouseDown(_, mouse)
+    if mouse == "RightButton" then rightDownAt = GetTime() end
+end
+
+-- A short right click (not a camera drag) arms the next right click for
+-- 0.4 s: that one goes to the fishing key, down and up, so it acts whatever
+-- edge the client uses.
+local function OnWorldMouseUp(_, mouse)
     local db = DB()
     if not (db and db.enabled and db.doubleClick) or mouse ~= "RightButton" then return end
-    if InCombatLockdown() or not PoleEquipped() then return end
-    local now = GetTime()
-    if now - lastRight < 0.4 then
-        lastRight = 0
-        Refresh()
-        -- The release of this second click goes to the fishing key.
-        SetOverrideBindingClick(dcOwner, true, "BUTTON2", BUTTON_NAME)
-        dcSet = true
-        C_Timer.After(0.6, ClearDoubleClick)
-    else
-        lastRight = now
-    end
+    if dcSet or InCombatLockdown() or not PoleEquipped() then return end
+    if GetTime() - rightDownAt > 0.25 then return end
+    Refresh()
+    SetOverrideBindingClick(dcOwner, true, "BUTTON2", BUTTON_NAME)
+    dcSet = true
+    C_Timer.After(0.4, ClearDoubleClick)
 end
 
 -- ---------------------------------------------------------------------
@@ -289,7 +299,7 @@ function FI.Initialize()
     local db = DB()
     if not db then return end
     -- Sounds left changed by a crash: put them back.
-    if db.savedSound then RestoreSession() end
+    if db.savedSound or db.savedInteract then RestoreSession() end
     ev:RegisterEvent("PLAYER_LOGOUT")
     ev:RegisterEvent("PLAYER_REGEN_ENABLED")
     ev:RegisterEvent("BAG_UPDATE_DELAYED")
@@ -299,6 +309,7 @@ function FI.Initialize()
     ev:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
     if not worldHooked and WorldFrame and WorldFrame.HookScript then
         WorldFrame:HookScript("OnMouseDown", OnWorldMouseDown)
+        WorldFrame:HookScript("OnMouseUp", OnWorldMouseUp)
         worldHooked = true
     end
     Refresh()
