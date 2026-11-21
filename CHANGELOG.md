@@ -1,6 +1,6 @@
 ## ####################################
 
-## CHANGELOG 1.3.6
+## CHANGELOG 1.3.6 - Release
 
 #### Forever frame style: official skin
 
