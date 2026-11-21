@@ -405,8 +405,8 @@ K.RegisterPage({
             }, "ufall", 3)
             c:Info(T("TMF : le style par défaut. Forever : bandeau de nom aux couleurs de la classe (ou de la réaction pour les PNJ), vie et ressource centrées, cadre bronze et or, médaillon de niveau. S'applique au joueur, à la cible, à la cible de la cible, au familier et au focus.",
                      "TMF: the default look. Forever: name strip in the class colour (reaction colour for NPCs), centred health and power, bronze and gold border, level medallion. Applies to the player, target, target of target, pet and focus."))
-            c:Info(T("Animation : un halo animé autour du personnage remplace les cadres du joueur, de la cible, de la cible de la cible et du familier, ainsi que leurs barres d'incantation TMF. Le focus et les boss gardent le style TMF. Réglages dans Cadres > HUD Animation.",
-                     "Animation: an animated halo around your character replaces the player, target, target of target and pet frames, and their TMF cast bars. Focus and boss frames keep the TMF look. Settings in Frames > Animation HUD."))
+            c:Info(T("Animation : un halo animé autour du personnage remplace les cadres du joueur, de la cible, de la cible de la cible et du familier, ainsi que leurs barres d'incantation TMF. Le focus et les boss gardent le style TMF. Quand ce style est choisi, la page Cadres > HUD Animation apparaît dans le menu.",
+                     "Animation: an animated halo around your character replaces the player, target, target of target and pet frames, and their TMF cast bars. Focus and boss frames keep the TMF look. When this look is chosen, the Frames > Animation HUD page shows in the menu."))
             c:Toggle(T("Forever : afficher le portrait", "Forever: show the portrait"), "unitFrames.foreverPortrait", "ufall",
                 T("Portrait rond à côté du joueur, de la cible et du focus, avec le niveau posé dessus.",
                   "Round portrait beside the player, target and focus, with the level on it."))
@@ -514,6 +514,12 @@ K.RegisterPage({
     key = "uf_anim",
     section = SECTION,
     label = T("HUD Animation", "Animation HUD"),
+    -- [1.3.6] Only listed while the Animation look is the chosen style.
+    visible = function()
+        local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+        return uf and uf.style == "animation"
+    end,
+    fallback = "uf_style",
     kw = "animation braise halo arc arcs hud anneau anneaux braises menace combo incantation cast onde",
     build = function(parent)
         return K.Page(parent, function(page)
@@ -527,15 +533,6 @@ K.RegisterPage({
             if AH and AH.BraiseLoaded and AH.BraiseLoaded() then
                 c:Info(T("L'addon Braise est chargé : il affiche déjà son halo, le style Animation reste en retrait pour ne pas en dessiner un second. Désactive Braise pour utiliser celui de TMF.",
                          "The Braise addon is loaded: it already draws its halo, so the Animation look stands down rather than draw a second one. Turn Braise off to use TMF's."))
-            elseif uf.style ~= "animation" then
-                c:Info(T("Le style Animation n'est pas actif. Tu peux régler ce HUD dès maintenant ; il apparaîtra quand tu choisiras ce style.",
-                         "The Animation look is not on. You can set this HUD up now; it shows once you pick that look."))
-                c:Button(T("Utiliser le style Animation", "Use the Animation look"), function()
-                    uf.style = "animation"
-                    if AH and AH.Sync then AH.Sync() end
-                    K.Apply("ufall")
-                    K.RefreshPage()
-                end, 240)
             elseif not uf.enabled then
                 c:Info(T("Les cadres d'unité TomoMod sont désactivés : le HUD Animation aussi. Active-les depuis l'Accueil.",
                          "TomoMod unit frames are turned off, and so is the Animation HUD. Turn them on from Home."))

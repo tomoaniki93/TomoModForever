@@ -2,6 +2,10 @@
 
 ## CHANGELOG 1.3.6
 
+#### Options window
+
+- **Changed** - The Frames > Animation HUD page is only listed (sidebar and search) while the Animation look is the chosen frame style. Pages can now declare `visible = function() ... end` and a `fallback` page: a saved last page or a link to a hidden page opens the fallback instead, and the sidebar is laid out again whenever a page is rebuilt (choosing a style shows or hides the page at once).
+
 #### Level up, notifications, quests in tooltips, animation level
 
 - **New** - Interface animations (home page of the options): full, reduced or none, stored in `animations.level` and read through `TomoMod_Utils.AnimLevel()` / `AnimFull()` / `AnimAny()`. Full: everything. Reduced: short fades and feedback only, no movement, scale, shake, looping pulse, sweep or flying icon. None: frames appear and disappear at once. Followed by the quest tracker (fade-in, completion flash), the bag space banner (pop, count-up, shake, pulse, fade), the class trainer reminder (fade, glint), the new spell ranks (flying icon), the camp flames, the XP bar (sweep, badge flash), `U.Pop` / `U.Shake` (every caller), the options window (`K.Animated`), and the new modules below.

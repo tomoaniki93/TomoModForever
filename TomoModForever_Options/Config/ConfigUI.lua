@@ -151,12 +151,29 @@ local ALIASES = {
     leveling = "xpedge", levelingbar = "xpedge", xp = "xpedge",
 }
 
+-- [1.3.6] A page can declare visible = function() ... end: it is left out
+-- of the sidebar and the search while that returns false, and opening it
+-- (saved last page, a link) leads to its fallback page instead.
+local function PageVisible(def)
+    if not (def and def.visible) then return true end
+    local ok, v = pcall(def.visible)
+    return not ok or v and true or false
+end
+
 local function ResolveKey(key)
     if type(key) ~= "string" then return "home" end
-    if PAGE_BY_KEY[key] then return key end
-    local a = ALIASES[key] or ALIASES[key:lower()]
-    if a and PAGE_BY_KEY[a] then return a end
-    return "home"
+    local k = PAGE_BY_KEY[key] and key
+    if not k then
+        local a = ALIASES[key] or ALIASES[key:lower()]
+        if a and PAGE_BY_KEY[a] then k = a end
+    end
+    if not k then return "home" end
+    local def = PAGE_BY_KEY[k]
+    if not PageVisible(def) then
+        local fb = def.fallback
+        return (fb and PAGE_BY_KEY[fb]) and fb or "home"
+    end
+    return k
 end
 
 -- =====================================================================
@@ -366,6 +383,8 @@ end
 
 function C.RebuildCurrentPage()
     if not current then return end
+    -- A setting may have shown or hidden a page (see PageVisible).
+    if RelayoutNav then RelayoutNav() end
     local entry = built[current]
     local def = PAGE_BY_KEY[current]
     -- A rebuild is an in-place refresh: keep the scroll position and skip
@@ -579,7 +598,7 @@ local function SearchResults(q)
     local fq = Fold(q)
     for _, def in ipairs(PAGES) do
         local hay = Fold(def.label .. " " .. (def.kw or ""))
-        if hay:find(fq, 1, true) then
+        if hay:find(fq, 1, true) and PageVisible(def) then
             out[#out + 1] = { label = def.label, sub = T("Page", "Page"), pageKey = def.key }
         end
     end
@@ -589,7 +608,7 @@ local function SearchResults(q)
         if e.fold:find(fq, 1, true) then
             local d = PAGE_BY_KEY[e.page]
             local k = e.page .. "\1" .. e.fold
-            if d and not seen[k] then
+            if d and not seen[k] and PageVisible(d) then
                 seen[k] = true
                 out[#out + 1] = { label = e.label, sub = d.label, entry = e }
             end
@@ -637,7 +656,7 @@ function RelayoutNav()
         local col = GuiDB().collapsed
         for _, sec in ipairs(SECTIONS) do
             local any = false
-            for _, def in ipairs(PAGES) do if def.section == sec.key then any = true break end end
+            for _, def in ipairs(PAGES) do if def.section == sec.key and PageVisible(def) then any = true break end end
             if any then
                 local open = true
                 if sec.label then
@@ -652,7 +671,7 @@ function RelayoutNav()
                 end
                 if open then
                     for _, def in ipairs(PAGES) do
-                        if def.section == sec.key then
+                        if def.section == sec.key and PageVisible(def) then
                             local b = navRows[def.key]
                             b:ClearAllPoints()
                             b:SetPoint("TOPLEFT", 0, y)
