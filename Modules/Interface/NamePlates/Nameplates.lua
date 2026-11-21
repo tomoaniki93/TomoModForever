@@ -880,7 +880,23 @@ end
 -- FRIENDLY NAME-ONLY HELPER
 -- =====================================
 
+-- [1.3.6] Soft-targeted world objects (fishing bobber, chests, nodes) get
+-- a nameplate too: name only, never a health bar nor "Offline".
+local function IsGameObject(unit)
+    local secret = issecretvalue
+    if UnitIsGameObject then
+        local ok, v = pcall(UnitIsGameObject, unit)
+        if ok and v ~= nil and not (secret and secret(v)) then return v and true or false end
+    end
+    local isPlayer = UnitIsPlayer(unit)
+    if (secret and secret(isPlayer)) or isPlayer then return false end
+    local connected = UnitIsConnected(unit)
+    if secret and secret(connected) then return false end
+    return not connected
+end
+
 local function IsFriendlyUnit(unit)
+    if IsGameObject(unit) then return true end
     local reaction = UnitReaction(unit, "player")
     return reaction and reaction >= 5
 end
@@ -1323,6 +1339,8 @@ local function UpdateHealthText(plate, unit)
         plate.hpNumber:SetText("Dead"); plate.hpPercent:SetText(""); return
     elseif UnitIsGhost(unit) then
         plate.hpNumber:SetText("Ghost"); plate.hpPercent:SetText(""); return
+    elseif IsGameObject(unit) then
+        plate.hpNumber:SetText(""); plate.hpPercent:SetText(""); return
     elseif not UnitIsConnected(unit) then
         plate.hpNumber:SetText("Offline"); plate.hpPercent:SetText(""); return
     end
@@ -1538,7 +1556,8 @@ local function UpdatePlate(plate, unit)
     local s = DB()
 
     -- Friendly name-only mode: show only colored name, hide everything else
-    if s.friendlyNameOnly ~= false and IsFriendlyUnit(unit) then
+    -- (always for world objects).
+    if IsGameObject(unit) or (s.friendlyNameOnly ~= false and IsFriendlyUnit(unit)) then
         ApplyFriendlyNameOnly(plate, unit)
         return
     end
