@@ -92,9 +92,15 @@ function UF.IsForeverStyle()
     return uf and uf.style == "forever" or false
 end
 
+-- [1.3.6] The official skin (ForeverArt.lua) is the default Forever look;
+-- this file draws the classic one (unitFrames.foreverArt = false).
+local function ArtOn()
+    return UF.ForeverArtOn and UF.ForeverArtOn() or false
+end
+
 local function PortraitOn()
     local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
-    return uf and uf.style == "forever" and uf.foreverPortrait == true or false
+    return uf and uf.style == "forever" and uf.foreverPortrait == true and not ArtOn() or false
 end
 
 local PORTRAIT = 52                 -- diameter, a little taller than the frame
@@ -129,6 +135,7 @@ end)
 -- The compact sizes, everything else read from the unit's own settings.
 -- A unit whose power bar is switched off keeps it off.
 function UF.ForeverSettings(unit, settings)
+    if ArtOn() and UF.ForeverArtSettings then return UF.ForeverArtSettings(unit, settings) end
     local d = Dims(unit)
     if not d or not settings then return settings end
     local power = ((settings.powerHeight or 0) > 0) and d.power or 0
@@ -273,6 +280,13 @@ end
 -- ---------------------------------------------------------------------
 function UF.ForeverPre(frame, unit, settings)
     if not (frame and frame.health) then return 0 end
+    -- Official skin: the classic widgets step aside.
+    if UF.IsForeverStyle() and ArtOn() and UF.ForeverArtDims and UF.ForeverArtDims(unit) then
+        if frame._fv then ShowAll(frame._fv, false) end
+        portraitFrames[frame] = nil
+        return UF.ForeverArtPre(frame, unit, settings)
+    end
+    if UF.ForeverArtHide then UF.ForeverArtHide(frame) end
     local d = Dims(unit)
     frame.health:ClearAllPoints()
     if not (UF.IsForeverStyle() and d) then
@@ -296,6 +310,10 @@ function UF.ForeverPre(frame, unit, settings)
 end
 
 function UF.ForeverPost(frame, unit, settings)
+    if UF.IsForeverStyle() and ArtOn() and UF.ForeverArtDims and UF.ForeverArtDims(unit) then
+        UF.ForeverArtPost(frame, unit, settings)
+        return
+    end
     local d = Dims(unit)
     if not (frame and frame.health and d and UF.IsForeverStyle()) then return end
     local fv = Build(frame, unit)
@@ -381,6 +399,10 @@ end
 
 -- Strip colour, name and level, on every name refresh (target change...).
 function UF.ForeverUpdate(frame)
+    if ArtOn() and frame and frame._fa and UF.ForeverArtUpdate then
+        UF.ForeverArtUpdate(frame)
+        return
+    end
     local fv = frame and frame._fv
     if not (fv and UF.IsForeverStyle()) then return end
     local unit = frame.unit or (frame.GetAttribute and frame:GetAttribute("unit"))

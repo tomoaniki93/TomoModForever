@@ -2,6 +2,14 @@
 
 ## CHANGELOG 1.3.6
 
+#### Forever frame style: official skin
+
+- **New** - `Units/ForeverArt.lua`: the Forever look (`unitFrames.style = "forever"`) gets an official skin, on by default (`unitFrames.foreverArt`; `false` = the classic flat strip of `ForeverStyle.lua`, unchanged). The frame is drawn with WoW Forever's own unit frame art read from the game (atlas `UI-HUD-UnitFrame-Target-PortraitOn`, nothing copied into TMF): the atlas is cut in three slices across its full height, the left end (x 0-8) and the right part (x 120-194: plate end, ring and rim) keep their size and the middle stretches with the width, so the ring stays whole without a mask. Tinted bronze, mirrored for the frames whose ring is on the left (player, pet, target of target). Health and power sit in the plate's slots (the health bar runs down to the power slot's bottom when the power bar is off), the name in the name box over the game's reaction tint (`...-PortraitOn-Type`, class colour for players), a 2D portrait under the ring, the level on the game's small disc.
+- **New** - State art on the ring: the elite / rare / boss dragon from the game's own `GetBossPortraitFrameData`, the skull on the level disc for a "??" target or focus, the quest mark for a quest boss or a hostile unit tied to an active quest (`UnitIsQuestBoss`, `C_QuestLog.UnitIsRelatedToActiveQuest`), the PvP crest (faction or free-for-all), the engine's raid marker and leader crown moved onto the ring, and on the player frame the combat swords, the resting corner piece and a lit copy of the plate pulsing in the threat colour, red in combat or gold while resting (steady glow at the reduced or none animation level). Refreshed on combat, resting, threat, classification, faction, quest log, portrait and level events. Secret values hide the art.
+- **New** - The click area reaches over the ring (`SetHitRectInsets`, out of combat), so a click on the portrait targets like on Blizzard's frames.
+- **New** - Frames > Shared style: Forever skin (official or classic). Official skin sizes per frame: width (stretches the middle of the plate) and scale (100 % = Blizzard's art; player and target 130 %, focus 100 %, pet 75 %, target of target 65 %). The classic skin keeps its own sizes and its portrait option.
+- Credit: the geometry, the slicing idea, Blizzard's placement table and the state art follow FlareUI by Malkkav (MIT License, https://github.com/malkkav/FlareUI), rewritten for TMF's unit frame engine. No FlareUI file is shipped.
+
 #### Options window
 
 - **Changed** - The Frames > Animation HUD page is only listed (sidebar and search) while the Animation look is the chosen frame style. Pages can now declare `visible = function() ... end` and a `fallback` page: a saved last page or a link to a hidden page opens the fallback instead, and the sidebar is laid out again whenever a page is rebuilt (choosing a style shows or hides the page at once).

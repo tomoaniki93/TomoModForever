@@ -407,9 +407,30 @@ K.RegisterPage({
                      "TMF: the default look. Forever: name strip in the class colour (reaction colour for NPCs), centred health and power, bronze and gold border, level medallion. Applies to the player, target, target of target, pet and focus."))
             c:Info(T("Animation : un halo animé autour du personnage remplace les cadres du joueur, de la cible, de la cible de la cible et du familier, ainsi que leurs barres d'incantation TMF. Le focus et les boss gardent le style TMF. Quand ce style est choisi, la page Cadres > HUD Animation apparaît dans le menu.",
                      "Animation: an animated halo around your character replaces the player, target, target of target and pet frames, and their TMF cast bars. Focus and boss frames keep the TMF look. When this look is chosen, the Frames > Animation HUD page shows in the menu."))
-            c:Toggle(T("Forever : afficher le portrait", "Forever: show the portrait"), "unitFrames.foreverPortrait", "ufall",
-                T("Portrait rond à côté du joueur, de la cible et du focus, avec le niveau posé dessus.",
-                  "Round portrait beside the player, target and focus, with the level on it."))
+            -- [1.3.6] Two skins for the Forever look: the game's own art, or
+            -- the classic flat strip.
+            if TomoModForeverDB.unitFrames.style == "forever" then
+                c:Seg(T("Habillage Forever", "Forever skin"), {
+                    get = function() return TomoModForeverDB.unitFrames.foreverArt ~= false and "art" or "classic" end,
+                    set = function(v)
+                        local on = v == "art"
+                        local changed = (TomoModForeverDB.unitFrames.foreverArt ~= false) ~= on
+                        TomoModForeverDB.unitFrames.foreverArt = on
+                        if changed then K.RefreshPage() end
+                    end,
+                    default = "art",
+                }, {
+                    { text = T("Officiel (art du jeu)", "Official (game art)"), value = "art" },
+                    { text = T("Classique", "Classic"), value = "classic" },
+                }, "ufall", 2)
+                c:Info(T("Officiel : la plaque bronze, l'anneau de portrait et le médaillon de niveau de WoW Forever, avec le dragon des élites et des rares, la marque de quête, le crâne des cibles trop fortes, et sur ton cadre les épées de combat et une lueur rouge (combat), dorée (repos) ou de menace. Classique : le bandeau plat de TMF.",
+                         "Official: WoW Forever's bronze plate, portrait ring and level disc, with the elite and rare dragon, the quest mark, the skull for targets far above you, and on your frame the combat swords and a red (combat), gold (resting) or threat glow. Classic: TMF's flat strip."))
+                if TomoModForeverDB.unitFrames.foreverArt == false then
+                    c:Toggle(T("Forever : afficher le portrait", "Forever: show the portrait"), "unitFrames.foreverPortrait", "ufall",
+                        T("Portrait rond à côté du joueur, de la cible et du focus, avec le niveau posé dessus.",
+                          "Round portrait beside the player, target and focus, with the level on it."))
+                end
+            end
 
             c:Select(T("Texture des barres", "Bar texture"), "unitFrames.texture", K.TEXTURES, "ufall")
             c:Select(T("Police", "Font"), {
@@ -422,7 +443,64 @@ K.RegisterPage({
 
             -- Forever sizes: the Forever look has its own sizes (the sliders
             -- of the Player / Target... pages are those of the TMF look).
-            if TomoModForeverDB.unitFrames.style == "forever" then
+            -- [1.3.6] Official skin: width and scale per frame (the art keeps
+            -- its proportions, only its middle stretches).
+            if TomoModForeverDB.unitFrames.style == "forever" and TomoModForeverDB.unitFrames.foreverArt ~= false then
+                c = page:Card(T("Tailles Forever", "Forever sizes"))
+                c:Info(T("L'art garde ses proportions : la largeur étire le milieu de la plaque, l'échelle agrandit tout le cadre, anneau compris. Choisis le cadre à régler.",
+                         "The art keeps its proportions: width stretches the middle of the plate, scale grows the whole frame, ring included. Pick the frame to size."))
+                local gui = K.GuiDB()
+                local ART_UNITS = {
+                    { text = T("Joueur", "Player"), value = "player" },
+                    { text = T("Cible", "Target"), value = "target" },
+                    { text = T("Focus", "Focus"), value = "focus" },
+                    { text = T("Cible cible", "Target target"), value = "targettarget" },
+                    { text = T("Familier", "Pet"), value = "pet" },
+                }
+                c:Seg(T("Cadre", "Frame"), {
+                    get = function() return gui.foreverSizeUnit or "player" end,
+                    set = function(v)
+                        local changed = gui.foreverSizeUnit ~= v
+                        gui.foreverSizeUnit = v
+                        if changed then K.RefreshPage() end
+                    end,
+                    default = "player",
+                }, ART_UNITS, nil, 5)
+                local unit = gui.foreverSizeUnit or "player"
+                local UFm = TomoMod_UnitFrames
+                local def = (UFm and UFm.FOREVER_ART_DEFAULTS and UFm.FOREVER_ART_DEFAULTS[unit]) or { width = 170, scale = 1 }
+                local function ArtSize(key, toUI, fromUI)
+                    return {
+                        get = function()
+                            local t = TomoModForeverDB.unitFrames.foreverArtSizes
+                            local u = type(t) == "table" and t[unit]
+                            return toUI((u and u[key]) or def[key])
+                        end,
+                        set = function(v)
+                            local uf = TomoModForeverDB.unitFrames
+                            uf.foreverArtSizes = type(uf.foreverArtSizes) == "table" and uf.foreverArtSizes or {}
+                            uf.foreverArtSizes[unit] = uf.foreverArtSizes[unit] or {}
+                            uf.foreverArtSizes[unit][key] = fromUI(v)
+                        end,
+                        default = toUI(def[key]),
+                    }
+                end
+                local same = function(v) return v end
+                c:Slider(T("Largeur", "Width"), ArtSize("width", same, same), 60, 400, 1, "ufall")
+                c:Slider(T("Échelle", "Scale"), ArtSize("scale",
+                    function(v) return math.floor(v * 100 + 0.5) end,
+                    function(v) return v / 100 end), 40, 250, 5, "ufall", "%d %%",
+                    T("100 % : la taille de l'art de Blizzard. Joueur et cible : 130 % par défaut.",
+                      "100 %: Blizzard's art size. Player and target: 130 % by default."))
+                c:Button(T("Tailles par défaut pour ce cadre", "Default sizes for this frame"), function()
+                    local t = TomoModForeverDB.unitFrames.foreverArtSizes
+                    if type(t) == "table" then t[unit] = nil end
+                    K.Apply("ufall")
+                    K.RefreshPage()
+                end)
+                c:Done()
+            end
+            if TomoModForeverDB.unitFrames.style == "forever" and TomoModForeverDB.unitFrames.foreverArt == false then
                 c = page:Card(T("Tailles Forever", "Forever sizes"))
                 c:Info(T("Le style Forever a ses propres tailles : les curseurs des pages Joueur, Cible... règlent le style TMF. Choisis le cadre à régler.",
                          "The Forever look has its own sizes: the sliders of the Player, Target... pages set the TMF look. Pick the frame to size."))

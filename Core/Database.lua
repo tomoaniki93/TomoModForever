@@ -1061,6 +1061,8 @@ TomoMod_Defaults = {
         style = "tmf",            -- "tmf" (default look) | "forever" (ForeverStyle.lua) | "animation" (AnimHUD)
         foreverPortrait = false,  -- Forever look: round portrait beside player / target / focus
         foreverSizes = {},        -- Forever look: [unit] = { width, name, health, power } over the defaults
+        foreverArt = true,        -- [1.3.6] Forever look drawn with the game's own art (false: classic skin)
+        foreverArtSizes = {},     -- [1.3.6] official skin: [unit] = { width, scale } over the defaults
         -- Animation look (Modules/Interface/AnimHUD, from Braise): the halo
         -- replaces the player / target / ToT / pet frames and their cast bars.
         animation = {

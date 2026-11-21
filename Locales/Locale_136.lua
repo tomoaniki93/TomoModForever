@@ -85,3 +85,23 @@ TomoMod_RegisterLocale("ptBR", {
     ["wn_136_tooltip"] = "Novo - Missões nas dicas: passe o mouse sobre um monstro ou item pedido por uma missão do seu registro e a missão com seu progresso aparece na dica. O TMF se retira quando o Questie mostra as dele.",
     ["wn_136_anim"] = "Novo - Animações da interface: completas, reduzidas (só esmaecimentos curtos) ou nenhuma, na página inicial das opções. Seguidas por todo o TMF: subida de nível, notificações, rastreador de missões, alertas, acampamento, janela de opções.",
 })
+
+-- Forever look drawn with the game's own art.
+TomoMod_RegisterLocale("enUS", {
+    ["wn_136_forever"] = "New - Forever frame style: an official skin drawn with WoW Forever's own art (bronze plate, portrait ring, level disc), with the elite and rare dragon, the quest mark, the skull for targets far above you, and on your frame the combat swords and a red, gold or threat glow. The old look stays as the classic skin, in Frames > Shared style. Inspired by FlareUI (Malkkav).",
+})
+TomoMod_RegisterLocale("frFR", {
+    ["wn_136_forever"] = "Nouveau - Style de cadres Forever : un habillage officiel dessiné avec l'art de WoW Forever (plaque bronze, anneau de portrait, médaillon de niveau), avec le dragon des élites et des rares, la marque de quête, le crâne des cibles trop fortes, et sur ton cadre les épées de combat et une lueur rouge, dorée ou de menace. L'ancien rendu reste en habillage classique, dans Cadres > Style commun. Inspiré de FlareUI (Malkkav).",
+})
+TomoMod_RegisterLocale("deDE", {
+    ["wn_136_forever"] = "Neu - Rahmenstil Forever: eine offizielle Optik mit der eigenen Grafik von WoW Forever (Bronzeplatte, Porträtring, Stufenmedaillon), mit dem Drachen für Elite und Rare, der Questmarkierung, dem Totenkopf für viel stärkere Ziele und auf deinem Rahmen den Kampfschwertern und einem roten, goldenen oder Bedrohungsleuchten. Die alte Optik bleibt als klassische Variante unter Rahmen > Gemeinsamer Stil. Inspiriert von FlareUI (Malkkav).",
+})
+TomoMod_RegisterLocale("esES", {
+    ["wn_136_forever"] = "Nuevo - Estilo de marcos Forever: un aspecto oficial dibujado con el arte de WoW Forever (placa de bronce, anillo de retrato, medallón de nivel), con el dragón de élites y raros, la marca de misión, la calavera de los objetivos muy superiores y, en tu marco, las espadas de combate y un brillo rojo, dorado o de amenaza. El aspecto anterior queda como clásico, en Marcos > Estilo común. Inspirado en FlareUI (Malkkav).",
+})
+TomoMod_RegisterLocale("itIT", {
+    ["wn_136_forever"] = "Nuovo - Stile dei riquadri Forever: un aspetto ufficiale disegnato con la grafica di WoW Forever (placca di bronzo, anello del ritratto, medaglione del livello), con il drago di élite e rari, il segno di missione, il teschio per i bersagli molto più forti e, sul tuo riquadro, le spade di combattimento e un bagliore rosso, dorato o di minaccia. Il vecchio aspetto resta come classico, in Riquadri > Stile comune. Ispirato a FlareUI (Malkkav).",
+})
+TomoMod_RegisterLocale("ptBR", {
+    ["wn_136_forever"] = "Novo - Estilo de quadros Forever: um visual oficial desenhado com a arte do WoW Forever (placa de bronze, anel do retrato, medalhão de nível), com o dragão de elites e raros, a marca de missão, a caveira para alvos muito acima de você e, no seu quadro, as espadas de combate e um brilho vermelho, dourado ou de ameaça. O visual antigo continua como clássico, em Quadros > Estilo comum. Inspirado no FlareUI (Malkkav).",
+})

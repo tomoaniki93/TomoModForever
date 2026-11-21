@@ -29,3 +29,8 @@ Mythic+ (studio, tracker, score, keys, teleports), action bars and totem bar, ho
 | Frames | Antique gold `#C9A252` |
 | Titles | Golden yellow `#FFD100` |
 | Text | Off-white `#F2EBDB` |
+
+## Credits
+
+- **FlareUI** by Malkkav (MIT License, https://github.com/malkkav/FlareUI): the official skin of the Forever frame style (geometry, art slicing, placement and state art) follows its Forever Style, rewritten for TMF.
+- **ForeverLoot** by its author: dungeon loot data in the codex, used with permission.

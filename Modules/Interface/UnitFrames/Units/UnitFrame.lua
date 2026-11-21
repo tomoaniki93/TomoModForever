@@ -195,7 +195,7 @@ local function UpdateName(frame)
 
     -- Look "Forever": the strip always carries the name (even with
     -- "show name" off in the TMF settings), level on the medallion.
-    if UF.IsForeverStyle and UF.IsForeverStyle() and frame._fv then
+    if UF.IsForeverStyle and UF.IsForeverStyle() and (frame._fv or frame._fa) then
         UF.ForeverUpdate(frame)
         return
     end
