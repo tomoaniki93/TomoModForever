@@ -773,6 +773,33 @@ end
 -- CREATE: POINT DISPLAY (Combo, Soul Shards, Essence, auras)
 -- Supports both icon textures and flat color bars
 -- =====================================
+-- Sizes and places the first `count` slots so they span the whole frame.
+-- Slots are built for the definition's maxPoints (7 combo points on retail),
+-- but the client cap can be lower (5 on WoW: Forever): laying out only the
+-- visible slots keeps them full width and the centered text in the middle.
+local function LayoutPointSlots(frame, count)
+    count = math.max(count or 0, 1)
+    if frame._laidOutFor == count then return end
+    frame._laidOutFor = count
+
+    local length, height = frame._slotLength, frame._slotHeight
+    local spacing = frame._slotSpacing
+    local extent = frame.useTextures and height or (length - (count - 1) * spacing) / count
+    local totalExtent = count * extent + (count - 1) * spacing
+    local offset = frame.useTextures and math.max((length - totalExtent) / 2, 0) or 0
+
+    for i, pt in ipairs(frame.points) do
+        pt:ClearAllPoints()
+        if frame._resourceOrientation == "VERTICAL" then
+            pt:SetSize(height, extent)
+            pt:SetPoint("BOTTOM", frame, "BOTTOM", 0, offset + (i - 1) * (extent + spacing))
+        else
+            pt:SetSize(extent, height)
+            pt:SetPoint("LEFT", frame, "LEFT", offset + (i - 1) * (extent + spacing), 0)
+        end
+    end
+end
+
 -- Flat-mode empty slot fill is styled through SetEmptyPointBackground so
 -- opacity changes apply to both fresh and restored combo-point slots.
 local function CreatePointDisplay(parent, maxPoints, width, height, colorKey, texType)
@@ -791,26 +818,16 @@ local function CreatePointDisplay(parent, maxPoints, width, height, colorKey, te
     local tc = useTex and ICON_TEXCOORDS[texType]
     local texPath = useTex and CP_TEXTURES[texType] and CP_TEXTURES[texType].fill
 
-    local spacing = GetSegmentSpacing()
-    local length = width
-    local extent = useTex and height or (length - (maxPoints - 1) * spacing) / maxPoints
-    local totalExtent = maxPoints * extent + (maxPoints - 1) * spacing
-    local offset = useTex and math.max((length - totalExtent) / 2, 0) or 0
-
     frame.points = {}
     frame.maxPoints = maxPoints
     frame.colorKey = colorKey
     frame.useTextures = useTex and true or false
+    frame._slotLength = width
+    frame._slotHeight = height
+    frame._slotSpacing = GetSegmentSpacing()
 
     for i = 1, maxPoints do
         local pt = CreateFrame("Frame", nil, frame)
-        if orientation == "VERTICAL" then
-            pt:SetSize(height, extent)
-            pt:SetPoint("BOTTOM", frame, "BOTTOM", 0, offset + (i - 1) * (extent + spacing))
-        else
-            pt:SetSize(extent, height)
-            pt:SetPoint("LEFT", frame, "LEFT", offset + (i - 1) * (extent + spacing), 0)
-        end
 
         local bg = pt:CreateTexture(nil, "BACKGROUND")
         bg:SetAllPoints()
@@ -855,6 +872,7 @@ local function CreatePointDisplay(parent, maxPoints, width, height, colorKey, te
         CreateBorder(pt, "class", ClassUsesSegmentBorders())
         frame.points[i] = pt
     end
+    LayoutPointSlots(frame, maxPoints)
 
     local text = CreateBarText(frame)
     text:SetFont(GetFont(), GetFontSize(), "OUTLINE")
@@ -1308,6 +1326,7 @@ local function UpdatePoints(pointFrame, resDef)
     local colorKey = pointFrame.colorKey or "comboPoints"
     local r, g, b = GetColor(colorKey)
     local displayMax = math.min(max, #pointFrame.points)
+    if pointFrame._slotLength then LayoutPointSlots(pointFrame, displayMax) end
     local fillR, fillG, fillB, textR, textG, textB, thresholdActive =
         ResolveClassThreshold(current + partialFrac, max, r, g, b)
 
