@@ -1,5 +1,19 @@
 ## ####################################
 
+## CHANGELOG 1.3.6
+
+#### Code audit after 1.3.5 (errors, memory, CPU)
+
+Whole addon checked: 247 loaded files, `luacheck` (Lua 5.1, plus undefined-global reads), every `OnUpdate`, ticker and high-frequency event, every growing table, static data measured in Lua 5.1. No syntax error, no leaked global, no unthrottled per-frame work, frequent unit events all filtered (`RegisterUnitEvent`), histories all capped, no forced `collectgarbage`.
+
+- **Improved** - `TrainerData.lua` drops the eight classes you are not at load: 360 KB of tables down to 47 KB. Only `TrainerReminder` reads it, for your own class.
+- **Improved** - Diagnostics: stack (4000 chars) and locals (2000 chars) are capped at capture. `debuglocals` dumps whole tables, and entries are kept in SavedVariables (up to 500).
+- **Improved** - Diagnostics: the report gains a `Memory:` line (TMF's own memory, measured when the report is built).
+- **Fixed** - Diagnostics: normal game messages from report session 151 are no longer logged as UIError: shapeshift form, "Must be in Bear Form", "Can't use that here", item not usable, no equipment slot, camp placement and full camp (FR and EN keywords).
+- **Fixed** - Diagnostics: seven em dashes saved as double-encoded UTF-8 showed as garbled text in the report and console.
+
+## ####################################
+
 ## CHANGELOG 1.3.5
 
 #### Quest tracker: rebuilt from scratch

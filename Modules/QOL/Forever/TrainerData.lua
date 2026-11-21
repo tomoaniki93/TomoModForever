@@ -299,3 +299,15 @@ TomoMod_TrainerData = {
     [60] = { { id = 1238215, r = 3, f = 45, cost = 28000 }, { id = 9896, r = 6, f = 26, cost = 28000 }, { id = 24977, r = 5, f = 30, cost = 28000 }, { id = 9885, r = 7, f = 8, cost = 28000 }, { id = 17402, r = 3, f = 41, cost = 28000 }, { id = 1238073, r = 4, f = 36, cost = 28000 }, { id = 20748, r = 5, f = 19, cost = 28000 }, { id = 1237951, r = 5, f = 11, cost = 28000 }, { id = 9858, r = 9, f = 12, cost = 28000 }, { id = 9913, r = 3, f = 42, cost = 28000 }, { id = 9863, r = 4, f = 32, cost = 28000 } },
   }
 }
+
+-- [1.3.6] Only your own class is ever read: the other eight are dropped at
+-- load (about 300 KB of tables kept for nothing otherwise).
+do
+    local class
+    if UnitClass then class = select(2, UnitClass("player")) end
+    if class and TomoMod_TrainerData[class] then
+        for key in pairs(TomoMod_TrainerData) do
+            if key ~= class then TomoMod_TrainerData[key] = nil end
+        end
+    end
+end

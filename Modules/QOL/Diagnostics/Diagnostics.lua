@@ -418,6 +418,22 @@ local function BuildExclusionSet()
         "objetivo v.-lido", "objetivos v.-lidos", -- ES
         "bersaglio valido", "bersagli validi", -- IT
         "alvo v.-lido", "alvos v.-lidos",     -- PT
+        -- Shapeshift, item use and camp messages (report, session 151,
+        -- 2026-11-20). FR from the report, EN equivalents.
+        "sous une autre forme",               -- FR "Vous etes sous une autre forme"
+        "shapeshift form", "shapeshifted",    -- EN
+        "doit .-tre en forme",                -- FR "Doit etre en Forme d'ours, ..."
+        "must be in .-form",                  -- EN "Must be in Bear Form, Dire Bear Form"
+        "inutilisable ici",                   -- FR "Inutilisable ici."
+        "can't use that here", "cannot be used here", "can't be used here", -- EN
+        "pas utiliser cet objet",             -- FR "Vous ne pouvez pas utiliser cet objet."
+        "can't use that item",                -- EN
+        "aucun emplacement d'.-quipement",    -- FR "Aucun emplacement d'equipement disponible pour cet objet."
+        "no equipment slot",                  -- EN
+        "aussi pr.-s d'une cr.-ature",        -- FR camp: "...placer un element aussi pres d'une creature ou d'un objet."
+        "too close to a creature", "too close to an object", -- EN
+        "plus de place pour d'autres fonctionnalit", -- FR camp: "Il n'y a plus de place pour d'autres fonctionnalites dans ce camp."
+        "no more room", "no room for more",   -- EN
     }
     for _, kw in ipairs(keywords) do
         EXCLUDED_UI_PATTERNS[#EXCLUDED_UI_PATTERNS + 1] = kw
@@ -594,9 +610,20 @@ end
 -- CAPTURE ENGINE
 -- =====================================================================
 
+-- [1.3.6] Entries live in SavedVariables (up to MAX_ERRORS). debuglocals
+-- dumps every local of the frame, tables included: one entry could weigh
+-- several KB, so stack and locals are capped at capture.
+local MAX_STACK_CHARS  = 4000
+local MAX_LOCALS_CHARS = 2000
+local function Clip(text, max)
+    if type(text) ~= "string" or #text <= max then return text end
+    return text:sub(1, max) .. "\n[... truncated]"
+end
+
 local function CaptureEntry(kind, message, stack, locals, meta)
     -- Allow TomoMod taint through even when diagnostics are disabled
     if not IsEnabled() and kind ~= KIND_TAINT then return end
+    stack, locals = Clip(stack, MAX_STACK_CHARS), Clip(locals, MAX_LOCALS_CHARS)
     if inCapture then return end
     inCapture = true
 
@@ -1405,7 +1432,7 @@ function D.SetExportView(view)
     if view == "link" then
         ef._title:SetText("Tracker address")
         text = TRACKER_URL
-        ef._hint:SetText("Ctrl+C to copy the link â€” this replaces the report in your clipboard")
+        ef._hint:SetText("Ctrl+C to copy the link - this replaces the report in your clipboard")
     elseif ef._mode == "tracker" then
         ef._title:SetText("Report for " .. TRACKER_HOST)
         text = D.BuildTrackerReport()
@@ -1496,7 +1523,7 @@ function D.ShowExportFrame(mode)
         persist:SetFont(FONT_MEDIUM, 9, "")
         persist:SetPoint("TOP", 0, -64)
         persist:SetTextColor(0.5, 0.5, 0.55, 1)
-        persist:SetText("Your report is saved â€” reopen it any time with /tmdiag tracker")
+        persist:SetText("Your report is saved - reopen it any time with /tmdiag tracker")
 
         -- View switch
         local function MakeViewButton(label, view, anchorX)
@@ -1616,7 +1643,7 @@ function D.ShowExportFrame(mode)
             if trackerReminderShown then return end
             trackerReminderShown = true
             print(ADDON_PREFIX .. " |cffaaaaaaPaste your report at|r |cffffd100"
-                .. TRACKER_URL .. "|r |cffaaaaaaâ€” reopen it with|r |cffffffff/tmdiag tracker|r")
+                .. TRACKER_URL .. "|r |cffaaaaaa- reopen it with|r |cffffffff/tmdiag tracker|r")
         end)
 
         exportFrame = ef
@@ -1775,11 +1802,11 @@ local function CaptureDisplay(reason)
 
     local parts = { "[Display] ", reason or "?" }
     if scaleMoved then
-        parts[#parts + 1] = string.format(" â€” UIParent scale %s -> %s",
+        parts[#parts + 1] = string.format(" - UIParent scale %s -> %s",
             FormatScale(previous.parentScale), FormatScale(current.parentScale))
     end
     if resMoved then
-        parts[#parts + 1] = string.format(" â€” resolution %sx%s -> %sx%s",
+        parts[#parts + 1] = string.format(" - resolution %sx%s -> %sx%s",
             SafeToString(previous.physicalWidth), SafeToString(previous.physicalHeight),
             SafeToString(current.physicalWidth), SafeToString(current.physicalHeight))
     end
@@ -1803,7 +1830,7 @@ local function MarkDisplaySettled()
 
     CaptureEntry(KIND_DEBUG, string.format(
         "[Display] UIParent scale settled at %s, expected %s for this configuration "
-        .. "(uiScale=%s useUiScale=%s) â€” set by a macro or another addon",
+        .. "(uiScale=%s useUiScale=%s) - set by a macro or another addon",
         FormatScale(d.parentScale), FormatScale(d.expectedScale),
         FormatScale(d.cvarUiScale), SafeToString(d.cvarUseUiScale)))
 end
@@ -1902,7 +1929,7 @@ function D.BuildReadableReport()
     lines[#lines + 1] = "Expected scale: " .. FormatScale(d.expectedScale)
     if d.scaleOverridden then
         lines[#lines + 1] = "!! UIParent scale differs from the expected " .. FormatScale(d.expectedScale)
-            .. " â€” set by a macro or another addon"
+            .. " - set by a macro or another addon"
     end
     lines[#lines + 1] = ""
 
@@ -1915,6 +1942,16 @@ function D.BuildReadableReport()
     end
     local home, world = ReadNetStats()
     lines[#lines + 1] = "Latency: home " .. SafeToString(home) .. "ms / world " .. SafeToString(world) .. "ms"
+    -- [1.3.6] Memory of TMF (KB), measured when the report is built.
+    local update = (C_AddOns and C_AddOns.UpdateAddOnMemoryUsage) or UpdateAddOnMemoryUsage
+    local usage  = (C_AddOns and C_AddOns.GetAddOnMemoryUsage) or GetAddOnMemoryUsage
+    if update and usage then
+        pcall(update)
+        local ok, kb = pcall(usage, ADDON_NAME)
+        if ok and type(kb) == "number" then
+            lines[#lines + 1] = string.format("Memory: %.1f MB (TomoModForever)", kb / 1024)
+        end
+    end
     lines[#lines + 1] = ""
 
     -- Errors

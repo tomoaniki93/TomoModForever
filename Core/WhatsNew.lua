@@ -63,6 +63,13 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.6",
+        highlights = {
+            L["wn_136_memory"],
+            L["wn_136_diag"],
+        },
+    },
+    {
         version = "1.3.5",
         highlights = {
             L["wn_135_tracker"],
