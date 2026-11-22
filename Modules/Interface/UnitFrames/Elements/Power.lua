@@ -32,6 +32,7 @@ function UF_Elements.CreatePower(parent, unit, settings)
     local font = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.font) or FONT
 
     local power = CreateFrame("StatusBar", nil, parent)
+    power:SetFrameLevel(parent:GetFrameLevel() + 5)   -- [1.3.7] same as health
     power:SetSize(settings.width, settings.powerHeight)
     power:SetStatusBarTexture(tex)
     power:GetStatusBarTexture():SetHorizTile(false)
@@ -68,9 +69,34 @@ function UF_Elements.CreatePower(parent, unit, settings)
     text:SetText("")
     power.text = text
 
+    -- [1.3.7] Spent trail: a pale bar under the fill that drains 0.4 s
+    -- after mana / energy is spent, like the health trail. It carries the
+    -- background while shown.
+    local trail = CreateFrame("StatusBar", nil, parent)
+    trail:SetAllPoints(power)
+    trail:SetFrameLevel(math.max(0, power:GetFrameLevel() - 1))
+    trail:SetStatusBarTexture(tex)
+    trail:SetStatusBarColor(1, 1, 1, 0.45)
+    trail:SetMinMaxValues(0, 100)
+    trail:SetValue(100)
+    local tbg = trail:CreateTexture(nil, "BACKGROUND")
+    tbg:SetAllPoints()
+    tbg:SetTexture(tex)
+    tbg:SetVertexColor(0.075, 0.063, 0.050, 0.8)
+    trail:EnableMouse(false)
+    power.trail = trail
+    local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+    UF_Elements.SetPowerTrail(power, not (uf and uf.powerTrail == false))
+
     power.unit = unit
     power:EnableMouse(false)  -- Let clicks pass through
     return power
+end
+
+function UF_Elements.SetPowerTrail(power, on)
+    if not (power and power.trail) then return end
+    power.trail:SetShown(on and true or false)
+    if power.bg then power.bg:SetAlpha(on and 0 or 1) end
 end
 
 function UF_Elements.UpdatePower(frame)
@@ -83,8 +109,19 @@ function UF_Elements.UpdatePower(frame)
     local current = UnitPower(unit, powerType)
     local max = UnitPowerMax(unit, powerType)
 
+    -- [1.3.7] Glides (same unit and power type), spent trail drains after.
+    local same = UF_Elements.SameUnit(frame.power, unit) and frame.power._tmType == powerType
+    frame.power._tmType = powerType
     frame.power:SetMinMaxValues(0, max)
-    frame.power:SetValue(current)
+    if UF_Elements.SetBarValue then
+        UF_Elements.SetBarValue(frame.power, current, same and UF_Elements.SmoothOn())
+    else
+        frame.power:SetValue(current)
+    end
+    local trail = frame.power.trail
+    if trail and trail:IsShown() and UF_Elements.TrailTo then
+        UF_Elements.TrailTo(trail, current, max, same)
+    end
 
     -- Color by power type
     local r, g, b = TomoMod_Utils.GetPowerColor(powerType)

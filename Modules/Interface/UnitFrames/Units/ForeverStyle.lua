@@ -181,7 +181,7 @@ local function Build(frame, unit)
     local back = CreateFrame("Frame", nil, frame)
     back:SetAllPoints(frame)
     back:EnableMouse(false)
-    back:SetFrameLevel(math.max(0, lvl - 1))
+    back:SetFrameLevel(math.max(0, lvl - 3))   -- [1.3.7] under trail and heal gain
     Tex(back, "BACKGROUND", -7, 0.055, 0.045, 0.035, 0.94):SetAllPoints()
     fv.back = back
 

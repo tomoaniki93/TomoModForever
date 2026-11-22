@@ -577,6 +577,13 @@ R.Define{
 }
 
 R.Define{
+    key = "edgeAlerts", label = "mod_edgeAlerts", group = "qol",
+    enabledPath = "edgeAlerts.enabled",
+    global = "TomoMod_EdgeAlerts", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = true,
+}
+
+R.Define{
     key = "trainerReminder", label = "mod_trainerReminder", group = "qol",
     enabledPath = "trainerReminder.enabled",
     anchors = { { id = "trainerReminder", path = "trainerReminder.position", shape = "point_relativePoint", label = "mod_trainerReminder" } },

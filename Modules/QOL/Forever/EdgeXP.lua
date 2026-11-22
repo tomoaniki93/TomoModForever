@@ -35,6 +35,10 @@ local session = { t0 = 0, xp0 = 0, gained = 0 }
 local lastXP, lastLevel
 local showUntil = 0
 local hovering = false
+-- [1.3.7] Gliding fill: the bar shows `shownFrac`, which runs to
+-- `targetFrac` after each gain; `gliding` while it moves.
+local shownFrac, targetFrac, shownLevel
+local gliding = false
 
 local function DB() return TomoModForeverDB and TomoModForeverDB.xpEdge end
 
@@ -129,6 +133,50 @@ local function Create()
     bar.fill:SetPoint("TOPLEFT")
     bar.fill:SetPoint("BOTTOMLEFT")
 
+    -- [1.3.7] The XP just earned, lit at once; the fill flows into it.
+    bar.gain = bar:CreateTexture(nil, "ARTWORK", nil, -1)
+    bar.gain:SetTexture(TEX)
+    bar.gain:SetPoint("TOPLEFT")
+    bar.gain:SetPoint("BOTTOMLEFT")
+    bar.gain:SetVertexColor(1, 0.92, 0.65, 0.75)
+    bar.gain:Hide()
+
+    -- [1.3.7] A light that runs over the rested part now and then.
+    bar.restClip = CreateFrame("Frame", nil, bar)
+    bar.restClip:SetClipsChildren(true)
+    bar.restClip:SetPoint("TOP")
+    bar.restClip:SetPoint("BOTTOM")
+    bar.restClip:EnableMouse(false)
+    bar.restClip:Hide()
+    do
+        local sh = CreateFrame("Frame", nil, bar.restClip)
+        sh:SetWidth(48)
+        sh:SetPoint("TOP"); sh:SetPoint("BOTTOM")
+        sh:SetPoint("RIGHT", bar.restClip, "LEFT", 0, 0)
+        for i, half in ipairs({ "LEFT", "RIGHT" }) do
+            local t = sh:CreateTexture(nil, "OVERLAY")
+            t:SetTexture(WHITE)
+            t:SetWidth(24)
+            t:SetPoint("TOP" .. half); t:SetPoint("BOTTOM" .. half)
+            local a1, a2 = (i == 1) and 0 or 0.7, (i == 1) and 0.7 or 0
+            local ok = CreateColor and pcall(t.SetGradient, t, "HORIZONTAL",
+                CreateColor(0.75, 0.88, 1, a1), CreateColor(0.75, 0.88, 1, a2))
+            if not ok then t:SetColorTexture(0.75, 0.88, 1, 0.3) end
+        end
+        local ag = sh:CreateAnimationGroup()
+        ag:SetLooping("REPEAT")
+        local mv = ag:CreateAnimation("Translation")
+        mv:SetDuration(1.6)
+        mv:SetSmoothing("IN_OUT")
+        mv:SetOrder(1)
+        -- A pause between two passes (the light is off-bar by then).
+        local wait = ag:CreateAnimation("Alpha")
+        wait:SetFromAlpha(1); wait:SetToAlpha(1)
+        wait:SetDuration(3.2)
+        wait:SetOrder(2)
+        bar.shimmer, bar.shimmerAG, bar.shimmerMove = sh, ag, mv
+    end
+
     bar.spark = bar:CreateTexture(nil, "OVERLAY")
     bar.spark:SetColorTexture(1, 0.95, 0.75, 0.9)
     bar.spark:SetWidth(2)
@@ -200,6 +248,16 @@ local function Create()
     badge:SetScript("OnLeave", Leave)
 
     bar:SetScript("OnUpdate", function(self, dt)
+        if gliding and shownFrac and targetFrac then
+            local d = targetFrac - shownFrac
+            if math.abs(d) < 0.0005 then
+                shownFrac, gliding = targetFrac, false
+                bar.gain:Hide()
+            else
+                shownFrac = shownFrac + d * math.min(1, dt * 5)
+            end
+            XP.DrawFill()
+        end
         if pop:IsShown() then
             pop._t = (pop._t or 0) + dt
             local p = pop._t / 1.6
@@ -333,15 +391,47 @@ function XP.Refresh()
     bar:Show()
     frac = math.max(0, math.min(1, frac))
     bar.fill:SetVertexColor(r, g, b, 1)
-    bar.fill:SetWidth(math.max(0.001, w * frac))
-    bar.fill:SetShown(frac > 0)
+
+    -- [1.3.7] A gain on the same level glides; anything else snaps.
+    local level = UnitLevel("player")
+    local U = TomoMod_Utils
+    local canGlide = db.glide ~= false and not (U and U.AnimAny and not U.AnimAny())
+    if canGlide and shownFrac and shownLevel == level and frac > shownFrac + 0.0005 then
+        targetFrac = frac
+        gliding = true
+        bar.gain:SetWidth(math.max(0.001, w * frac))
+        bar.gain:Show()
+    else
+        shownFrac, targetFrac, gliding = frac, frac, false
+        bar.gain:Hide()
+    end
+    shownLevel = level
+    XP.DrawFill()
+
     bar.rested:SetVertexColor(RESTED[1], RESTED[2], RESTED[3], 0.45)
     bar.rested:SetWidth(math.max(0.001, w * restFrac))
     bar.rested:SetShown(restFrac > frac)
-    bar.spark:ClearAllPoints()
-    bar.spark:SetPoint("TOP", bar, "TOPLEFT", w * frac, 0)
-    bar.spark:SetPoint("BOTTOM", bar, "BOTTOMLEFT", w * frac, 0)
-    bar.spark:SetShown(frac > 0 and frac < 1)
+
+    -- [1.3.7] Shimmer over the rested part (full animations only).
+    local restW = w * (restFrac - frac)
+    local full = not (U and U.AnimFull) or U.AnimFull()
+    if full and db.restedShimmer ~= false and restW >= 8 then
+        bar.restClip:ClearAllPoints()
+        bar.restClip:SetPoint("TOPLEFT", bar, "TOPLEFT", w * frac, 0)
+        bar.restClip:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", w * frac, 0)
+        bar.restClip:SetWidth(restW)
+        bar.restClip:Show()
+        local offset = restW + 48
+        if math.abs((bar.shimmerOffset or 0) - offset) > 4 then
+            bar.shimmerOffset = offset
+            bar.shimmerMove:SetOffset(offset, 0)
+            if bar.shimmerAG:IsPlaying() then bar.shimmerAG:Stop() end
+        end
+        if not bar.shimmerAG:IsPlaying() then bar.shimmerAG:Play() end
+    else
+        if bar.shimmerAG:IsPlaying() then bar.shimmerAG:Stop() end
+        bar.restClip:Hide()
+    end
     for i, t in ipairs(bar.ticks) do
         t:ClearAllPoints()
         t:SetPoint("TOP", bar, "TOPLEFT", w * i / 10, 0)
@@ -350,6 +440,19 @@ function XP.Refresh()
     end
     badge.zzz:SetShown(IsResting and IsResting() and not AtMaxLevel() or false)
     XP.UpdateAlpha()
+end
+
+-- Fill and spark at the shown fraction (gliding or not).
+function XP.DrawFill()
+    if not bar then return end
+    local w = bar:GetWidth() or 0
+    local f = math.max(0, math.min(1, shownFrac or 0))
+    bar.fill:SetWidth(math.max(0.001, w * f))
+    bar.fill:SetShown(f > 0)
+    bar.spark:ClearAllPoints()
+    bar.spark:SetPoint("TOP", bar, "TOPLEFT", w * f, 0)
+    bar.spark:SetPoint("BOTTOM", bar, "BOTTOMLEFT", w * f, 0)
+    bar.spark:SetShown(f > 0 and f < 1)
 end
 
 -- The level badge sits on the inner side of the bar: centred by default,

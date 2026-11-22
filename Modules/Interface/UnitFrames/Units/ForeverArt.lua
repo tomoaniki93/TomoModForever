@@ -239,7 +239,7 @@ local function Build(frame)
     local holder = CreateFrame("Frame", nil, frame)
     holder:SetAllPoints(frame)
     holder:EnableMouse(false)
-    holder:SetFrameLevel(math.max(0, lvl - 2))
+    holder:SetFrameLevel(math.max(0, lvl - 4))   -- [1.3.7] glow at -3, under trail and heal gain
     art.holder = holder
 
     art.ringCentre = holder:CreateTexture(nil, "BACKGROUND")

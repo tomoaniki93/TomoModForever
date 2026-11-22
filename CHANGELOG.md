@@ -1,5 +1,18 @@
 ## ####################################
 
+## CHANGELOG 1.3.7
+
+#### Livelier frames and bars
+
+- **New** - Smooth bars (`unitFrames.smoothBars`): unit frame health and power bars glide to their new value with the engine's own easing (`StatusBar:SetValue` with `Enum.StatusBarInterpolation.ExponentialEaseOut`, C-side, secret-safe). A new unit in the frame (target swap) or a power type change snaps. Off with the option or with animations set to none.
+- **New** - Heal gain (`unitFrames.healGain`): a green bar under the health fill is set at once to the new health; with the fill gliding, a heal shows its green part first and the fill flows into it, while on a hit it stays hidden under the fill. No comparison of values, so secret health is never read. Layers: trail (-2), gain (-1), fill; the lowest visible bar carries the background.
+- **New** - Spent trail (`unitFrames.powerTrail`): a pale bar under the power fill drains 0.4 s after mana / energy is spent, like the health trail (shared `TrailTo`).
+- **Changed** - Health and power bars sit 5 levels above their frame so the trail, heal gain and the Forever skins' plate / background (now -3 / -4 under the fill) each have a level of their own; the threat border moves to +7.
+- **New** - `EdgeAlerts.lua` (`edgeAlerts.*`): a glow along the screen edges, four gradient textures under the interface, click-through. Red and breathing under the health threshold (30 %), blue under the mana threshold (20 %, mana users, in combat only by default). Health wins; nothing while dead. Breathing (AnimationGroup) with full animations, steady otherwise, never hidden. Readable values are compared; when the client keeps them secret, `UnitHealthPercent` / `UnitPowerPercent` with a colour curve light it engine-side. Options page with test buttons, thresholds, depth and intensity.
+- **New** - XP bar (`xpEdge.glide`, `xpEdge.restedShimmer`): after a gain on the same level the earned part lights at once in pale gold and the fill flows into it (eased in the bar's existing OnUpdate, only while it moves); level changes and losses snap. A light passes over the rested part every few seconds (clipped frame, Translation in an AnimationGroup, full animations only).
+
+## ####################################
+
 ## CHANGELOG 1.3.6 - Release
 
 #### Forever frame style: official skin

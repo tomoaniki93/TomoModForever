@@ -271,6 +271,9 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     local fontSize = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.fontSize) or 12
 
     local health = CreateFrame("StatusBar", nil, parent)
+    -- [1.3.7] Room under the fill: trail (-2), heal gain (-1), and the
+    -- skins' plate / background (-3 / -4) each on a level of their own.
+    health:SetFrameLevel(parent:GetFrameLevel() + 5)
     health:SetSize(settings.width, settings.healthHeight)
     health:SetPoint("TOP", parent, "TOP", 0, 0)
     health:SetStatusBarTexture(tex)
@@ -400,7 +403,7 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     -- only handed to SetValue, C-side: secret health stays secret.
     local trail = CreateFrame("StatusBar", nil, parent)
     trail:SetAllPoints(health)
-    trail:SetFrameLevel(math.max(0, health:GetFrameLevel() - 1))
+    trail:SetFrameLevel(math.max(0, health:GetFrameLevel() - 2))
     trail:SetStatusBarTexture(tex)
     trail:SetStatusBarColor(0.90, 0.20, 0.12, 0.85)
     trail:SetMinMaxValues(0, 100)
@@ -411,6 +414,26 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     tbg:SetVertexColor(0.137, 0.114, 0.086, 0.8)
     trail.bg = tbg
     health.trail = trail
+
+    -- [1.3.7] Heal gain: a green bar set at once to the new health, between
+    -- the trail and the health fill. With the fill gliding (smooth bars), a
+    -- heal shows its green part first and the fill flows into it; on a hit
+    -- it hides under the fill. No comparison: secret health stays secret.
+    local gain = CreateFrame("StatusBar", nil, parent)
+    gain:SetAllPoints(health)
+    gain:SetFrameLevel(math.max(0, health:GetFrameLevel() - 1))
+    gain:SetStatusBarTexture(tex)
+    gain:SetStatusBarColor(0.40, 0.92, 0.45, 0.85)
+    gain:SetMinMaxValues(0, 100)
+    gain:SetValue(100)
+    local gbg = gain:CreateTexture(nil, "BACKGROUND")
+    gbg:SetAllPoints()
+    gbg:SetTexture(tex)
+    gbg:SetVertexColor(0.137, 0.114, 0.086, 0.8)
+    gain.bg = gbg
+    gain:EnableMouse(false)
+    health.gain = gain
+
     local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
     UF_Elements.SetHealthTrail(health, not (uf and uf.healthTrail == false))
 
@@ -419,10 +442,74 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     return health
 end
 
+-- =====================================
+-- SMOOTH BARS (1.3.7)
+-- =====================================
+-- Bars glide to a new value with the engine's own easing (StatusBar
+-- interpolation, C-side, secret-safe). A new unit in the frame (target
+-- swap) snaps. Off with the option, or with animations set to none.
+
+function UF_Elements.SmoothOn()
+    local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+    if uf and uf.smoothBars == false then return false end
+    local U = TomoMod_Utils
+    if U and U.AnimAny and not U.AnimAny() then return false end
+    return Enum and Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.ExponentialEaseOut ~= nil or false
+end
+
+--- True when `bar` still shows the same unit as last time (records it).
+function UF_Elements.SameUnit(bar, unit)
+    local ok, guid = pcall(UnitGUID, unit)
+    local U = TomoMod_Utils
+    if not ok or (U and U.IsSecret and U.IsSecret(guid)) then guid = nil end
+    local same = guid ~= nil and guid == bar._tmGuid
+    bar._tmGuid = guid
+    return same
+end
+
+function UF_Elements.SetBarValue(bar, value, smooth)
+    if smooth then
+        local ok = pcall(bar.SetValue, bar, value, Enum.StatusBarInterpolation.ExponentialEaseOut)
+        if ok then return end
+    end
+    bar:SetValue(value)
+end
+
+-- Trail under a bar: catches up 0.4 s after the last change, eased.
+function UF_Elements.TrailTo(trail, value, max, same)
+    trail:SetMinMaxValues(0, max)
+    if not same then trail:SetValue(value) return end
+    trail._target = value
+    if trail._queued then return end
+    trail._queued = true
+    C_Timer.After(0.4, function()
+        trail._queued = false
+        -- Eased whenever the engine can (as since 1.1.0), snapped with
+        -- animations set to none.
+        local U = TomoMod_Utils
+        local eased = Enum and Enum.StatusBarInterpolation ~= nil and not (U and U.AnimAny and not U.AnimAny())
+        UF_Elements.SetBarValue(trail, trail._target, eased)
+    end)
+end
+
+-- Backgrounds: the lowest visible bar carries it (trail, else gain, else
+-- the health bar itself), so nothing hides the bars above.
+local function HealthBackgrounds(health)
+    local trailOn = health.trail and health.trail:IsShown()
+    local gainOn  = health.gain and health.gain:IsShown()
+    if health.trail and health.trail.bg then health.trail.bg:SetShown(trailOn and true or false) end
+    if health.gain and health.gain.bg then health.gain.bg:SetShown(gainOn and not trailOn or false) end
+    if health.bg then health.bg:SetAlpha((trailOn or gainOn) and 0 or 1) end
+end
+
 function UF_Elements.SetHealthTrail(health, on)
     if not (health and health.trail) then return end
     health.trail:SetShown(on and true or false)
-    if health.bg then health.bg:SetAlpha(on and 0 or 1) end
+    if health.gain then
+        local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+        health.gain:SetShown(UF_Elements.SmoothOn() and not (uf and uf.healGain == false))
+    end
+    HealthBackgrounds(health)
 end
 
 -- =====================================
@@ -454,7 +541,7 @@ function UF_Elements.CreateThreatIndicator(parent)
     local threat = CreateFrame("Frame", nil, parent)
     threat:SetPoint("TOPLEFT", -2, 2)
     threat:SetPoint("BOTTOMRIGHT", 2, -2)
-    threat:SetFrameLevel(parent:GetFrameLevel() + 5)
+    threat:SetFrameLevel(parent:GetFrameLevel() + 7)
 
     local edges = {}
     local function MakeEdge(p1, p2, w, h)

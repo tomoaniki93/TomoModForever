@@ -650,6 +650,21 @@ TomoMod_Defaults = {
         showQuests = true,
         repAtMax = true,
         levelUpBurst = true,      -- golden sweep + big "Level N" on level up
+        glide = true,             -- [1.3.7] the fill flows after each gain
+        restedShimmer = true,     -- [1.3.7] a light runs over the rested part
+    },
+
+    -- [1.3.7] Screen edge alerts (EdgeAlerts.lua).
+    edgeAlerts = {
+        enabled = true,
+        health = true,
+        healthPct = 30,
+        healthInCombat = false,   -- also out of combat by default
+        mana = true,
+        manaPct = 20,
+        manaInCombat = true,      -- drinking would light it every time
+        size = 90,                -- glow depth, pixels
+        intensity = 0.6,
     },
 
     -- Self-buff reminders with click-to-cast icons.
@@ -1138,6 +1153,10 @@ TomoMod_Defaults = {
         healthTrail = true,       -- red chunk that drains after a hit
         lowHealthPulse = true,    -- red frame breathing around the player frame
         lowHealthPct = 30,
+        -- 1.3.7 livelier bars
+        smoothBars = true,        -- health and power glide to their new value
+        healGain = true,          -- green part of a heal, shown before the fill flows in
+        powerTrail = true,        -- pale chunk that drains after mana / energy is spent
 
         -- Per-unit settings
         player = {

@@ -63,6 +63,14 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.7",
+        highlights = {
+            L["wn_137_bars"],
+            L["wn_137_edge"],
+            L["wn_137_xp"],
+        },
+    },
+    {
         version = "1.3.6",
         highlights = {
             L["wn_136_forever"],

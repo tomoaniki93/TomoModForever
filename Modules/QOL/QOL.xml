@@ -69,6 +69,7 @@
     <Include file="Forever\QuestReward.lua" />
     <Include file="Forever\Fishing.lua" />
     <Include file="Forever\MapMarkers.lua" />
+    <Include file="Forever\EdgeAlerts.lua" />
     <Include file="Forever\Triage.lua" />
     <Include file="Forever\MapRevealData.lua" />
     <Include file="Forever\MapReveal.lua" />

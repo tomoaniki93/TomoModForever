@@ -60,30 +60,10 @@ end
 -- Damage trail: catch up 0.4 s after the last change, eased C-side. A new
 -- unit in the frame (target swap) snaps instead of draining from the old
 -- unit's health.
-local function UpdateHealthTrail(frame, unit, current, max)
+local function UpdateHealthTrail(frame, unit, current, max, same)
     local trail = frame.health and frame.health.trail
     if not (trail and trail:IsShown()) then return end
-    trail:SetMinMaxValues(0, max)
-    local ok, guid = pcall(UnitGUID, unit)
-    local same = ok and not IsSecret(guid) and guid == trail._guid
-    if not same then
-        trail._guid = (ok and not IsSecret(guid)) and guid or nil
-        trail:SetValue(current)
-        return
-    end
-    trail._target = current
-    if trail._queued then return end
-    trail._queued = true
-    C_Timer.After(0.4, function()
-        trail._queued = false
-        local interp = Enum and Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.ExponentialEaseOut
-        if interp then
-            local okSet = pcall(trail.SetValue, trail, trail._target, interp)
-            if not okSet then trail:SetValue(trail._target) end
-        else
-            trail:SetValue(trail._target)
-        end
-    end)
+    UF_Elements.TrailTo(trail, current, max, same)
 end
 
 -- Low health: a red frame breathes around the player frame under the
@@ -139,9 +119,16 @@ local function UpdateHealth(frame)
     local max     = UnitHealthMax(unit)
 
     -- C-side — acceptent les secret numbers nativement
+    -- [1.3.7] The fill glides (same unit), the heal gain jumps at once.
+    local same = UF_Elements.SameUnit(frame.health, unit)
     frame.health:SetMinMaxValues(0, max)
-    frame.health:SetValue(current)
-    UpdateHealthTrail(frame, unit, current, max)
+    UF_Elements.SetBarValue(frame.health, current, same and UF_Elements.SmoothOn())
+    local gain = frame.health.gain
+    if gain and gain:IsShown() then
+        gain:SetMinMaxValues(0, max)
+        gain:SetValue(current)
+    end
+    UpdateHealthTrail(frame, unit, current, max, same)
     if unit == "player" then UpdateLowHealth(frame, current, max) end
 
     -- Couleur
@@ -1190,6 +1177,7 @@ function UF.ApplyVisuals(frame, unitKey, settings)
     frame.health:SetSize(settings.width, settings.healthHeight)
 
     if E.SetHealthTrail then E.SetHealthTrail(frame.health, globalDB.healthTrail ~= false) end
+    if E.SetPowerTrail and frame.power then E.SetPowerTrail(frame.power, globalDB.powerTrail ~= false) end
     if frame._tmLowGlow and globalDB.lowHealthPulse == false then frame._tmLowGlow:Hide() end
     if frame.health.text     then frame.health.text:SetFont(font, fontSize,     fontOutline) end
     if frame.health.nameText then frame.health.nameText:SetFont(font, fontSize - 1, fontOutline) end
@@ -1221,6 +1209,15 @@ function UF.ApplyVisuals(frame, unitKey, settings)
             ApplyBarTexture(frame.health.trail, barTex)
             frame.health.trail:SetStatusBarColor(0.90, 0.20, 0.12, 0.85)
             if frame.health.trail.bg then frame.health.trail.bg:SetTexture(barTex) end
+        end
+        if frame.health.gain then
+            ApplyBarTexture(frame.health.gain, barTex)
+            frame.health.gain:SetStatusBarColor(0.40, 0.92, 0.45, 0.85)
+            if frame.health.gain.bg then frame.health.gain.bg:SetTexture(barTex) end
+        end
+        if frame.power and frame.power.trail then
+            ApplyBarTexture(frame.power.trail, barTex)
+            frame.power.trail:SetStatusBarColor(1, 1, 1, 0.45)
         end
         ApplyBarTexture(frame.power,   barTex)
         ApplyBarTexture(frame.absorb,  barTex)

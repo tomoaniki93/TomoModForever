@@ -118,6 +118,12 @@ K.RegisterPage({
             c:Toggle(T("Au niveau max : afficher la réputation suivie", "At max level: show the watched reputation"), "xpEdge.repAtMax", XPApply)
             c:Done()
 
+            c = page:Card(T("Animations", "Animations"))
+            c:Toggle(T("L'XP gagnée remplit la barre en glissant", "Earned XP flows into the bar"), "xpEdge.glide", XPApply)
+            c:Toggle(T("Reflet sur la part reposée", "Shimmer on the rested part"), "xpEdge.restedShimmer", XPApply,
+                T("Avec les animations complètes.", "With full animations."))
+            c:Done()
+
             c = page:Card(T("Passage de niveau", "Level up"))
             c:Toggle(T("Lumière dorée et « Niveau N ! » au centre de l'écran", "Golden sweep and \"Level N!\" in the middle of the screen"), "xpEdge.levelUpBurst", nil)
             c:Button(T("Tester l'animation", "Test the animation"), function()
@@ -914,6 +920,51 @@ K.RegisterPage({
             o:Slider(T("Opacité du fond", "Backdrop opacity"), "mapMarkers.behindAlpha", 0, 1, 0.05, MMApply, "%.2f")
             o:Toggle(T("Les clics traversent le fond", "Clicks go through the backdrop"), "mapMarkers.clickThrough", MMApply)
             o:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
+-- 1.3.7: Screen edge alerts
+-- ---------------------------------------------------------------------
+local function EAApply() Call("TomoMod_EdgeAlerts", "ApplySettings") end
+
+K.RegisterPage({
+    key = "edgealerts",
+    section = SECTION,
+    label = T("Alertes en bord d'écran", "Screen edge alerts"),
+    kw = "alerte alert bord edge ecran screen vie health mana basse low rouge red bleu blue vignette",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Alertes en bord d'écran", "Screen edge alerts"),
+                T("Un liseré rouge pulse sur les bords de l'écran quand ta vie est basse, un liseré bleu quand ta mana passe sous son seuil. La vie passe avant la mana.",
+                  "A red glow pulses along the screen edges when your health is low, a blue one when your mana drops under its threshold. Health comes before mana."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "edgeAlerts", T("Afficher les alertes en bord d'écran", "Show the screen edge alerts"))
+            c:Done()
+
+            local h = page:Card(T("Vie", "Health"))
+            h:Toggle(T("Liseré rouge quand ta vie est basse", "Red glow when your health is low"), "edgeAlerts.health", EAApply)
+            h:Slider(T("Seuil", "Threshold"), "edgeAlerts.healthPct", 10, 60, 1, EAApply, "%d %%")
+            h:Toggle(T("En combat seulement", "In combat only"), "edgeAlerts.healthInCombat", EAApply)
+            h:Button(T("Tester", "Test"), function() Call("TomoMod_EdgeAlerts", "Test", "health") end, 160)
+            h:Done()
+
+            local m = page:Card(T("Mana", "Mana"))
+            m:Toggle(T("Liseré bleu quand ta mana est basse", "Blue glow when your mana is low"), "edgeAlerts.mana", EAApply)
+            m:Slider(T("Seuil", "Threshold"), "edgeAlerts.manaPct", 5, 50, 1, EAApply, "%d %%")
+            m:Toggle(T("En combat seulement", "In combat only"), "edgeAlerts.manaInCombat", EAApply,
+                T("Sinon il s'allume chaque fois que tu bois.", "Otherwise it lights up every time you drink."))
+            m:Button(T("Tester", "Test"), function() Call("TomoMod_EdgeAlerts", "Test", "mana") end, 160)
+            m:Done()
+
+            local l = page:Card(T("Apparence", "Look"))
+            l:Slider(T("Profondeur", "Depth"), "edgeAlerts.size", 30, 200, 5, EAApply, "%d px")
+            l:Slider(T("Intensité", "Intensity"), "edgeAlerts.intensity", 0.2, 1, 0.05, EAApply, "%.2f")
+            l:Info(T("Le liseré pulse avec les animations complètes, il reste fixe sinon : c'est une alerte, il ne disparaît jamais.",
+                     "The glow pulses with full animations and stays steady otherwise: it is an alert, it never goes away."))
+            l:Done()
         end)
     end,
 })

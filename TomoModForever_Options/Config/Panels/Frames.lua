@@ -574,6 +574,12 @@ K.RegisterPage({
                 T("Le morceau de vie perdu reste affiché en rouge un instant puis s'écoule.", "The lost chunk of health stays red for a moment, then drains away."))
             c:Toggle(T("Cadre joueur qui pulse en rouge quand ta vie est basse", "Player frame pulses red on low health"), "unitFrames.lowHealthPulse", "uf:player")
             c:Slider(T("Seuil de vie basse", "Low health threshold"), "unitFrames.lowHealthPct", 10, 60, 1, "uf:player", "%d %%")
+            c:Toggle(T("Barres de vie et de ressource qui glissent", "Health and power bars glide"), "unitFrames.smoothBars", "ufall",
+                T("Les barres coulent vers leur nouvelle valeur au lieu de sauter. Suit le réglage global des animations.",
+                  "Bars flow to their new value instead of jumping. Follows the global animation setting."))
+            c:Toggle(T("Part verte des soins", "Green part of heals"), "unitFrames.healGain", "ufall",
+                T("Un soin s'affiche d'abord en vert, puis la barre de vie le remplit.", "A heal shows in green first, then the health bar fills it."))
+            c:Toggle(T("Traînée pâle quand mana ou énergie est dépensée", "Pale trail when mana or energy is spent"), "unitFrames.powerTrail", "ufall")
             c:Done()
 
             c = page:Card(T("Cadres Blizzard", "Blizzard frames"), { adv = true })
