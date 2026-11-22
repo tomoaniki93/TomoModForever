@@ -50,7 +50,7 @@ globals = {
     "TomoMod_ProfileSafety", "TomoMod_InflateBounded",
     "TomoMod_Toasts", "TomoMod_QuestTooltip",   -- 1.3.6
     "TomoMod_ManaBar", "TomoMod_GatherTips", "TomoMod_QuestReward", "TomoMod_Fishing", "TomoMod_MapMarkers",
-    "TomoMod_EdgeAlerts",   -- 1.3.7
+    "TomoMod_EdgeAlerts", "TomoMod_PartyQuests",   -- 1.3.7
     "ClickCastFrames", "ColorPickerFrame", "CompanionStatusDB", "FCF_FadeInChatFrame",
     "FCF_FadeInScrollbar", "FCF_FadeOutChatFrame", "FCF_FadeOutScrollbar", "FCF_StartDragging",
     "FCF_StopDragging", "GetMinimapShape", "SLASH_COMPANIONSTATUS1", "SLASH_TOMOCDMDEBUG1",

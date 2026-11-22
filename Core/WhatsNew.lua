@@ -69,6 +69,7 @@ CHANGELOG = {
             L["wn_137_edge"],
             L["wn_137_xp"],
             L["wn_137_polish"],
+            L["wn_137_party"],
         },
     },
     {

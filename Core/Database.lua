@@ -129,6 +129,7 @@ TomoMod_Defaults = {
         scale = 1.0,
         animateProgress = true,   -- [1.3.7] bars glide, objectives flash when they move
         zoneBanner = true,        -- [1.3.7] zone name above the tracker on zone change
+        shareProgress = true,     -- [1.3.7] tell group members running TMF where you stand (PartyQuests.lua)
         position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 },
     },
     rareAlert = {

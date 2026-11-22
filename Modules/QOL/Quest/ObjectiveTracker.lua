@@ -90,6 +90,7 @@ local DEFAULTS = {
     scale = 1.0,
     animateProgress = true,     -- [1.3.7] bars glide, objectives flash when they move
     zoneBanner = true,          -- [1.3.7] zone name above the tracker on zone change
+    shareProgress = true,       -- [1.3.7] PartyQuests.lua
 }
 
 local function S()
@@ -852,7 +853,9 @@ local function AddPartyLines(q)
             if name and not Secret(name) and ok and not Secret(on) then
                 local _, class = UnitClass(unit)
                 local c = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
-                lines[#lines + 1] = { name = name, on = on and true or false, c = c }
+                local PQ = TomoMod_PartyQuests
+                local info = PQ and PQ.Get and PQ.Get(unit, q.id)
+                lines[#lines + 1] = { name = name, on = (on or info) and true or false, c = c, info = info }
             end
         end
     end
@@ -862,9 +865,29 @@ local function AddPartyLines(q)
     for _, l in ipairs(lines) do
         local r, g, b = 0.9, 0.9, 0.9
         if l.c then r, g, b = l.c.r, l.c.g, l.c.b end
-        GameTooltip:AddDoubleLine((l.on and READY_TEX or NOTREADY_TEX) .. " " .. l.name,
-            l.on and T("ot_party_on", "On this quest") or T("ot_party_off", "Not on it"),
-            r, g, b, l.on and C_GREEN[1] or 0.6, l.on and C_GREEN[2] or 0.6, l.on and C_GREEN[3] or 0.6)
+        -- [1.3.7] Progress sent by their TMF (PartyQuests.lua), when any.
+        local right, rr, rg, rb
+        local info = l.info
+        if info and info.state == "c" then
+            right, rr, rg, rb = T("ot_ready", "Ready to turn in"), C_GREEN[1], C_GREEN[2], C_GREEN[3]
+        elseif info and info.state == "f" then
+            right, rr, rg, rb = T("ot_failed", "Failed"), C_RED[1], C_RED[2], C_RED[3]
+        elseif info and info.objs and #info.objs > 0 then
+            local parts = {}
+            for i, o in ipairs(info.objs) do
+                local mine = q.objectives[i]
+                local label = mine and mine.text and mine.text:gsub("%s*:?%s*%d+%s*/%s*%d+%s*$", "") or nil
+                if label and #info.objs > 1 and #label > 18 then label = label:sub(1, 16) .. ".." end
+                local count = o[1] .. "/" .. o[2]
+                parts[#parts + 1] = (#info.objs > 1 and label and label ~= "") and (label .. " " .. count) or count
+            end
+            right, rr, rg, rb = table.concat(parts, ",  "), 1, 0.82, 0
+        elseif l.on then
+            right, rr, rg, rb = T("ot_party_on", "On this quest"), C_GREEN[1], C_GREEN[2], C_GREEN[3]
+        else
+            right, rr, rg, rb = T("ot_party_off", "Not on it"), 0.6, 0.6, 0.6
+        end
+        GameTooltip:AddDoubleLine((l.on and READY_TEX or NOTREADY_TEX) .. " " .. l.name, right, r, g, b, rr, rg, rb)
     end
 end
 
@@ -1541,6 +1564,7 @@ RequestRefresh = function()
     C_Timer.After(0.05, RunQueuedRefresh)
 end
 OT.Refresh = RequestRefresh
+OT.GatherLog = GatherLog   -- [1.3.7] read by PartyQuests.lua
 
 -- Distance sort re-sorts while you move (out of combat).
 local distTicker

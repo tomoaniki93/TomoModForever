@@ -519,6 +519,7 @@ local function BuildObjectiveTrackerTab(parent)
     Check("showProgressBar",   L["opt_ot_progress_bar"], true)
     Check("animateProgress",   L["opt_ot_animate"], true)
     Check("zoneBanner",        L["opt_ot_zone_banner"], true)
+    Check("shareProgress",     L["opt_ot_share"], true)
     Check("showTooltips",      L["opt_ot_tooltips"], true)
     Check("showBorder",        L["opt_obj_tracker_border"], true)
     Dropdown("itemSide", L["opt_ot_item_side"], {

@@ -50,6 +50,7 @@
     <Include file="Quest\AutoQuest.lua" />
     <Include file="Quest\ObjectiveTracker.lua" />
     <Include file="Quest\QuestTooltip.lua" />
+    <Include file="Quest\PartyQuests.lua" />
 
     <!-- Modules: CVar Optimizer -->
     <Include file="Optimizations\CVarOptimizer.lua" />
