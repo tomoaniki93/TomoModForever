@@ -14,7 +14,8 @@
 --   1X|id|id        quests no longer in my log
 -- A full list goes out when we join a group, when someone new joins, and in
 -- answer to a hello; afterwards only the quests that changed, at most every
--- 1.5 seconds. Messages stay under 255 bytes.
+-- 1.5 seconds, and never in combat (sent right after it). Messages stay
+-- under 255 bytes. Nothing reads the combat log.
 -- =====================================================================
 
 TomoMod_PartyQuests = TomoMod_PartyQuests or {}
@@ -127,12 +128,17 @@ local function SendDelta()
     lastSent = log
 end
 
+-- Nothing is sent in combat: kill counts move there, they go out together
+-- right after it (PLAYER_REGEN_ENABLED).
+local afterCombat = false
 local function Schedule(full)
     if full then fullPending = true end
+    if InCombatLockdown() then afterCombat = true return end
     if pending then return end
     pending = true
     C_Timer.After(full and (0.5 + math.random() * 1.0) or DEBOUNCE, function()
         pending = false
+        if InCombatLockdown() then afterCombat = true return end
         if fullPending then
             fullPending = false
             SendFull()
@@ -232,6 +238,11 @@ local ev = CreateFrame("Frame")
 ev:SetScript("OnEvent", function(_, event, a1, a2, _, a4)
     if event == "CHAT_MSG_ADDON" then
         if a1 == PREFIX then OnMessage(a2, a4) end
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        if afterCombat then
+            afterCombat = false
+            if Enabled() and InParty() then Schedule(false) end
+        end
     elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
         OnRoster()
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_REMOVED" or event == "QUEST_ACCEPTED" then
@@ -249,5 +260,6 @@ function PQ.Initialize()
     ev:RegisterEvent("QUEST_LOG_UPDATE")
     ev:RegisterEvent("QUEST_REMOVED")
     ev:RegisterEvent("QUEST_ACCEPTED")
+    ev:RegisterEvent("PLAYER_REGEN_ENABLED")
     OnRoster()
 end
