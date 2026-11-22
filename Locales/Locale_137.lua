@@ -128,31 +128,31 @@ TomoMod_RegisterLocale("ptBR", {
 -- 1.3.7: quest progress shared in a group
 TomoMod_RegisterLocale("enUS", {
     ["opt_ot_share"] = "Share my quest progress with my group (TMF users)",
-    ["wn_137_party"] = "New - In a group, members running TMF share their quest progress: the quest tracker tooltip shows how far each one is (Wolf 3/8) or that the quest is ready to turn in. Option in the quest tracker settings.",
+    ["wn_137_party"] = "New - In a group, members running TMF share their quest progress: the quest tracker tooltip shows how far each one is (Wolf 3/8) or that the quest is ready to turn in. Nothing is sent in combat: progress goes out right after the fight. Option in the quest tracker settings.",
 })
 
 TomoMod_RegisterLocale("frFR", {
     ["opt_ot_share"] = "Partager ma progression de quêtes avec mon groupe (joueurs TMF)",
-    ["wn_137_party"] = "Nouveau - En groupe, les membres qui ont TMF partagent leur progression : l'infobulle du suivi indique où en est chacun (Loup 3/8) ou que la quête est prête à rendre. Option dans les réglages du suivi des quêtes.",
+    ["wn_137_party"] = "Nouveau - En groupe, les membres qui ont TMF partagent leur progression : l'infobulle du suivi indique où en est chacun (Loup 3/8) ou que la quête est prête à rendre. Rien n'est envoyé en combat : la progression part juste après le combat. Option dans les réglages du suivi des quêtes.",
 })
 
 TomoMod_RegisterLocale("deDE", {
     ["opt_ot_share"] = "Questfortschritt mit der Gruppe teilen (TMF-Nutzer)",
-    ["wn_137_party"] = "Neu - In der Gruppe teilen Mitglieder mit TMF ihren Questfortschritt: Der Tooltip der Questverfolgung zeigt, wie weit jeder ist (Wolf 3/8) oder dass die Quest abgabebereit ist. Option in den Einstellungen der Questverfolgung.",
+    ["wn_137_party"] = "Neu - In der Gruppe teilen Mitglieder mit TMF ihren Questfortschritt: Der Tooltip der Questverfolgung zeigt, wie weit jeder ist (Wolf 3/8) oder dass die Quest abgabebereit ist. Im Kampf wird nichts gesendet: Der Fortschritt geht direkt nach dem Kampf raus. Option in den Einstellungen der Questverfolgung.",
 })
 
 TomoMod_RegisterLocale("esES", {
     ["opt_ot_share"] = "Compartir mi progreso de misiones con el grupo (jugadores de TMF)",
-    ["wn_137_party"] = "Nuevo - En grupo, los miembros con TMF comparten su progreso: la descripción del seguimiento muestra cómo va cada uno (Lobo 3/8) o que la misión está lista para entregar. Opción en los ajustes del seguimiento de misiones.",
+    ["wn_137_party"] = "Nuevo - En grupo, los miembros con TMF comparten su progreso: la descripción del seguimiento muestra cómo va cada uno (Lobo 3/8) o que la misión está lista para entregar. No se envía nada en combate: el progreso sale justo después del combate. Opción en los ajustes del seguimiento de misiones.",
 })
 
 TomoMod_RegisterLocale("itIT", {
     ["opt_ot_share"] = "Condividi i miei progressi delle missioni col gruppo (giocatori TMF)",
-    ["wn_137_party"] = "Nuovo - In gruppo, i membri con TMF condividono i progressi: il suggerimento del tracciamento mostra a che punto è ognuno (Lupo 3/8) o che la missione è pronta da consegnare. Opzione nelle impostazioni del tracciamento.",
+    ["wn_137_party"] = "Nuovo - In gruppo, i membri con TMF condividono i progressi: il suggerimento del tracciamento mostra a che punto è ognuno (Lupo 3/8) o che la missione è pronta da consegnare. Niente viene inviato in combattimento: i progressi partono subito dopo lo scontro. Opzione nelle impostazioni del tracciamento.",
 })
 
 TomoMod_RegisterLocale("ptBR", {
     ["opt_ot_share"] = "Compartilhar meu progresso de missões com o grupo (jogadores do TMF)",
-    ["wn_137_party"] = "Novo - Em grupo, os membros com TMF compartilham o progresso: a dica do rastreador mostra como cada um está (Lobo 3/8) ou que a missão está pronta para entregar. Opção nas configurações do rastreador de missões.",
+    ["wn_137_party"] = "Novo - Em grupo, os membros com TMF compartilham o progresso: a dica do rastreador mostra como cada um está (Lobo 3/8) ou que a missão está pronta para entregar. Nada é enviado em combate: o progresso sai logo depois do combate. Opção nas configurações do rastreador de missões.",
 })
 
