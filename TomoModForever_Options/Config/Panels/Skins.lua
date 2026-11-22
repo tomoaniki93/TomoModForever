@@ -395,6 +395,12 @@ local function BuildBagsTab(parent)
     end)
     y = ny
 
+    local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_new_glint", "Golden light on new items"), slots.newGlint ~= false, y, function(v)
+        slots.newGlint = v
+        Apply()
+    end)
+    y = ny
+
     local _, ny = W.CreateCheckbox(c, Loc("opt_skin_bags_show_empty", "Show empty slots"), slots.showEmpty ~= false, y, function(v)
         slots.showEmpty = v
         Apply()
@@ -511,6 +517,8 @@ local function BuildObjectiveTrackerTab(parent)
     Check("titleByDifficulty", L["opt_ot_title_difficulty"], false)
     Check("showTags",          L["opt_ot_show_tags"], true)
     Check("showProgressBar",   L["opt_ot_progress_bar"], true)
+    Check("animateProgress",   L["opt_ot_animate"], true)
+    Check("zoneBanner",        L["opt_ot_zone_banner"], true)
     Check("showTooltips",      L["opt_ot_tooltips"], true)
     Check("showBorder",        L["opt_obj_tracker_border"], true)
     Dropdown("itemSide", L["opt_ot_item_side"], {

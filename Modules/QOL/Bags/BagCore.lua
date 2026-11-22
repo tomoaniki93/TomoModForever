@@ -148,6 +148,7 @@ local DEFAULTS = {
         itemLevel = true,
         showEmpty = true,
         questMarks = true,  -- gold quest border / "!" (BagSlots.lua, Triage.lua)
+        newGlint = true,    -- [1.3.7] golden light over new items
     },
     sidebar = {
         pinnedMax = 8,

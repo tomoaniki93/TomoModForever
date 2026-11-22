@@ -42,3 +42,47 @@ TomoMod_RegisterLocale("ptBR", {
     ["wn_137_edge"] = "Novo - Alertas na borda da tela: um brilho vermelho pulsa nas bordas com vida baixa, um azul com mana baixa (em combate por padrão). Limites, profundidade e intensidade em Aventura, Alertas na borda.",
     ["wn_137_xp"] = "Novo - Barra de experiência: a experiência ganha preenche a barra deslizando após cada abate, e de vez em quando um reflexo passa sobre a parte descansada.",
 })
+
+-- 1.3.7: finishing touches (tracker, bags, options window)
+TomoMod_RegisterLocale("enUS", {
+    ["opt_ot_animate"] = "Bars glide, an objective that moves lights up",
+    ["opt_ot_zone_banner"] = "Zone name above the tracker on zone change",
+    ["opt_skin_bags_new_glint"] = "Golden light on new items",
+    ["wn_137_polish"] = "New - Finishing touches: in the quest tracker the progress bar glides and an objective that moves lights up, and the new zone's name shows above it on zone change; new items in the bags get a golden light until the bags close; the options window brings its cards in one after another and its menus light up softly on hover.",
+})
+
+TomoMod_RegisterLocale("frFR", {
+    ["opt_ot_animate"] = "Barres qui glissent, objectif qui s'éclaire quand il avance",
+    ["opt_ot_zone_banner"] = "Nom de la zone au-dessus du suivi quand tu changes de zone",
+    ["opt_skin_bags_new_glint"] = "Reflet doré sur les nouveaux objets",
+    ["wn_137_polish"] = "Nouveau - Finitions : dans le suivi des quêtes, la barre de progression glisse et l'objectif qui avance s'éclaire, et le nom de la nouvelle zone s'affiche au-dessus quand tu en changes ; les nouveaux objets des sacs ont un reflet doré jusqu'à la fermeture des sacs ; la fenêtre des options fait arriver ses cartes l'une après l'autre et ses menus s'éclairent en douceur au survol.",
+})
+
+TomoMod_RegisterLocale("deDE", {
+    ["opt_ot_animate"] = "Leisten gleiten, ein fortschreitendes Ziel leuchtet auf",
+    ["opt_ot_zone_banner"] = "Zonenname über der Questverfolgung beim Zonenwechsel",
+    ["opt_skin_bags_new_glint"] = "Goldenes Licht auf neuen Gegenständen",
+    ["wn_137_polish"] = "Neu - Feinschliff: In der Questverfolgung gleitet der Fortschrittsbalken und ein fortschreitendes Ziel leuchtet auf, beim Zonenwechsel erscheint der Name der neuen Zone darüber; neue Gegenstände in den Taschen leuchten golden, bis die Taschen geschlossen werden; das Optionsfenster lässt seine Karten nacheinander erscheinen und seine Menüs leuchten beim Überfahren sanft auf.",
+})
+
+TomoMod_RegisterLocale("esES", {
+    ["opt_ot_animate"] = "Las barras se deslizan, el objetivo que avanza se ilumina",
+    ["opt_ot_zone_banner"] = "Nombre de la zona sobre el seguimiento al cambiar de zona",
+    ["opt_skin_bags_new_glint"] = "Brillo dorado en los objetos nuevos",
+    ["wn_137_polish"] = "Nuevo - Detalles finales: en el seguimiento de misiones la barra de progreso se desliza y el objetivo que avanza se ilumina, y el nombre de la nueva zona aparece encima al cambiar de zona; los objetos nuevos de las bolsas tienen un brillo dorado hasta cerrar las bolsas; la ventana de opciones muestra sus tarjetas una tras otra y sus menús se iluminan suavemente al pasar el ratón.",
+})
+
+TomoMod_RegisterLocale("itIT", {
+    ["opt_ot_animate"] = "Le barre scorrono, l'obiettivo che avanza si illumina",
+    ["opt_ot_zone_banner"] = "Nome della zona sopra il tracciamento al cambio di zona",
+    ["opt_skin_bags_new_glint"] = "Riflesso dorato sui nuovi oggetti",
+    ["wn_137_polish"] = "Nuovo - Rifiniture: nel tracciamento delle missioni la barra di avanzamento scorre e l'obiettivo che avanza si illumina, e al cambio di zona il nome della nuova zona appare sopra; i nuovi oggetti nelle borse hanno un riflesso dorato fino alla chiusura delle borse; la finestra delle opzioni fa arrivare le sue schede una dopo l'altra e i suoi menu si illuminano dolcemente al passaggio del mouse.",
+})
+
+TomoMod_RegisterLocale("ptBR", {
+    ["opt_ot_animate"] = "As barras deslizam, o objetivo que avança se ilumina",
+    ["opt_ot_zone_banner"] = "Nome da zona acima do rastreador ao mudar de zona",
+    ["opt_skin_bags_new_glint"] = "Brilho dourado nos itens novos",
+    ["wn_137_polish"] = "Novo - Acabamentos: no rastreador de missões a barra de progresso desliza e o objetivo que avança se ilumina, e o nome da nova zona aparece acima ao mudar de zona; os itens novos nas bolsas têm um brilho dourado até fechar as bolsas; a janela de opções traz seus cartões um após o outro e seus menus se iluminam suavemente ao passar o mouse.",
+})
+

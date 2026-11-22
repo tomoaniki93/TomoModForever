@@ -88,6 +88,8 @@ local DEFAULTS = {
     combatAlpha = 1,
     itemSide = "left",          -- "left" | "right"
     scale = 1.0,
+    animateProgress = true,     -- [1.3.7] bars glide, objectives flash when they move
+    zoneBanner = true,          -- [1.3.7] zone name above the tracker on zone change
 }
 
 local function S()
@@ -529,6 +531,7 @@ local state = {
     rendered     = false,
     seen         = {},        -- questIDs drawn in the last pass
     wasComplete  = {},
+    objText      = {},          -- [1.3.7] questID -> objective texts, for the flash
 }
 local blockByID = {}
 local RequestRefresh -- forward
@@ -702,6 +705,7 @@ local function Forget(questID)
     local cs = CS()
     cs.pinned[questID], cs.hidden[questID] = nil, nil
     state.wasComplete[questID] = nil
+    state.objText[questID] = nil
 end
 
 -- =====================================================================
@@ -993,6 +997,17 @@ local function GetLine(b, i)
     ln.fs = b:CreateFontString(nil, "OVERLAY")
     ln.fs:SetJustifyH("LEFT")
     ln.fs:SetWordWrap(true)
+    -- [1.3.7] Gold glint behind a line whose objective just moved.
+    ln.flash = b:CreateTexture(nil, "BACKGROUND", nil, 2)
+    ln.flash:SetPoint("TOPLEFT", ln.fs, "TOPLEFT", -10, 1)
+    ln.flash:SetPoint("BOTTOMRIGHT", ln.fs, "BOTTOMRIGHT", 4, -1)
+    SetColor(ln.flash, C_GOLD, 0.45)
+    ln.flash:SetAlpha(0)
+    local ag = ln.flash:CreateAnimationGroup()
+    local a1 = ag:CreateAnimation("Alpha"); a1:SetFromAlpha(0); a1:SetToAlpha(1); a1:SetDuration(0.15); a1:SetOrder(1)
+    local a2 = ag:CreateAnimation("Alpha"); a2:SetFromAlpha(1); a2:SetToAlpha(0); a2:SetDuration(0.8);  a2:SetOrder(2)
+    ag:SetScript("OnFinished", function() ln.flash:SetAlpha(0) end)
+    ln.flashAnim = ag
     b.lines[i] = ln
     return ln
 end
@@ -1063,7 +1078,11 @@ local function FillQuestBlock(b, q, width)
         b.bar:ClearAllPoints()
         b.bar:SetPoint("TOPLEFT", b, "TOPLEFT", indent, y + 1)
         b.bar:SetPoint("TOPRIGHT", b, "TOPRIGHT", 0, y + 1)
-        b.bar:SetValue(q.progress)
+        -- [1.3.7] Same quest: the bar glides to its new value.
+        local glide = b.barQuest == q.id and Opt("animateProgress") and AnimAny()
+            and Enum and Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.ExponentialEaseOut
+        if not (glide and pcall(b.bar.SetValue, b.bar, q.progress, glide)) then b.bar:SetValue(q.progress) end
+        b.barQuest = q.id
         b.bar:Show()
         y = y - 4
     else
@@ -1083,11 +1102,17 @@ local function FillQuestBlock(b, q, width)
         lines[1] = { text = text, color = C_GREEN }
     else
         local hideDone = Opt("hideCompletedObjectives")
-        for _, o in ipairs(q.objectives) do
+        -- [1.3.7] An objective whose text changed since last time moved.
+        local prev = state.objText[q.id]
+        local now = {}
+        for i, o in ipairs(q.objectives) do
+            now[i] = o.text
+            local moved = prev ~= nil and prev[i] ~= nil and prev[i] ~= o.text
             if not (hideDone and o.done) then
-                lines[#lines + 1] = { text = o.text, color = o.done and C_GREEN or C_OBJ, done = o.done }
+                lines[#lines + 1] = { text = o.text, color = o.done and C_GREEN or C_OBJ, done = o.done, moved = moved }
             end
         end
+        state.objText[q.id] = now
     end
 
     local lineW = math.max(width - indent - 8, 40)
@@ -1104,6 +1129,10 @@ local function FillQuestBlock(b, q, width)
         ln.dot:ClearAllPoints()
         ln.dot:SetPoint("TOPLEFT", b, "TOPLEFT", indent + 1, y - math.floor(oSize / 2))
         ln.dot:Show()
+        if info.moved and Opt("animateProgress") and AnimAny() then
+            if ln.flashAnim:IsPlaying() then ln.flashAnim:Stop() end
+            ln.flashAnim:Play()
+        end
         local h = ln.fs:GetStringHeight()
         if not h or h < oSize then h = oSize + 1 end
         y = y - h - 2
@@ -1870,7 +1899,56 @@ local function OnCombatEnd()
     Refresh()
 end
 
+-- [1.3.7] Zone banner: the new zone's name rises above the tracker for a
+-- moment on zone change (not on login, not with animations off).
+local zoneBanner, lastZone
+local function ShowZoneBanner()
+    local zone = GetRealZoneText and GetRealZoneText()
+    if not zone or zone == "" or Secret(zone) then return end
+    local first = lastZone == nil
+    if zone == lastZone then return end
+    lastZone = zone
+    if first or not (active and root and root:IsShown() and root:GetAlpha() > 0) then return end
+    if not (Opt("zoneBanner") and AnimAny()) then return end
+    if not zoneBanner then
+        zoneBanner = CreateFrame("Frame", nil, root)
+        zoneBanner:SetSize(10, 22)
+        zoneBanner:EnableMouse(false)
+        zoneBanner.text = zoneBanner:CreateFontString(nil, "OVERLAY")
+        Font(zoneBanner.text, FONT_BOLD, 13)
+        zoneBanner.text:SetPoint("BOTTOMLEFT", zoneBanner, "BOTTOMLEFT", 2, 4)
+        zoneBanner.text:SetTextColor(C_GOLD[1], C_GOLD[2], C_GOLD[3], 1)
+        zoneBanner.text:SetShadowOffset(1, -1)
+        local line = zoneBanner:CreateTexture(nil, "ARTWORK")
+        line:SetHeight(1)
+        line:SetPoint("BOTTOMLEFT", zoneBanner, "BOTTOMLEFT", 0, 1)
+        line:SetPoint("BOTTOMRIGHT", zoneBanner, "BOTTOMRIGHT", 0, 1)
+        line:SetTexture("Interface\\Buttons\\WHITE8x8")
+        local ok = CreateColor and pcall(line.SetGradient, line, "HORIZONTAL",
+            CreateColor(C_GOLD[1], C_GOLD[2], C_GOLD[3], 0.9), CreateColor(C_GOLD[1], C_GOLD[2], C_GOLD[3], 0))
+        if not ok then SetColor(line, C_GOLD, 0.5) end
+        zoneBanner:Hide()
+        local ag = zoneBanner:CreateAnimationGroup()
+        local a1 = ag:CreateAnimation("Alpha"); a1:SetFromAlpha(0); a1:SetToAlpha(1); a1:SetDuration(0.3); a1:SetOrder(1)
+        local mv = ag:CreateAnimation("Translation"); mv:SetOffset(0, 6); mv:SetDuration(0.3); mv:SetSmoothing("OUT"); mv:SetOrder(1)
+        local a2 = ag:CreateAnimation("Alpha"); a2:SetFromAlpha(1); a2:SetToAlpha(0); a2:SetDuration(0.7); a2:SetStartDelay(2.2); a2:SetOrder(2)
+        ag:SetScript("OnFinished", function() zoneBanner:Hide() end)
+        zoneBanner.anim = ag
+    end
+    zoneBanner.text:SetText(zone)
+    zoneBanner:ClearAllPoints()
+    zoneBanner:SetPoint("BOTTOMLEFT", root, "TOPLEFT", 0, 2)
+    zoneBanner:SetPoint("BOTTOMRIGHT", root, "TOPRIGHT", 0, 2)
+    if zoneBanner.anim:IsPlaying() then zoneBanner.anim:Stop() end
+    zoneBanner:SetAlpha(1)
+    zoneBanner:Show()
+    zoneBanner.anim:Play()
+end
+
 ev:SetScript("OnEvent", function(_, event, ...)
+    if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
+        ShowZoneBanner()
+    end
     if event == "PLAYER_REGEN_DISABLED" then
         ApplyAlpha()
         return

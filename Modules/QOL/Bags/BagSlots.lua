@@ -313,6 +313,72 @@ function Slots:EnsurePool()
     end
 end
 
+-- [1.3.7] New items: a golden light sweeps over the icon every few
+-- seconds (full animations), a soft gold veil otherwise. Built on the first
+-- new item a slot shows; nothing on Blizzard's secure button.
+local function NewGlint(wrapper)
+    local g = wrapper.glint
+    if g then return g end
+    g = CreateFrame("Frame", nil, wrapper)
+    g:SetAllPoints(wrapper.itemIcon)
+    g:SetFrameLevel(wrapper:GetFrameLevel() + 2)
+    g:SetClipsChildren(true)
+    g:EnableMouse(false)
+    g.veil = g:CreateTexture(nil, "OVERLAY", nil, 1)
+    g.veil:SetAllPoints()
+    g.veil:SetColorTexture(1, 0.82, 0.30, 0.16)
+    local band = g:CreateTexture(nil, "OVERLAY", nil, 2)
+    band:SetTexture(WHITE)
+    band:SetSize(14, 80)
+    band:SetPoint("CENTER", g, "LEFT", -12, 0)
+    band:SetRotation(math.rad(25))
+    local ok = CreateColor and pcall(band.SetGradient, band, "HORIZONTAL",
+        CreateColor(1, 0.86, 0.40, 0), CreateColor(1, 0.92, 0.55, 0.85))
+    if not ok then band:SetColorTexture(1, 0.88, 0.45, 0.5) end
+    g.band = band
+    local ag = band:CreateAnimationGroup()
+    ag:SetLooping("REPEAT")
+    local mv = ag:CreateAnimation("Translation")
+    mv:SetDuration(0.7)
+    mv:SetSmoothing("IN_OUT")
+    mv:SetOrder(1)
+    local wait = ag:CreateAnimation("Alpha")
+    wait:SetFromAlpha(1); wait:SetToAlpha(1)
+    wait:SetDuration(2.2)
+    wait:SetOrder(2)
+    g.anim, g.move = ag, mv
+    g:Hide()
+    wrapper.glint = g
+    return g
+end
+
+local function SetNewGlint(wrapper, on, size)
+    if not on then
+        local g = wrapper.glint
+        if g and g:IsShown() then g.anim:Stop(); g:Hide() end
+        return
+    end
+    local g = NewGlint(wrapper)
+    local U = TomoMod_Utils
+    local full = not (U and U.AnimFull) or U.AnimFull()
+    g.band:SetHeight(size * 2)
+    g.move:SetOffset(size + 24, 0)
+    g.band:SetShown(full)
+    g.veil:SetShown(not full)
+    g:Show()
+    if full then
+        if not g.anim:IsPlaying() then g.anim:Play() end
+    else
+        g.anim:Stop()
+    end
+end
+
+local function IsNew(item)
+    if not (C_NewItems and C_NewItems.IsNewItem and item.bagID and item.slotID) then return false end
+    local ok, v = pcall(C_NewItems.IsNewItem, item.bagID, item.slotID)
+    return ok and v == true
+end
+
 function Slots:Render(wrapper, item)
     local button = wrapper.button
     if not button then return end
@@ -358,6 +424,7 @@ function Slots:Render(wrapper, item)
         -- leave its gold border on the slot it came from.
         if wrapper.questBorder then wrapper.questBorder:Hide() end
         if wrapper.questBang then wrapper.questBang:Hide() end
+        SetNewGlint(wrapper, false)
         button:SetAlpha(1)
         button:EnableMouse(true)
         return
@@ -428,6 +495,7 @@ function Slots:Render(wrapper, item)
         wrapper.ilvlPlate:Hide()
     end
     wrapper.pin:SetShown(Bags.Modules.Data:IsPinned(item.itemID))
+    SetNewGlint(wrapper, db.newGlint ~= false and IsNew(item), size)
 
     if wrapper.upgrade then wrapper.upgrade:Hide() end
 

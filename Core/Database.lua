@@ -127,6 +127,8 @@ TomoMod_Defaults = {
         combatAlpha = 1,
         itemSide = "left",        -- quest item buttons: "left" | "right"
         scale = 1.0,
+        animateProgress = true,   -- [1.3.7] bars glide, objectives flash when they move
+        zoneBanner = true,        -- [1.3.7] zone name above the tracker on zone change
         position = { point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = -110, y = -260 },
     },
     rareAlert = {

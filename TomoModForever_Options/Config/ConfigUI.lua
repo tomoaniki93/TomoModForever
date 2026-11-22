@@ -364,6 +364,7 @@ function C.SwitchCategory(key)
         entry.holder:SetAllPoints(content)
         entry.holder:Show()
         if not C._noGlide and K.Animated() and TomoMod_Utils.SlideIn then TomoMod_Utils.SlideIn(entry.holder, 16, 0, 0.18) end
+        if not C._noGlide and K.PlayEntrance then K.PlayEntrance(entry.panel) end
     end
     if def.onShow then pcall(def.onShow) end
     SetCrumb(def)
@@ -479,6 +480,15 @@ local function NavRow(parent, def)
     bar:SetPoint("BOTTOMLEFT")
     bar:SetColorTexture(TH.accent[1], TH.accent[2], TH.accent[3], 1)
     bar:Hide()
+    -- [1.3.7] Hover wash that fades, and an accent bar that grows from the
+    -- middle when the page becomes the current one.
+    local wash = b:CreateTexture(nil, "BACKGROUND", nil, 1)
+    wash:SetAllPoints()
+    wash:SetColorTexture(TH.accent[1], TH.accent[2], TH.accent[3], 0.07)
+    local hover = K.HoverFade and K.HoverFade(wash, 1, 0.12)
+    local grow = bar:CreateAnimationGroup()
+    local sc = grow:CreateAnimation("Scale")
+    sc:SetScaleFrom(1, 0.1); sc:SetScaleTo(1, 1); sc:SetDuration(0.18); sc:SetSmoothing("OUT")
     local t = b:CreateFontString(nil, "OVERLAY")
     t:SetFont(FONT, 11, "")
     t:SetPoint("LEFT", def.section == "home" and 14 or 22, 0)
@@ -488,6 +498,7 @@ local function NavRow(parent, def)
     b.SetActive = function(_, on)
         if on then
             bg:SetColorTexture(TH.accent[1], TH.accent[2], TH.accent[3], 0.14)
+            if not bar:IsShown() and K.Animated() then grow:Play() end
             bar:Show()
             t:SetTextColor(1, 0.82, 0, 1)
         else
@@ -497,10 +508,14 @@ local function NavRow(parent, def)
         end
     end
     b:SetScript("OnEnter", function()
-        if current ~= def.key then bg:SetColorTexture(TH.accent[1], TH.accent[2], TH.accent[3], 0.06) end
+        if hover then hover:Set(current ~= def.key)
+        elseif current ~= def.key then bg:SetColorTexture(TH.accent[1], TH.accent[2], TH.accent[3], 0.06) end
         if def.locate then K.Locate(def.locate, def.label, true) end
     end)
-    b:SetScript("OnLeave", function() b:SetActive(current == def.key) end)
+    b:SetScript("OnLeave", function()
+        if hover then hover:Set(false) end
+        b:SetActive(current == def.key)
+    end)
     b:SetScript("OnClick", function() C.SwitchCategory(def.key) end)
     b:SetActive(false)
     return b
@@ -524,6 +539,15 @@ local function NavHead(parent, sec)
     line:SetPoint("BOTTOMLEFT", 10, 0)
     line:SetPoint("BOTTOMRIGHT", -10, 0)
     line:SetColorTexture(TH.border[1], TH.border[2], TH.border[3], 0.6)
+    -- [1.3.7] The section title brightens softly on hover.
+    local glow = b:CreateTexture(nil, "BACKGROUND")
+    glow:SetAllPoints()
+    glow:SetColorTexture(TH.accent[1], TH.accent[2], TH.accent[3], 0.05)
+    local hover = K.HoverFade and K.HoverFade(glow, 1, 0.15)
+    if hover then
+        b:SetScript("OnEnter", function() hover:Set(true) end)
+        b:SetScript("OnLeave", function() hover:Set(false) end)
+    end
     b:SetScript("OnClick", function()
         local col = GuiDB().collapsed
         col[sec.key] = not col[sec.key]

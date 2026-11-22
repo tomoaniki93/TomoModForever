@@ -241,6 +241,9 @@ function Layout:CreateFrame()
     end)
     f:SetScript("OnHide", function()
         GameTooltip:Hide()
+        -- [1.3.7] Seen once the bags close, as with Blizzard's bags: the new
+        -- items lose their golden light.
+        if C_NewItems and C_NewItems.ClearAll then pcall(C_NewItems.ClearAll) end
     end)
 end
 

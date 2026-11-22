@@ -779,6 +779,8 @@ function P:Card(title, opts)
     end
     local card, cy = W.CreateCard(self.c, title, self.y)
     if opts.tip then Tip(card, opts.tip) end
+    self.cards = self.cards or {}
+    self.cards[#self.cards + 1] = card
     local b = NewBuilder(card.inner, cy)
     local page = self
     b.Done = function(me)
@@ -825,8 +827,13 @@ function P:Hero(title, text, locate, locateLabel)
         bt:SetPoint("CENTER")
         bt:SetTextColor(1, 0.82, 0, 1)
         bt:SetText(T("Montre-moi", "Show me"))
-        btn:SetScript("OnEnter", function(s) s:SetBackdropColor(0.30, 0.22, 0.06, 1) end)
-        btn:SetScript("OnLeave", function(s) s:SetBackdropColor(0.16, 0.12, 0.05, 1) end)
+        -- [1.3.7] Soft golden hover.
+        local hl = btn:CreateTexture(nil, "ARTWORK")
+        hl:SetPoint("TOPLEFT", 1, -1); hl:SetPoint("BOTTOMRIGHT", -1, 1)
+        hl:SetColorTexture(1, 0.82, 0.25, 0.16)
+        local hv = K.HoverFade(hl, 1, 0.14)
+        btn:SetScript("OnEnter", function() hv:Set(true) end)
+        btn:SetScript("OnLeave", function() hv:Set(false) end)
         btn:SetScript("OnClick", function() K.Locate(locate, locateLabel or title) end)
         W.SetTooltip(btn, T("Fait clignoter l'élément réel à l'écran.", "Pulses the real element on screen."))
     end
@@ -834,6 +841,8 @@ function P:Hero(title, text, locate, locateLabel)
     local dh = d:GetStringHeight() or 13
     local height = math.max(54, 30 + dh + 12)
     f:SetHeight(height)
+    self.cards = self.cards or {}
+    self.cards[#self.cards + 1] = f
     self.y = self.y - height - 10
     return f
 end
@@ -851,6 +860,61 @@ function P:Finish()
     end
     self.c:SetHeight(math.abs(self.y) + 24)
     if self.scroll.UpdateScroll then self.scroll.UpdateScroll() end
+    self.scroll._tmCards = self.cards
+end
+
+-- [1.3.7] Page entrance: the hero and the cards rise into place one after
+-- another (a few hundredths of a second apart, the first eight only).
+-- Engine-side animations; nothing moves for good, the layout is untouched.
+local STAGGER_MAX, STAGGER_STEP = 8, 0.045
+
+local function RiseAnim(f)
+    local ag = f._tmRise
+    if ag then return ag end
+    ag = f:CreateAnimationGroup()
+    local out = ag:CreateAnimation("Translation"); out:SetOffset(0, -10); out:SetDuration(0); out:SetOrder(1)
+    local hide = ag:CreateAnimation("Alpha"); hide:SetFromAlpha(0); hide:SetToAlpha(0); hide:SetDuration(0); hide:SetOrder(1)
+    local back = ag:CreateAnimation("Translation"); back:SetOffset(0, 10); back:SetDuration(0.22); back:SetSmoothing("OUT"); back:SetOrder(2)
+    local fade = ag:CreateAnimation("Alpha"); fade:SetFromAlpha(0); fade:SetToAlpha(1); fade:SetDuration(0.22); fade:SetSmoothing("OUT"); fade:SetOrder(2)
+    ag._back, ag._fade = back, fade
+    f._tmRise = ag
+    return ag
+end
+
+function K.PlayEntrance(panel)
+    local list = panel and panel._tmCards
+    if not (list and K.Animated()) then return end
+    for i, f in ipairs(list) do
+        if i > STAGGER_MAX then break end
+        local ag = RiseAnim(f)
+        local delay = (i - 1) * STAGGER_STEP
+        ag._back:SetStartDelay(delay)
+        ag._fade:SetStartDelay(delay)
+        if ag:IsPlaying() then ag:Stop() end
+        ag:Play()
+    end
+end
+
+--- [1.3.7] Soft hover: a texture fades in and out instead of switching.
+function K.HoverFade(tex, onAlpha, duration)
+    if not (tex and tex.CreateAnimationGroup) then return nil end
+    local h = { tex = tex, on = onAlpha or 1, d = duration or 0.12 }
+    local ag = tex:CreateAnimationGroup()
+    local a = ag:CreateAnimation("Alpha")
+    a:SetSmoothing("OUT")
+    ag:SetToFinalAlpha(true)
+    h.ag, h.a = ag, a
+    function h:Set(on)
+        local to = on and self.on or 0
+        local from = self.tex:GetAlpha()
+        if self.ag:IsPlaying() then self.ag:Stop() end
+        if not K.Animated() then self.tex:SetAlpha(to) return end
+        self.a:SetFromAlpha(from); self.a:SetToAlpha(to); self.a:SetDuration(self.d)
+        self.tex:SetAlpha(to)
+        self.ag:Play()
+    end
+    tex:SetAlpha(0)
+    return h
 end
 
 -- build(page) fills the page; returns the scroll container the shell shows.
