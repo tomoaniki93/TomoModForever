@@ -86,3 +86,41 @@ TomoMod_RegisterLocale("ptBR", {
     ["wn_137_polish"] = "Novo - Acabamentos: no rastreador de missões a barra de progresso desliza e o objetivo que avança se ilumina, e o nome da nova zona aparece acima ao mudar de zona; os itens novos nas bolsas têm um brilho dourado até fechar as bolsas; a janela de opções traz seus cartões um após o outro e seus menus se iluminam suavemente ao passar o mouse.",
 })
 
+
+-- 1.3.7: group members in the quest tracker tooltip
+TomoMod_RegisterLocale("enUS", {
+    ["ot_party"] = "Group",
+    ["ot_party_on"] = "On this quest",
+    ["ot_party_off"] = "Not on it",
+})
+
+TomoMod_RegisterLocale("frFR", {
+    ["ot_party"] = "Groupe",
+    ["ot_party_on"] = "A cette quête",
+    ["ot_party_off"] = "Ne l'a pas",
+})
+
+TomoMod_RegisterLocale("deDE", {
+    ["ot_party"] = "Gruppe",
+    ["ot_party_on"] = "Hat die Quest",
+    ["ot_party_off"] = "Hat sie nicht",
+})
+
+TomoMod_RegisterLocale("esES", {
+    ["ot_party"] = "Grupo",
+    ["ot_party_on"] = "Tiene la misión",
+    ["ot_party_off"] = "No la tiene",
+})
+
+TomoMod_RegisterLocale("itIT", {
+    ["ot_party"] = "Gruppo",
+    ["ot_party_on"] = "Ha la missione",
+    ["ot_party_off"] = "Non ce l'ha",
+})
+
+TomoMod_RegisterLocale("ptBR", {
+    ["ot_party"] = "Grupo",
+    ["ot_party_on"] = "Tem a missão",
+    ["ot_party_off"] = "Não tem",
+})
+

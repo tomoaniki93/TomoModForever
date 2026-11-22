@@ -835,6 +835,39 @@ local function AnchorTooltip(owner)
     end
 end
 
+-- [1.3.7] Group members on the same quest (C_QuestLog.IsUnitOnQuest), as
+-- the game's own tracker showed: name in class colour, a check or a cross.
+local READY_TEX   = "|TInterface\\RaidFrame\\ReadyCheck-Ready:14:14|t"
+local NOTREADY_TEX = "|TInterface\\RaidFrame\\ReadyCheck-NotReady:14:14|t"
+
+local function AddPartyLines(q)
+    if not (C_QuestLog and C_QuestLog.IsUnitOnQuest) or not IsInGroup or not IsInGroup() then return end
+    if IsInRaid and IsInRaid() then return end
+    local lines = {}
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists(unit) then
+            local name = UnitName(unit)
+            local ok, on = pcall(C_QuestLog.IsUnitOnQuest, unit, q.id)
+            if name and not Secret(name) and ok and not Secret(on) then
+                local _, class = UnitClass(unit)
+                local c = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
+                lines[#lines + 1] = { name = name, on = on and true or false, c = c }
+            end
+        end
+    end
+    if #lines == 0 then return end
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine(T("ot_party", "Group"), C_GOLD[1], C_GOLD[2], C_GOLD[3])
+    for _, l in ipairs(lines) do
+        local r, g, b = 0.9, 0.9, 0.9
+        if l.c then r, g, b = l.c.r, l.c.g, l.c.b end
+        GameTooltip:AddDoubleLine((l.on and READY_TEX or NOTREADY_TEX) .. " " .. l.name,
+            l.on and T("ot_party_on", "On this quest") or T("ot_party_off", "Not on it"),
+            r, g, b, l.on and C_GREEN[1] or 0.6, l.on and C_GREEN[2] or 0.6, l.on and C_GREEN[3] or 0.6)
+    end
+end
+
 local function QuestTooltip(owner, q)
     if not Opt("showTooltips") then return end
     AnchorTooltip(owner)
@@ -851,6 +884,7 @@ local function QuestTooltip(owner, q)
             GameTooltip:AddLine(o.text, c[1], c[2], c[3], true)
         end
     end
+    AddPartyLines(q)
     GameTooltip:AddLine(" ")
     local h = 0.55
     GameTooltip:AddLine(T("ot_hint_open", "Left click: open the quest"), h, h, h)

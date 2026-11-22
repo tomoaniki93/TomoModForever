@@ -146,7 +146,8 @@ NavDistFS:SetPoint("TOP", Navigator, "BOTTOM", 0, -2)
 -- ══ State ════════════════════════════════════════════════════════════
 
 local navFrame       = nil   -- C_Navigation.GetFrame()
-local navFrameHidden = false -- whether we hid the Blizzard navFrame icon
+local navFrameHidden = nil   -- [1.3.7] the nav frame we made transparent (a new one can replace it)
+local anchoredTo     = nil   -- [1.3.7] the nav frame the beacon is anchored to
 local sessionName    = nil   -- destination label
 local currentMode    = "HIDDEN"  -- "HIDDEN" | "WAYPOINT" | "NAVIGATOR"
 local isActive       = false
@@ -173,16 +174,17 @@ end
 
 -- Hide/show Blizzard's navigation frame icon so our custom beacon is visible
 local function HideBlizzardNavFrame()
-    if navFrame and not navFrameHidden then
+    if navFrame and navFrameHidden ~= navFrame then
+        if navFrameHidden then navFrameHidden:SetAlpha(1) end
         navFrame:SetAlpha(0)
-        navFrameHidden = true
+        navFrameHidden = navFrame
     end
 end
 
 local function ShowBlizzardNavFrame()
-    if navFrame and navFrameHidden then
-        navFrame:SetAlpha(1)
-        navFrameHidden = false
+    if navFrameHidden then
+        navFrameHidden:SetAlpha(1)
+        navFrameHidden = nil
     end
 end
 
@@ -199,10 +201,12 @@ local navCurrAngle = 0
 
 -- ══ Helper functions ═════════════════════════════════════════════════
 
+-- [1.3.7] The game's answer only: a cached frame outlived its destruction,
+-- and the beacon then followed a frame no longer on screen (fixed by a
+-- reload).
 local function GetNavFrameSafe()
     if C_Navigation and C_Navigation.GetFrame then
-        local f = C_Navigation.GetFrame()
-        if f then navFrame = f end
+        navFrame = C_Navigation.GetFrame()
     end
     return navFrame
 end
@@ -267,6 +271,7 @@ end
 
 local function AnchorBeacon()
     if not navFrame then return end
+    anchoredTo = navFrame
     local size = BeaconSize()
     Beacon:ClearAllPoints()
     Beacon:SetPoint("CENTER", navFrame, "CENTER")
@@ -402,6 +407,11 @@ Ticker:SetScript("OnUpdate", function(_, elapsed)
         WP.SetMode("HIDDEN")
         return
     end
+    -- [1.3.7] A new nav frame (path recomputed): follow it.
+    if nf ~= anchoredTo then
+        AnchorBeacon()
+        if currentMode ~= "HIDDEN" then HideBlizzardNavFrame() end
+    end
 
     local offScreen = IsOffScreen(nf)
     local newMode = offScreen and "NAVIGATOR" or "WAYPOINT"
@@ -487,8 +497,21 @@ local function SetActive(active)
     end
 end
 
+-- [1.3.7] Some reasons to stay hidden end without any event: leaving the
+-- quest area (quest blob), crossing into the waypoint's zone with "zone
+-- only". While something is tracked but the beacon is off, look again
+-- every second; the poll stops as soon as it shows or nothing is tracked.
+local recheck
 local function CheckActive()
-    SetActive(ShouldBeActive())
+    local want = ShouldBeActive()
+    SetActive(want)
+    local tracking = C_SuperTrack and C_SuperTrack.IsSuperTrackingAnything and C_SuperTrack.IsSuperTrackingAnything()
+    if tracking and not want then
+        if not recheck then recheck = C_Timer.NewTicker(1, function() CheckActive() end) end
+    elseif recheck then
+        recheck:Cancel()
+        recheck = nil
+    end
 end
 
 -- Public wrapper used by the config UI
