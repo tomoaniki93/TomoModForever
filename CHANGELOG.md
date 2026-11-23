@@ -1,6 +1,6 @@
 ## ####################################
 
-## CHANGELOG 1.3.7
+## CHANGELOG 1.3.7 - Release
 
 #### Livelier frames and bars
 
