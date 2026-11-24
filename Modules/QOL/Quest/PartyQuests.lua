@@ -264,20 +264,28 @@ end
 function PQ.Report()
     local out = {}
     local function add(t) out[#out + 1] = t end
-    add("|cffd4a64aTMF groupe|r  partage " .. (Enabled() and "on" or "off")
-        .. ", groupe " .. (InParty() and "oui" or "non") .. ", canal " .. Channel())
-    add("  envoyés " .. stats.sent .. ", refusés " .. stats.failed
-        .. ", dernier résultat " .. tostring(stats.lastResult) .. " (" .. tostring(stats.lastChannel) .. ")")
+    local L = TomoMod_L
+    local function T(key, fallback)
+        local v = L and L[key]
+        if v == nil or v == key or v == "" then return fallback end
+        return v
+    end
+    local yes, no = T("pq_rep_yes", "yes"), T("pq_rep_no", "no")
+    add(string.format(T("pq_rep_head", "|cffd4a64aTMF group|r  sharing %s, in a group %s, channel %s"),
+        Enabled() and yes or no, InParty() and yes or no, Channel()))
+    add(string.format(T("pq_rep_sent", "  sent %d, refused %d, last result %s (%s)"),
+        stats.sent, stats.failed, tostring(stats.lastResult), tostring(stats.lastChannel)))
     local mine = 0
     for _ in pairs(lastSent) do mine = mine + 1 end
-    add("  mes quêtes annoncées : " .. mine)
+    add(string.format(T("pq_rep_mine", "  my quests announced: %d"), mine))
     for i = 1, 4 do
         local unit = "party" .. i
         if UnitExists(unit) then
             local n = Short(UnitName(unit)) or "?"
             local q = 0
             if data[n] then for _ in pairs(data[n]) do q = q + 1 end end
-            add("  " .. n .. " : messages reçus " .. (stats.recv[n] or 0) .. ", quêtes connues " .. q)
+            add(string.format(T("pq_rep_member", "  %s: messages received %d, quests known %d"),
+                n, stats.recv[n] or 0, q))
         end
     end
     for _, line in ipairs(out) do print(line) end
