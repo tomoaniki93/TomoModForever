@@ -5,6 +5,7 @@
 #### Group quest progress
 
 - **Fixed** - Shared quest progress showed nothing in the first in-game test (3 players): messages sent at login or during a loading screen can be lost, and only changes were sent afterwards. Now, 5 s after each loading screen a hello and the full list go out again; a tooltip that finds a member on the quest with nothing from them asks again (at most every 15 s); a member still "Unknown" while loading no longer wipes what we had; if the client refuses the party channel the instance channel is tried (group finder groups), and the reverse. `/tmf groupe` prints what was sent, refused and received per member.
+- **Changed** - `/tmf groupe` is listed in `/tmf help`, and its report is translated in the six languages (`Locales/Locale_138.lua`).
 
 ## ####################################
 
