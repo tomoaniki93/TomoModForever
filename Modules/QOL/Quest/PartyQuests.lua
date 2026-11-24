@@ -29,6 +29,7 @@ local data = {}          -- shortName -> { [questID] = { state = "c"|"f"|nil, ob
 local lastSent = {}      -- questID -> encoded state we last announced
 local members = {}       -- shortName -> true (current party)
 local pending, fullPending = false, false
+local lastHello = 0
 
 local function Enabled()
     local db = TomoModForeverDB and TomoModForeverDB.objectiveTracker
@@ -58,9 +59,31 @@ local function Channel()
     return "PARTY"
 end
 
+-- [1.3.7] Counters for /tmf groupe (in-game check of the exchange).
+local stats = { sent = 0, failed = 0, lastResult = nil, lastChannel = nil, recv = {}, hello = 0 }
+
+local function Accepted(ok, res)
+    if not ok then return false end
+    if res == nil or res == true or res == 0 then return true end
+    local E = Enum and Enum.SendAddonMessageResult
+    return E ~= nil and res == E.Success
+end
+
+-- The group's channel first; if the client refuses it (a group made by
+-- the group finder is an "instance" group even outdoors, or the reverse),
+-- the other one.
 local function Send(msg)
     if not (C_ChatInfo and C_ChatInfo.SendAddonMessage) then return end
-    pcall(C_ChatInfo.SendAddonMessage, PREFIX, msg, Channel())
+    local first = Channel()
+    local ok, res = pcall(C_ChatInfo.SendAddonMessage, PREFIX, msg, first)
+    local used = first
+    if not Accepted(ok, res) then
+        local other = first == "PARTY" and "INSTANCE_CHAT" or "PARTY"
+        ok, res = pcall(C_ChatInfo.SendAddonMessage, PREFIX, msg, other)
+        used = other
+    end
+    stats.lastResult, stats.lastChannel = ok and tostring(res) or ("error: " .. tostring(res)), used
+    if Accepted(ok, res) then stats.sent = stats.sent + 1 else stats.failed = stats.failed + 1 end
 end
 
 -- ---------------------------------------------------------------------
@@ -162,6 +185,7 @@ local function OnMessage(msg, sender)
     local who = Short(sender)
     if not who or who == UnitName("player") then return end
     if type(msg) ~= "string" or Secret(msg) then return end
+    stats.recv[who] = (stats.recv[who] or 0) + 1
     local kind = msg:sub(1, 2)
     if kind == "1H" then
         Schedule(true)
@@ -190,6 +214,8 @@ local function ReadMembers()
             local unit = "party" .. i
             if UnitExists(unit) then
                 local n = Short(UnitName(unit))
+                -- Still loading: "Unknown" must not wipe what we know.
+                if n == UNKNOWNOBJECT or n == UNKNOWN then return false, false end
                 if n then
                     now[n] = true
                     if not members[n] then new = true end
@@ -224,6 +250,39 @@ function PQ.Get(unit, questID)
     return t and t[questID] or nil
 end
 
+--- [1.3.7] The tooltip found a member on the quest with nothing from them:
+--- ask the group again (at most every 15 s, never in combat).
+function PQ.Ask()
+    if not (Enabled() and InParty()) or InCombatLockdown() then return end
+    if GetTime() - lastHello < 15 then return end
+    lastHello = GetTime()
+    stats.hello = stats.hello + 1
+    Send("1H")
+end
+
+--- /tmf groupe: what was sent and received, to check the exchange in game.
+function PQ.Report()
+    local out = {}
+    local function add(t) out[#out + 1] = t end
+    add("|cffd4a64aTMF groupe|r  partage " .. (Enabled() and "on" or "off")
+        .. ", groupe " .. (InParty() and "oui" or "non") .. ", canal " .. Channel())
+    add("  envoyés " .. stats.sent .. ", refusés " .. stats.failed
+        .. ", dernier résultat " .. tostring(stats.lastResult) .. " (" .. tostring(stats.lastChannel) .. ")")
+    local mine = 0
+    for _ in pairs(lastSent) do mine = mine + 1 end
+    add("  mes quêtes annoncées : " .. mine)
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists(unit) then
+            local n = Short(UnitName(unit)) or "?"
+            local q = 0
+            if data[n] then for _ in pairs(data[n]) do q = q + 1 end end
+            add("  " .. n .. " : messages reçus " .. (stats.recv[n] or 0) .. ", quêtes connues " .. q)
+        end
+    end
+    for _, line in ipairs(out) do print(line) end
+end
+
 --- True once `unit` sent anything (it runs TMF with sharing on).
 function PQ.Knows(unit)
     local n = Short(UnitName(unit))
@@ -243,8 +302,19 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, _, a4)
             afterCombat = false
             if Enabled() and InParty() then Schedule(false) end
         end
-    elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
+    elseif event == "GROUP_ROSTER_UPDATE" then
         OnRoster()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        OnRoster()
+        -- [1.3.7] Messages sent during a loading screen or right at login
+        -- can be lost: once settled, ask everyone and send our list again.
+        C_Timer.After(5, function()
+            if not (Enabled() and InParty()) then return end
+            if InCombatLockdown() then afterCombat = true; fullPending = true return end
+            lastHello = GetTime()
+            Send("1H")
+            Schedule(true)
+        end)
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_REMOVED" or event == "QUEST_ACCEPTED" then
         if Enabled() and InParty() then Schedule(false) end
     end

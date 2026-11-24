@@ -373,6 +373,8 @@ SlashCmdList["TOMOMOD"] = function(msg)
         if TomoMod_CooldownForge and TomoMod_CooldownForge.DumpAura then
             TomoMod_CooldownForge.DumpAura()
         end
+    elseif msg == "groupe" or msg == "group" or msg == "party" then
+        if TomoMod_PartyQuests and TomoMod_PartyQuests.Report then TomoMod_PartyQuests.Report() end
     elseif msg:sub(1, 3) == "way" then
         if TomoMod_Waypoint then
             local args = rawMsg:sub(5)  -- preserve a waypoint's user label

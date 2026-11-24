@@ -860,6 +860,13 @@ local function AddPartyLines(q)
         end
     end
     if #lines == 0 then return end
+    -- [1.3.7] Someone on the quest but nothing from their TMF yet: ask.
+    for _, l in ipairs(lines) do
+        if l.on and not l.info and TomoMod_PartyQuests and TomoMod_PartyQuests.Ask then
+            TomoMod_PartyQuests.Ask()
+            break
+        end
+    end
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine(T("ot_party", "Group"), C_GOLD[1], C_GOLD[2], C_GOLD[3])
     for _, l in ipairs(lines) do

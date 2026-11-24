@@ -63,6 +63,12 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.8",
+        highlights = {
+            L["wn_138_party"],
+        },
+    },
+    {
         version = "1.3.7",
         highlights = {
             L["wn_137_bars"],

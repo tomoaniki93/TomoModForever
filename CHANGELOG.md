@@ -1,5 +1,13 @@
 ## ####################################
 
+## CHANGELOG 1.3.8
+
+#### Group quest progress
+
+- **Fixed** - Shared quest progress showed nothing in the first in-game test (3 players): messages sent at login or during a loading screen can be lost, and only changes were sent afterwards. Now, 5 s after each loading screen a hello and the full list go out again; a tooltip that finds a member on the quest with nothing from them asks again (at most every 15 s); a member still "Unknown" while loading no longer wipes what we had; if the client refuses the party channel the instance channel is tried (group finder groups), and the reverse. `/tmf groupe` prints what was sent, refused and received per member.
+
+## ####################################
+
 ## CHANGELOG 1.3.7 - Release
 
 #### Livelier frames and bars
