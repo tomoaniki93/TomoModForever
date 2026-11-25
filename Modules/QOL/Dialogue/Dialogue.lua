@@ -54,6 +54,32 @@ local function Font(fs, path, size, flags)
     fs:SetShadowColor(0, 0, 0, 0.85)
 end
 
+-- [1.3.9] What happened lately (events, keys, actions), for /tmf dialogue.
+local log = {}
+local function Log(msg)
+    log[#log + 1] = string.format("%.1f  %s", GetTime() % 1000, msg)
+    if #log > 30 then table.remove(log, 1) end
+end
+D.Log = Log
+
+function D.Report()
+    print("|cffd4a64aTMF dialogue|r  actif " .. tostring(D.Active and D.Active())
+        .. ", panneau " .. tostring(TomoMod_DialogueFrame and TomoMod_DialogueFrame:IsShown())
+        .. ", clavier " .. tostring(TomoMod_DialogueFrame and TomoMod_DialogueFrame:IsKeyboardEnabled())
+        .. ", scène " .. tostring(TomoMod_DialogueScene and TomoMod_DialogueScene.Active and TomoMod_DialogueScene.Active()))
+    for _, l in ipairs(log) do print("  " .. l) end
+end
+
+-- Runs a game action, logged; an error is logged and reported, never stuck.
+local function Do(name, fn)
+    Log("action " .. name)
+    local ok, err = pcall(fn)
+    if not ok then
+        Log("ERREUR " .. tostring(err))
+        geterrorhandler()(err)
+    end
+end
+
 local function Plain(v)
     if type(issecretvalue) == "function" and issecretvalue(v) then return nil end
     return v
@@ -101,6 +127,7 @@ local primaryBtn, secondaryBtn
 local current            -- current page { kind = ..., ... }
 local closeToken = 0
 local typing             -- { fs, shown, total }
+local FinishTyping       -- defined with the typewriter below
 
 local function MakeKeycap(parent)
     local k = CreateFrame("Frame", nil, parent)
@@ -120,8 +147,8 @@ local function MakeKeycap(parent)
     return k
 end
 
-local function MakeButton(parent, onClick)
-    local b = CreateFrame("Button", nil, parent)
+local function MakeButton(parent, onClick, name)
+    local b = CreateFrame("Button", name, parent)
     b:SetSize(170, 34)
     b.bg = b:CreateTexture(nil, "BACKGROUND")
     b.bg:SetAllPoints()
@@ -140,7 +167,9 @@ local function MakeButton(parent, onClick)
     b.text:SetJustifyH("LEFT")
     b:SetScript("OnEnter", function(s) if s:IsEnabled() then s.hl:Show() end end)
     b:SetScript("OnLeave", function(s) s.hl:Hide() end)
-    b:SetScript("OnClick", function(s) if s.action then s.action() end end)
+    b:SetScript("OnClick", function(s)
+        if s.action then FinishTyping(); Do("clic " .. tostring(s.text:GetText()), s.action) end
+    end)
     function b:Set(label, key, action, enabled)
         self.text:SetText(label)
         self.key:SetKey(key)
@@ -182,7 +211,7 @@ local function GetOption(i)
     o.text:SetWordWrap(false)
     o:SetScript("OnEnter", function(s) s.hl:SetAlpha(1) end)
     o:SetScript("OnLeave", function(s) s.hl:SetAlpha(0) end)
-    o:SetScript("OnClick", function(s) if s.action then s.action() end end)
+    o:SetScript("OnClick", function(s) if s.action then FinishTyping(); Do("clic choix " .. i, s.action) end end)
     options[i] = o
     return o
 end
@@ -193,12 +222,16 @@ end
 local typer = CreateFrame("Frame")
 typer:Hide()
 
-local function FinishTyping()
+-- [1.3.9] The whole text: the gradient starts past the last character.
+-- (A length of 0 is refused by the client: that error, raised every frame,
+-- kept the text "being written" forever, so Space never got to the button
+-- and closing never reached the scene.)
+FinishTyping = function()
     if not typing then return false end
-    typing.fs:SetAlphaGradient(0, 0)
-    typing.fs:SetAlphaGradient(typing.total + 50, 1)
+    local t = typing
     typing = nil
     typer:Hide()
+    pcall(t.fs.SetAlphaGradient, t.fs, t.total + 50, 1)
     return true
 end
 
@@ -210,7 +243,7 @@ typer:SetScript("OnUpdate", function(self, dt)
         FinishTyping()
         return
     end
-    typing.fs:SetAlphaGradient(math.floor(typing.shown), 12)
+    if not pcall(typing.fs.SetAlphaGradient, typing.fs, math.floor(typing.shown), 12) then FinishTyping() end
 end)
 
 local function StartTyping(fs, text)
@@ -219,8 +252,8 @@ local function StartTyping(fs, text)
     if not (db and db.typewriter ~= false and AnimAny()) or not fs.SetAlphaGradient then return end
     local total = #(text or "")
     if total < 2 then return end
+    if not pcall(fs.SetAlphaGradient, fs, 0, 12) then return end
     typing = { fs = fs, shown = 0, total = total }
-    fs:SetAlphaGradient(0, 12)
     typer:Show()
 end
 
@@ -346,10 +379,24 @@ end
 -- ---------------------------------------------------------------------
 -- Opening and closing
 -- ---------------------------------------------------------------------
+-- Keys: the panel listens to the keyboard (Space, 1 to 9, Escape), and as a
+-- second way Space is also bound to the main button while the panel is up
+-- (if the panel's own listening misses it). Out of combat only; the binding
+-- goes when the panel hides or a fight starts.
+local bindOwner = CreateFrame("Frame")
+local function Bind(on)
+    if InCombatLockdown() then return end
+    ClearOverrideBindings(bindOwner)
+    if on then SetOverrideBindingClick(bindOwner, true, "SPACE", "TomoMod_DialoguePrimary") end
+end
+D.Unbind = function() Bind(false) end
+
 local function KeysOn(on)
     if not panel then return end
     if InCombatLockdown() then panel:EnableKeyboard(false) return end
+    panel:SetPropagateKeyboardInput(true)
     panel:EnableKeyboard(on and true or false)
+    Bind(on)
 end
 
 local function Open(page)
@@ -369,7 +416,7 @@ local function Open(page)
 end
 
 local function HideNow()
-    FinishTyping()
+    pcall(FinishTyping)
     current = nil
     if panel then panel:Hide() end
     local S = TomoMod_DialogueScene
@@ -415,6 +462,8 @@ local function QuestLabel(title, level)
     return title or ""
 end
 
+local consumeGossipClose = false
+
 local function GossipPage()
     local choices = {}
     local G = C_GossipInfo
@@ -422,14 +471,14 @@ local function GossipPage()
         choices[#choices + 1] = {
             text = QuestLabel(q.title, q.questLevel), icon = q.isComplete and ICON_ACTIVE or ICON_PENDING,
             color = q.isComplete and GREEN or DIM,
-            action = function() G.SelectActiveQuest(q.questID) end,
+            action = function() consumeGossipClose = true; G.SelectActiveQuest(q.questID) end,
         }
     end
     for _, q in ipairs((G.GetAvailableQuests and G.GetAvailableQuests()) or {}) do
         choices[#choices + 1] = {
             text = QuestLabel(q.title, q.questLevel), icon = ICON_AVAILABLE,
             color = q.isTrivial and DIM or DifficultyColor(q.questLevel),
-            action = function() G.SelectAvailableQuest(q.questID) end,
+            action = function() consumeGossipClose = true; G.SelectAvailableQuest(q.questID) end,
         }
     end
     local opts = (G.GetOptions and G.GetOptions()) or {}
@@ -555,31 +604,38 @@ end
 -- ---------------------------------------------------------------------
 -- Keys
 -- ---------------------------------------------------------------------
+-- The key is kept or passed on BEFORE anything runs: an action can hide
+-- the panel, and a hidden frame no longer decides about the key it got.
 local function OnKey(self, key)
     if InCombatLockdown() then return end
-    local handled = false
+    local run
     if key == "SPACE" or key == "ENTER" then
-        handled = true
-        if not FinishTyping() and current and current.primary and current.primary.enabled ~= false then
-            current.primary.action()
+        run = function()
+            if FinishTyping() then Log("texte affiché") return end
+            local p = current and current.primary
+            if p and p.enabled ~= false then Do("bouton principal: " .. tostring(p.label), p.action)
+            else Log("bouton principal inactif") end
         end
     elseif key == "ESCAPE" then
-        handled = true
-        if current and current.secondary then current.secondary.action() else Goodbye() end
+        run = function()
+            if current and current.secondary then Do("bouton secondaire", current.secondary.action) else Goodbye() end
+        end
     else
         local n = tonumber(key)
         if n and n >= 1 and n <= 9 and current then
-            if current.rewards == "complete" and TomoMod_DialogueRewards and TomoMod_DialogueRewards.Pick then
-                handled = TomoMod_DialogueRewards.Pick(n)
-                if handled then D.Refresh(true) end
+            if current.rewards == "complete" and TomoMod_DialogueRewards and TomoMod_DialogueRewards.Pick
+                and (GetNumQuestChoices and GetNumQuestChoices() or 0) >= n then
+                run = function() TomoMod_DialogueRewards.Pick(n); D.Refresh(true) end
             elseif current.choices and current.choices[n] then
-                handled = true
-                FinishTyping()
-                current.choices[n].action()
+                run = function() FinishTyping(); Do("choix " .. n, current.choices[n].action) end
             end
         end
     end
-    self:SetPropagateKeyboardInput(not handled)
+    self:SetPropagateKeyboardInput(run == nil)
+    if run then
+        Log("touche " .. key)
+        run()
+    end
 end
 
 -- ---------------------------------------------------------------------
@@ -691,14 +747,20 @@ local function Create()
     local sa = panel.intro:CreateAnimation("Alpha"); sa:SetTarget(shine); sa:SetFromAlpha(0.9); sa:SetToAlpha(0); sa:SetDuration(0.6); sa:SetStartDelay(0.2); sa:SetOrder(2)
 
     -- footer
-    primaryBtn = MakeButton(panel)
+    primaryBtn = MakeButton(panel, nil, "TomoMod_DialoguePrimary")
     secondaryBtn = MakeButton(panel)
 
     panel:SetScript("OnKeyDown", OnKey)
     -- Escape when the keys are not ours (combat), or any other hide: the
     -- game is told the conversation is over.
     panel:SetScript("OnHide", function()
-        if not current then return end
+        Bind(false)
+        Log("panneau caché" .. (current and " (conversation ouverte : fermée)" or ""))
+        local S0 = TomoMod_DialogueScene
+        if not current then
+            if S0 and S0.Leave then S0.Leave() end
+            return
+        end
         local kind = current.kind
         current = nil
         FinishTyping()
@@ -733,15 +795,21 @@ end
 local ev = CreateFrame("Frame")
 ev:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_REGEN_DISABLED" then
+        -- Fires just before the lockdown: the Space binding can still go.
+        Bind(false)
         if panel then panel:EnableKeyboard(false) end
         return
     elseif event == "PLAYER_REGEN_ENABLED" then
-        if panel and panel:IsShown() then
-            panel:SetPropagateKeyboardInput(true)
-            panel:EnableKeyboard(true)
-        end
+        if panel and panel:IsShown() then KeysOn(true) end
         return
     elseif event == "GOSSIP_CLOSED" or event == "QUEST_FINISHED" then
+        Log("événement " .. event)
+        -- Picking a quest in a gossip closes the gossip AFTER the quest page
+        -- came: that close is not the end of the conversation.
+        if event == "GOSSIP_CLOSED" and consumeGossipClose and current and current.kind == "quest" then
+            consumeGossipClose = false
+            return
+        end
         CloseSoon()
         return
     elseif event == "QUEST_ITEM_UPDATE" or event == "GET_ITEM_INFO_RECEIVED" then
@@ -752,6 +820,8 @@ ev:SetScript("OnEvent", function(_, event, ...)
     end
     local build = BUILDERS[event]
     if not build then return end
+    Log("événement " .. event)
+    if event == "GOSSIP_SHOW" then consumeGossipClose = false end
     Create()
     -- A gossip with nothing but one quest or nothing to say still shows:
     -- the player opened it on purpose.

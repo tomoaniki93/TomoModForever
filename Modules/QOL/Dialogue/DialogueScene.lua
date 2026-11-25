@@ -25,6 +25,7 @@ local function AnimAny()
 end
 
 local inScene = false
+local watchdog            -- ticker that ends a scene left without its dialogue
 local saved = {}          -- camera values to give back
 local uiAlphaWas
 local keptIgnore = {}
@@ -138,11 +139,13 @@ local function CameraIn()
     saved.zoom = GetCameraZoom()
     local target = db.cameraZoom or 3.5
     if saved.zoom and saved.zoom > target then CameraZoomIn(saved.zoom - target) end
-    if GetCVar and SetCVar and (db.side ~= "center") then
+    -- Side offset only when asked for: it is an "experimental" camera
+    -- setting, and Forever asks the player to confirm it.
+    if GetCVar and SetCVar and db.side ~= "center" and (db.cameraShift or 0) > 0 then
         MuteCVarWarning()
         saved.shoulder = GetCVar("test_cameraOverShoulder")
         db.savedShoulder = saved.shoulder   -- given back at next login after a crash
-        SetCVar("test_cameraOverShoulder", tostring(db.cameraShift or 1.2))
+        SetCVar("test_cameraOverShoulder", tostring(db.cameraShift))
     end
 end
 
@@ -160,13 +163,27 @@ end
 -- ---------------------------------------------------------------------
 -- Scene
 -- ---------------------------------------------------------------------
+local function Owner()
+    local p, b = _G.TomoMod_DialogueFrame, _G.TomoMod_BookFrame
+    return (p and p:IsShown()) or (b and b:IsShown())
+end
+
 function S.Enter()
     if inScene then return end
     inScene = true
     local db = DB()
-    CameraIn()
+    pcall(CameraIn)
+    -- [1.3.9] The scene ends when no dialogue is on screen any more, whatever
+    -- the path that closed it.
+    if watchdog then watchdog:Cancel() end
+    watchdog = C_Timer.NewTicker(0.3, function()
+        if inScene and not Owner() then S.Leave() end
+    end)
     if db and db.hideUI ~= false and not InCombatLockdown() then
-        uiAlphaWas = UIParent:GetAlpha()
+        -- Coming back from our own fade: the alpha to restore is the one
+        -- we were fading back to, not the half-way value.
+        uiAlphaWas = (tween:IsShown() and toA) or UIParent:GetAlpha()
+        if uiAlphaWas < 0.05 then uiAlphaWas = 1 end
         KeepVisible(true)
         FadeUI(0)
         ShowBars(true)
@@ -176,7 +193,12 @@ end
 function S.Leave(instant)
     if not inScene then return end
     inScene = false
-    CameraOut()
+    if watchdog then watchdog:Cancel(); watchdog = nil end
+    -- Nothing may stop the interface from coming back.
+    local ok, err = pcall(CameraOut)
+    if not ok and TomoMod_Dialogue and TomoMod_Dialogue.Log then TomoMod_Dialogue.Log("caméra: " .. tostring(err)) end
+    -- Our fade left the interface out with nothing saved: bring it back.
+    if not uiAlphaWas and toA == 0 then uiAlphaWas = 1 end
     if uiAlphaWas then
         FadeUI(uiAlphaWas, instant)
         uiAlphaWas = nil

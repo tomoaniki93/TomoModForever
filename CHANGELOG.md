@@ -2,6 +2,11 @@
 
 ## CHANGELOG 1.3.9
 
+#### Fixes
+
+- **Fixed** - World map: `ADDON_ACTION_BLOCKED ... Button:SetPassThroughButtons()` on every map refresh (reports from 1.3.6 on). The map markers were a data provider in the map's own list, which tainted the pins the game's quest provider acquired. They now follow the map through hooks (`OnMapChanged`, `OnCanvasScaleChanged`, show and hide) and the map's providers are left alone.
+- **Fixed** - Diagnostics: more normal game messages no longer logged as UIError (report session 179): no pockets to empty, non-empty bags, ammo-only slots, line not in fishable water, while swimming, a more powerful spell already active, while moving (FR and EN).
+
 #### Quest dialogue
 
 - **New** - `Modules/QOL/Dialogue/Dialogue.lua` (`dialogue.*`): NPC conversations (`GOSSIP_SHOW`), greetings (`QUEST_GREETING`) and the quest pages (`QUEST_DETAIL`, `QUEST_PROGRESS`, `QUEST_COMPLETE`) open on one parchment panel: NPC name over a gold crest, quest title, divider, the text revealed with the engine's alpha gradient (`FontString:SetAlphaGradient`, speed in options; a click or Space shows it all), objectives, rewards, numbered choices (active quests, available quests by difficulty colour, gossip options), and two key-cap buttons. Keys out of combat: Space / Enter continue, accept or turn in, 1 to 9 choose (or pick a reward when turning in), Escape declines or leaves; Escape also works in combat (`UISpecialFrames`). Every action is the game's own function (`C_GossipInfo.Select*`, `AcceptQuest`, `CompleteQuest`, `GetQuestReward`, `CloseQuest`...).
@@ -11,6 +16,11 @@
 - **New** - `DialogueBook.lua`: `ITEM_TEXT_*` open a TMF book: parchment page tinted by material (stone, marble, silver, bronze), gold corners, title and divider, `SimpleHTML` body (plain and HTML texts), page number, arrows; Right / Space next, Left previous, Escape closes; pages slide in, the screen darkens behind (option). The game's `ItemTextFrame` loses those events while this is on.
 - **New** - Textures in `Assets/Textures/Dialogue/` drawn for TMF: parchment and page, corner filigree, divider, crest, key cap, slot, button, highlight, upgrade arrow, shine band, cinema bar.
 - **New** - Options: Adventure, Quest dialogue (position, size, text size, writing speed, detailed rewards, camera distance and offset, in dungeons, hide interface, cinema bars, books, darkened screen). Module registry entry.
+- **Fixed** (first in-game test) - Space never accepted and Escape left the scene on (interface hidden, cinema bars): the client refuses `SetAlphaGradient` with a length of 0, which the typewriter used to show the whole text. That error, raised every frame, kept the text "being written", so Space only ever tried to finish it, and closing stopped before the scene was left. The whole text is now shown with the gradient placed past the last character, every gradient call is protected, and closing always reaches the scene.
+- **Fixed** - Keys: the key is kept or passed on before the action runs (an action can hide the panel); Space is also bound to the main button while the panel is up, out of combat (binding dropped on hide and as a fight starts). Gossip -> quest: the gossip close that follows the quest page no longer closes it.
+- **Fixed** - The scene ends whenever no dialogue or book is on screen (checked every 0.3 s while a scene is on), the interface always comes back (even when a new dialogue started half-way through the fade back), and the camera restore cannot stop it.
+- **Changed** - Side offset of the camera off by default (`cameraShift` 0, reset once by a migration): on Forever the game asks to confirm its experimental camera; above 0 the options say to pick Accept.
+- **New** - `/tmf dialogue`: state of the panel, keyboard and scene, and the last 30 events, keys and actions, to check it in game.
 - Idea from DialogueUI by Peterodox (no licence, all rights reserved): nothing of its code or art is used.
 
 ## ####################################

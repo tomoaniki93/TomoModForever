@@ -434,6 +434,15 @@ local function BuildExclusionSet()
         "too close to a creature", "too close to an object", -- EN
         "plus de place pour d'autres fonctionnalit", -- FR camp: "Il n'y a plus de place pour d'autres fonctionnalites dans ce camp."
         "no more room", "no room for more",   -- EN
+        -- Report session 179 (2026-11-25): bags, ammo, fishing, swimming,
+        -- buffs, moving. FR from the report, EN equivalents.
+        "pas de poches .- vider", "no pockets to empty",
+        "sacs qui ne sont pas vides", "bags that are not empty", "non%-empty bag",
+        "ne pouvez y mettre que des", "can only put",
+        "ligne n'a pas atteint", "didn't land in fishable water", "fishable water",
+        "quand vous nagez", "while swimming",
+        "sort plus puissant est d.-j.- actif", "more powerful spell is already active",
+        "en vous d.-pla.-ant", "while moving",
     }
     for _, kw in ipairs(keywords) do
         EXCLUDED_UI_PATTERNS[#EXCLUDED_UI_PATTERNS + 1] = kw

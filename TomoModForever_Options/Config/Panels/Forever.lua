@@ -1012,6 +1012,8 @@ K.RegisterPage({
             s:Toggle(T("Caméra sur le PNJ", "Camera on the NPC"), "dialogue.camera", DLApply)
             s:Slider(T("Distance de la caméra", "Camera distance"), "dialogue.cameraZoom", 2, 8, 0.5, DLApply, "%.1f")
             s:Slider(T("Décalage sur le côté", "Side offset"), "dialogue.cameraShift", 0, 2.5, 0.1, DLApply, "%.1f")
+            s:Info(T("Au-dessus de 0, le jeu demande une fois d'accepter sa caméra expérimentale : choisis Accepter.",
+                     "Above 0, the game asks once to accept its experimental camera: pick Accept."))
             s:Toggle(T("Aussi en donjon", "Also in dungeons"), "dialogue.cameraInInstance", DLApply)
             s:Toggle(T("Masquer l'interface", "Hide the interface"), "dialogue.hideUI", DLApply,
                 T("Elle revient tout de suite si un combat commence.", "It comes back at once if a fight starts."))

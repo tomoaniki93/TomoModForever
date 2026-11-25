@@ -17,9 +17,9 @@
 --     to the chosen opacity and, with click-through, lets the mouse reach
 --     the world.
 --
--- The markers are frames of our own on the map canvas; a map data provider
--- tells map changes and zoom. Nothing of Blizzard's map is hooked or
--- written.
+-- The markers are frames of our own on the map canvas; hooks on the map
+-- tell map changes and zoom (no data provider: see Hook below). Nothing of
+-- Blizzard's map is written.
 -- =====================================================================
 
 TomoMod_MapMarkers = TomoMod_MapMarkers or {}
@@ -68,7 +68,7 @@ end
 -- Pins
 -- ---------------------------------------------------------------------
 local pins, used = {}, 0
-local provider, mapRef
+local hooked, mapRef
 
 local function Atlas(tex, kind, atlasOverride)
     local a = atlasOverride or ATLAS[kind]
@@ -273,26 +273,28 @@ end
 -- ---------------------------------------------------------------------
 -- Setup
 -- ---------------------------------------------------------------------
-local function AddProvider()
+-- [1.3.9] Hooks, not a map data provider. A provider of ours sits in the
+-- map's own provider list, and every pin the game's quest provider then
+-- acquired was tainted: SetPassThroughButtons() was blocked each time the
+-- map refreshed (reports from 1.3.6 on). Following the map from outside
+-- leaves its pins alone.
+local function Hook()
     local map = _G.WorldMapFrame
-    if provider or not (map and map.AddDataProvider and MapCanvasDataProviderMixin and CreateFromMixins) then
-        return provider ~= nil
-    end
-    provider = CreateFromMixins(MapCanvasDataProviderMixin)
-    function provider:RemoveAllData() HideAll() end
-    function provider:RefreshAllData() mapRef = self:GetMap(); Draw() end
-    function provider:OnMapChanged() self:RefreshAllData() end
-    function provider:OnCanvasScaleChanged() Rescale() end
-    map:AddDataProvider(provider)
+    if hooked then return true end
+    if not (map and map.GetCanvas and map.HookScript) then return false end
+    hooked = true
     mapRef = map
-    if map.HookScript then map:HookScript("OnShow", ApplyBehind) end
+    if map.OnMapChanged then hooksecurefunc(map, "OnMapChanged", function() Draw() end) end
+    if map.OnCanvasScaleChanged then hooksecurefunc(map, "OnCanvasScaleChanged", function() Rescale() end) end
+    map:HookScript("OnShow", function() Draw(); ApplyBehind() end)
+    map:HookScript("OnHide", function() HideAll() end)
     return true
 end
 
 function MM.ApplySettings()
     ApplyFade()
     ApplyBehind()
-    if provider then provider:RefreshAllData() end
+    if hooked and mapRef and mapRef:IsShown() then Draw() end
 end
 
 function MM.SetEnabled(v)
@@ -305,11 +307,11 @@ end
 function MM.Initialize()
     if not DB() then return end
     ApplyFade()
-    if not AddProvider() then
+    if not Hook() then
         local f = CreateFrame("Frame")
         f:RegisterEvent("ADDON_LOADED")
         f:SetScript("OnEvent", function(self, _, name)
-            if name == "Blizzard_WorldMap" and AddProvider() then self:UnregisterAllEvents() end
+            if name == "Blizzard_WorldMap" and Hook() then self:UnregisterAllEvents() end
         end)
     end
 end

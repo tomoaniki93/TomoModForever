@@ -103,7 +103,7 @@ TomoMod_Defaults = {
         rewardsDetail = true,     -- quality colours, upgrade arrow, best price purse
         camera = true,            -- zoom on the NPC
         cameraZoom = 3.5,
-        cameraShift = 1.2,        -- shoulder offset so the NPC stands beside the panel
+        cameraShift = 0,          -- shoulder offset; above 0 the game asks once to accept its "experimental camera"
         cameraInInstance = true,
         hideUI = true,            -- fade the rest of the interface
         letterbox = true,         -- cinema bars
@@ -1943,6 +1943,14 @@ local function TomoMod_RunMigrations()
         done.questTrackerWatched = true
         local ot = TomoModForeverDB.objectiveTracker
         if type(ot) == "table" then ot.displayMode = "watched" end
+    end
+
+    -- [1.3.9] The dialogue's side offset uses an "experimental" camera
+    -- setting and the game asks for a confirmation on Forever: off unless
+    -- the player turns it on.
+    if not done.dialogueShiftOff then
+        done.dialogueShiftOff = true
+        if type(TomoModForeverDB.dialogue) == "table" then TomoModForeverDB.dialogue.cameraShift = 0 end
     end
 
     if not done.otHideWhenEmpty then
