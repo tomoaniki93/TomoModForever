@@ -968,3 +968,62 @@ K.RegisterPage({
         end)
     end,
 })
+
+-- ---------------------------------------------------------------------
+-- 1.3.9: Quest dialogue
+-- ---------------------------------------------------------------------
+local function DLApply()
+    Call("TomoMod_Dialogue", "ApplySettings")
+    Call("TomoMod_DialogueBook", "ApplySettings")
+end
+
+K.RegisterPage({
+    key = "dialogue",
+    section = SECTION,
+    label = T("Dialogues de quête", "Quest dialogue"),
+    kw = "dialogue quete quest pnj npc discussion gossip parchemin camera zoom interface cacher hide livre book lettre letter recompense reward",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Dialogues de quête", "Quest dialogue"),
+                T("Les discussions avec les PNJ et les quêtes s'ouvrent sur un parchemin TMF : le texte s'écrit pendant que tu lis, les choix sont numérotés, et Espace continue, accepte ou rend la quête. La caméra se rapproche du PNJ et l'interface s'efface le temps du dialogue.",
+                  "NPC conversations and quests open on a TMF parchment: the text writes itself as you read, choices are numbered, and Space continues, accepts or turns in. The camera moves closer to the NPC and the interface fades for the length of the dialogue."))
+
+            local c = page:Card(T("Activation", "On / off"))
+            ModuleToggle(c, "dialogue", T("Remplacer les fenêtres de quête et de discussion", "Replace the quest and conversation windows"))
+            c:Info(T("Touches : Espace pour continuer, 1 à 9 pour choisir, Échap pour refuser ou partir. Se met en retrait si Immersion ou DialogueUI est chargé.",
+                     "Keys: Space to continue, 1 to 9 to choose, Escape to decline or leave. Steps aside when Immersion or DialogueUI is loaded."))
+            c:Done()
+
+            local t = page:Card(T("Panneau", "Panel"))
+            t:Seg(T("Position", "Position"), "dialogue.side", {
+                { text = T("À droite", "Right"), value = "right" },
+                { text = T("Au centre", "Center"), value = "center" },
+            }, DLApply, 2)
+            t:Slider(T("Taille", "Size"), "dialogue.scale", 0.8, 1.3, 0.05, DLApply, "%.2f")
+            t:Slider(T("Taille du texte", "Text size"), "dialogue.fontSize", 12, 18, 1, DLApply)
+            t:Toggle(T("Le texte s'écrit progressivement", "Text writes itself out"), "dialogue.typewriter", DLApply)
+            t:Slider(T("Vitesse d'écriture", "Writing speed"), "dialogue.typeSpeed", 30, 160, 5, DLApply, "%d")
+            t:Toggle(T("Récompenses détaillées", "Detailed rewards"), "dialogue.rewardsDetail", DLApply,
+                T("Couleur de qualité, flèche verte si c'est mieux que ton équipement, bourse sur le choix qui se vend le plus cher.",
+                  "Quality colour, green arrow when better than your gear, purse on the choice that sells for the most."))
+            t:Done()
+
+            local s = page:Card(T("Mise en scène", "Scene"))
+            s:Toggle(T("Caméra sur le PNJ", "Camera on the NPC"), "dialogue.camera", DLApply)
+            s:Slider(T("Distance de la caméra", "Camera distance"), "dialogue.cameraZoom", 2, 8, 0.5, DLApply, "%.1f")
+            s:Slider(T("Décalage sur le côté", "Side offset"), "dialogue.cameraShift", 0, 2.5, 0.1, DLApply, "%.1f")
+            s:Toggle(T("Aussi en donjon", "Also in dungeons"), "dialogue.cameraInInstance", DLApply)
+            s:Toggle(T("Masquer l'interface", "Hide the interface"), "dialogue.hideUI", DLApply,
+                T("Elle revient tout de suite si un combat commence.", "It comes back at once if a fight starts."))
+            s:Toggle(T("Bandes de cinéma", "Cinema bars"), "dialogue.letterbox", DLApply)
+            s:Info(T("Ta caméra (distance, décalage) revient comme elle était à la fin du dialogue.",
+                     "Your camera (distance, offset) goes back as it was when the dialogue ends."))
+            s:Done()
+
+            local b = page:Card(T("Livres et lettres", "Books and letters"))
+            b:Toggle(T("Ouvrir livres, lettres et plaques dans un livre TMF", "Open books, letters and plaques in a TMF book"), "dialogue.books", DLApply)
+            b:Toggle(T("Assombrir l'écran derrière", "Darken the screen behind"), "dialogue.bookDim", DLApply)
+            b:Done()
+        end)
+    end,
+})

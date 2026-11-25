@@ -92,6 +92,25 @@ TomoMod_Defaults = {
             position = nil,
         },
     },
+    -- [1.3.9] Quest and NPC dialogue, TMF style (Modules/QOL/Dialogue).
+    dialogue = {
+        enabled = true,
+        typewriter = true,        -- text written out as you read
+        typeSpeed = 70,           -- characters per second
+        fontSize = 14,
+        side = "right",           -- "right" | "center"
+        scale = 1.0,
+        rewardsDetail = true,     -- quality colours, upgrade arrow, best price purse
+        camera = true,            -- zoom on the NPC
+        cameraZoom = 3.5,
+        cameraShift = 1.2,        -- shoulder offset so the NPC stands beside the panel
+        cameraInInstance = true,
+        hideUI = true,            -- fade the rest of the interface
+        letterbox = true,         -- cinema bars
+        books = true,             -- books, letters, plaques
+        bookDim = true,           -- darken the screen behind a book
+    },
+
     autoQuest = {
         autoAccept = false,
         autoTurnIn = false,

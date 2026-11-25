@@ -577,6 +577,13 @@ R.Define{
 }
 
 R.Define{
+    key = "dialogue", label = "mod_dialogue", group = "qol",
+    enabledPath = "dialogue.enabled",
+    global = "TomoMod_Dialogue", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = false,
+}
+
+R.Define{
     key = "edgeAlerts", label = "mod_edgeAlerts", group = "qol",
     enabledPath = "edgeAlerts.enabled",
     global = "TomoMod_EdgeAlerts", applyMode = "setter", apply = "SetEnabled",

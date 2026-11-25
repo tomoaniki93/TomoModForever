@@ -1,11 +1,28 @@
 ## ####################################
 
+## CHANGELOG 1.3.9
+
+#### Quest dialogue
+
+- **New** - `Modules/QOL/Dialogue/Dialogue.lua` (`dialogue.*`): NPC conversations (`GOSSIP_SHOW`), greetings (`QUEST_GREETING`) and the quest pages (`QUEST_DETAIL`, `QUEST_PROGRESS`, `QUEST_COMPLETE`) open on one parchment panel: NPC name over a gold crest, quest title, divider, the text revealed with the engine's alpha gradient (`FontString:SetAlphaGradient`, speed in options; a click or Space shows it all), objectives, rewards, numbered choices (active quests, available quests by difficulty colour, gossip options), and two key-cap buttons. Keys out of combat: Space / Enter continue, accept or turn in, 1 to 9 choose (or pick a reward when turning in), Escape declines or leaves; Escape also works in combat (`UISpecialFrames`). Every action is the game's own function (`C_GossipInfo.Select*`, `AcceptQuest`, `CompleteQuest`, `GetQuestReward`, `CloseQuest`...).
+- The game's `GossipFrame` and `QuestFrame` lose their events while the module is on and get them back when it is turned off. A page that fails to build hands that conversation to the game's window. Stands down when Immersion or DialogueUI is loaded. Gossip to quest transitions keep the panel (close delayed 0.12 s, cancelled by the next page).
+- **New** - `DialogueRewards.lua`: cards in two columns, quality colour on name and slot, green arrow on usable gear with a higher item level than the worn piece (or an empty slot), purse on the choice with the best sell value, count; hover shows the item, Shift compares, Ctrl dresses up, Shift-click links. Money, experience and a taught spell as small cards; on the progress page the required items with carried / needed counts.
+- **New** - `DialogueScene.lua`: camera zooms to `dialogue.cameraZoom` and shifts with `test_cameraOverShoulder` so the NPC stands beside the panel (the experimental-setting confirmation is muted); zoom and offset go back at the end, and the offset at the next login after a crash. The interface fades (own tween on `UIParent`'s alpha) while the panel, the item tooltips and popups ignore that fade; cinema bars slide in. A fight brings the interface back at once.
+- **New** - `DialogueBook.lua`: `ITEM_TEXT_*` open a TMF book: parchment page tinted by material (stone, marble, silver, bronze), gold corners, title and divider, `SimpleHTML` body (plain and HTML texts), page number, arrows; Right / Space next, Left previous, Escape closes; pages slide in, the screen darkens behind (option). The game's `ItemTextFrame` loses those events while this is on.
+- **New** - Textures in `Assets/Textures/Dialogue/` drawn for TMF: parchment and page, corner filigree, divider, crest, key cap, slot, button, highlight, upgrade arrow, shine band, cinema bar.
+- **New** - Options: Adventure, Quest dialogue (position, size, text size, writing speed, detailed rewards, camera distance and offset, in dungeons, hide interface, cinema bars, books, darkened screen). Module registry entry.
+- Idea from DialogueUI by Peterodox (no licence, all rights reserved): nothing of its code or art is used.
+
+## ####################################
+
 ## CHANGELOG 1.3.8
 
 #### Group quest progress
 
 - **Fixed** - Shared quest progress showed nothing in the first in-game test (3 players): messages sent at login or during a loading screen can be lost, and only changes were sent afterwards. Now, 5 s after each loading screen a hello and the full list go out again; a tooltip that finds a member on the quest with nothing from them asks again (at most every 15 s); a member still "Unknown" while loading no longer wipes what we had; if the client refuses the party channel the instance channel is tried (group finder groups), and the reverse. `/tmf groupe` prints what was sent, refused and received per member.
 - **Changed** - `/tmf groupe` is listed in `/tmf help`, and its report is translated in the six languages (`Locales/Locale_138.lua`).
+- **Fixed** - Second in-game test (3 players): each sent 37 messages, none refused, none received. Members we hear nothing from 10 s after a hello are now reached by whisper as well (`WHISPER` addon messages, name with realm when it differs), and someone who writes to us by whisper gets our messages that way too; the prefix is registered again after a loading screen if the client lost it, and `CHAT_MSG_ADDON_LOGGED` is listened to as well.
+- **New** - `/tmf groupe` also shows the prefix registration result, every `TMFQ` event received before any check (own echoes, secret values, per channel) and who is on whisper, to tell a message that never arrives from one dropped on arrival.
 
 ## ####################################
 

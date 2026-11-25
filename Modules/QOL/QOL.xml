@@ -51,6 +51,10 @@
     <Include file="Quest\ObjectiveTracker.lua" />
     <Include file="Quest\QuestTooltip.lua" />
     <Include file="Quest\PartyQuests.lua" />
+    <Include file="Dialogue\DialogueRewards.lua" />
+    <Include file="Dialogue\DialogueScene.lua" />
+    <Include file="Dialogue\Dialogue.lua" />
+    <Include file="Dialogue\DialogueBook.lua" />
 
     <!-- Modules: CVar Optimizer -->
     <Include file="Optimizations\CVarOptimizer.lua" />

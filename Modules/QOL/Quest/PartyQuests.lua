@@ -60,7 +60,15 @@ local function Channel()
 end
 
 -- [1.3.7] Counters for /tmf groupe (in-game check of the exchange).
-local stats = { sent = 0, failed = 0, lastResult = nil, lastChannel = nil, recv = {}, hello = 0 }
+local stats = {
+    sent = 0, failed = 0, lastResult = nil, lastChannel = nil, recv = {}, hello = 0,
+    -- [1.3.8] Raw view of CHAT_MSG_ADDON for our prefix, before any check.
+    raw = 0, self = 0, secret = 0, byChannel = {}, register = "?", whisperSent = 0,
+}
+
+-- [1.3.8] Members reached by whisper as well (their party messages never
+-- arrived, or they answered by whisper): shortName -> name to whisper.
+local whisper = {}
 
 local function Accepted(ok, res)
     if not ok then return false end
@@ -84,6 +92,19 @@ local function Send(msg)
     end
     stats.lastResult, stats.lastChannel = ok and tostring(res) or ("error: " .. tostring(res)), used
     if Accepted(ok, res) then stats.sent = stats.sent + 1 else stats.failed = stats.failed + 1 end
+    -- [1.3.8] Same message straight to the members on whisper.
+    for _, target in pairs(whisper) do
+        local okW, resW = pcall(C_ChatInfo.SendAddonMessage, PREFIX, msg, "WHISPER", target)
+        if Accepted(okW, resW) then stats.whisperSent = stats.whisperSent + 1 end
+    end
+end
+
+-- [1.3.8] Name to whisper a party unit (with realm when it differs).
+local function WhisperName(unit)
+    local name, realm = UnitName(unit)
+    if not name or Secret(name) then return nil end
+    if realm and realm ~= "" and not Secret(realm) then return name .. "-" .. realm end
+    return name
 end
 
 -- ---------------------------------------------------------------------
@@ -181,8 +202,11 @@ local function Parse(s)
     return { objs = objs }
 end
 
-local function OnMessage(msg, sender)
+local function OnMessage(msg, sender, channel)
     local who = Short(sender)
+    if who and channel == "WHISPER" and not whisper[who] and not Secret(sender) then
+        whisper[who] = sender
+    end
     if not who or who == UnitName("player") then return end
     if type(msg) ~= "string" or Secret(msg) then return end
     stats.recv[who] = (stats.recv[who] or 0) + 1
@@ -224,6 +248,7 @@ local function ReadMembers()
         end
     end
     for n in pairs(data) do if not now[n] then data[n] = nil end end
+    for n in pairs(whisper) do if not now[n] then whisper[n] = nil end end
     local wasAlone = next(members) == nil
     members = now
     return new, wasAlone and next(now) ~= nil
@@ -258,6 +283,28 @@ function PQ.Ask()
     lastHello = GetTime()
     stats.hello = stats.hello + 1
     Send("1H")
+    C_Timer.After(5, function() PQ.WhisperSilent() end)
+end
+
+--- [1.3.8] Members silent so far get our messages by whisper as well, and
+--- a hello and our full list right away.
+function PQ.WhisperSilent()
+    if not (Enabled() and InParty()) or InCombatLockdown() then return end
+    local added = false
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists(unit) and (not UnitIsConnected or UnitIsConnected(unit)) then
+            local n = Short(UnitName(unit))
+            if n and not stats.recv[n] and not whisper[n] then
+                local target = WhisperName(unit)
+                if target then whisper[n] = target; added = true end
+            end
+        end
+    end
+    if added then
+        Send("1H")
+        Schedule(true)
+    end
 end
 
 --- /tmf groupe: what was sent and received, to check the exchange in game.
@@ -275,6 +322,14 @@ function PQ.Report()
         Enabled() and yes or no, InParty() and yes or no, Channel()))
     add(string.format(T("pq_rep_sent", "  sent %d, refused %d, last result %s (%s)"),
         stats.sent, stats.failed, tostring(stats.lastResult), tostring(stats.lastChannel)))
+    -- [1.3.8] Whisper relay and raw CHAT_MSG_ADDON view.
+    add(string.format(T("pq_rep_whisper", "  sent by whisper %d"), stats.whisperSent))
+    local chans = {}
+    for c, n in pairs(stats.byChannel) do chans[#chans + 1] = c .. " " .. n end
+    add(string.format(T("pq_rep_prefix", "  prefix %s: %s"), PREFIX, tostring(stats.register)))
+    add(string.format(T("pq_rep_raw", "  events received %d (own %d, secret %d)"),
+        stats.raw, stats.self, stats.secret)
+        .. (#chans > 0 and (": " .. table.concat(chans, ", ")) or ""))
     local mine = 0
     for _ in pairs(lastSent) do mine = mine + 1 end
     add(string.format(T("pq_rep_mine", "  my quests announced: %d"), mine))
@@ -285,7 +340,8 @@ function PQ.Report()
             local q = 0
             if data[n] then for _ in pairs(data[n]) do q = q + 1 end end
             add(string.format(T("pq_rep_member", "  %s: messages received %d, quests known %d"),
-                n, stats.recv[n] or 0, q))
+                n, stats.recv[n] or 0, q)
+                .. (whisper[n] and T("pq_rep_onwhisper", ", by whisper") or ""))
         end
     end
     for _, line in ipairs(out) do print(line) end
@@ -301,10 +357,26 @@ function PQ.ApplySettings()
     if Enabled() and InParty() then Schedule(true) end
 end
 
+local function Register()
+    if not (C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix) then stats.register = "no API" return end
+    local ok, res = pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
+    stats.register = ok and tostring(res) or ("error: " .. tostring(res))
+    if C_ChatInfo.IsAddonMessagePrefixRegistered then
+        local okR, isReg = pcall(C_ChatInfo.IsAddonMessagePrefixRegistered, PREFIX)
+        stats.register = stats.register .. (okR and (", registered " .. tostring(isReg)) or "")
+    end
+end
+
 local ev = CreateFrame("Frame")
-ev:SetScript("OnEvent", function(_, event, a1, a2, _, a4)
-    if event == "CHAT_MSG_ADDON" then
-        if a1 == PREFIX then OnMessage(a2, a4) end
+ev:SetScript("OnEvent", function(_, event, a1, a2, a3, a4)
+    if event == "CHAT_MSG_ADDON" or event == "CHAT_MSG_ADDON_LOGGED" then
+        if a1 ~= PREFIX then return end
+        stats.raw = stats.raw + 1
+        if Secret(a2) or Secret(a4) then stats.secret = stats.secret + 1 end
+        local chan = (not Secret(a3)) and tostring(a3) or "?"
+        stats.byChannel[chan] = (stats.byChannel[chan] or 0) + 1
+        if not Secret(a4) and Short(a4) == UnitName("player") then stats.self = stats.self + 1 end
+        OnMessage(a2, a4, a3)
     elseif event == "PLAYER_REGEN_ENABLED" then
         if afterCombat then
             afterCombat = false
@@ -313,6 +385,11 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, _, a4)
     elseif event == "GROUP_ROSTER_UPDATE" then
         OnRoster()
     elseif event == "PLAYER_ENTERING_WORLD" then
+        -- [1.3.8] Prefix lost or refused at load: register it again.
+        if C_ChatInfo and C_ChatInfo.IsAddonMessagePrefixRegistered then
+            local ok, isReg = pcall(C_ChatInfo.IsAddonMessagePrefixRegistered, PREFIX)
+            if ok and not isReg then Register() end
+        end
         OnRoster()
         -- [1.3.7] Messages sent during a loading screen or right at login
         -- can be lost: once settled, ask everyone and send our list again.
@@ -322,6 +399,9 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, _, a4)
             lastHello = GetTime()
             Send("1H")
             Schedule(true)
+            -- [1.3.8] Ten seconds later, members we heard nothing from are
+            -- reached by whisper too (party addon messages that never arrive).
+            C_Timer.After(10, function() PQ.WhisperSilent() end)
         end)
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_REMOVED" or event == "QUEST_ACCEPTED" then
         if Enabled() and InParty() then Schedule(false) end
@@ -329,10 +409,9 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, _, a4)
 end)
 
 function PQ.Initialize()
-    if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
-        pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
-    end
+    Register()
     ev:RegisterEvent("CHAT_MSG_ADDON")
+    pcall(ev.RegisterEvent, ev, "CHAT_MSG_ADDON_LOGGED")
     ev:RegisterEvent("GROUP_ROSTER_UPDATE")
     ev:RegisterEvent("PLAYER_ENTERING_WORLD")
     ev:RegisterEvent("QUEST_LOG_UPDATE")

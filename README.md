@@ -4,7 +4,7 @@
 
 **TomoModForever** is a streamlined edition of TomoMod built for **World of Warcraft: Forever**. It keeps the TomoMod interface (unit frames, party and raid frames, nameplates, castbars, resources, cooldowns, chat, bags, mail, damage meter, skins and quality-of-life tools) and leaves out every module Forever has no use for.
 
-**Author:** TomoAniki · **Interface:** 16001 · **Version:** 1.3.8
+**Author:** TomoAniki · **Interface:** 16001 · **Version:** 1.3.9
 
 ## Installation
 
@@ -34,3 +34,4 @@ Mythic+ (studio, tracker, score, keys, teleports), action bars and totem bar, ho
 
 - **FlareUI** by Malkkav (MIT License, https://github.com/malkkav/FlareUI): the official skin of the Forever frame style (geometry, art slicing, placement and state art) follows its Forever Style, rewritten for TMF.
 - **ForeverLoot** by its author: dungeon loot data in the codex, used with permission.
+- **DialogueUI** by Peterodox (https://github.com/Peterodox/YUI-Dialogue): the idea of the quest dialogue. No code or art from it is used; TMF's dialogue and its textures are written for TMF.

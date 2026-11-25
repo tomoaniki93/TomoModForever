@@ -63,6 +63,15 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.3.9",
+        highlights = {
+            L["wn_139_dialogue"],
+            L["wn_139_scene"],
+            L["wn_139_rewards"],
+            L["wn_139_books"],
+        },
+    },
+    {
         version = "1.3.8",
         highlights = {
             L["wn_138_party"],

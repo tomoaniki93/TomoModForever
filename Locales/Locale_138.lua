@@ -10,6 +10,10 @@ TomoMod_RegisterLocale("enUS", {
     ["pq_rep_sent"] = "  sent %d, refused %d, last result %s (%s)",
     ["pq_rep_mine"] = "  my quests announced: %d",
     ["pq_rep_member"] = "  %s: messages received %d, quests known %d",
+    ["pq_rep_whisper"] = "  sent by whisper %d",
+    ["pq_rep_prefix"] = "  prefix %s: %s",
+    ["pq_rep_raw"] = "  events received %d (own %d, secret %d)",
+    ["pq_rep_onwhisper"] = ", by whisper",
 })
 
 TomoMod_RegisterLocale("frFR", {
@@ -21,6 +25,10 @@ TomoMod_RegisterLocale("frFR", {
     ["pq_rep_sent"] = "  envoyés %d, refusés %d, dernier résultat %s (%s)",
     ["pq_rep_mine"] = "  mes quêtes annoncées : %d",
     ["pq_rep_member"] = "  %s : messages reçus %d, quêtes connues %d",
+    ["pq_rep_whisper"] = "  envoyés en chuchotement %d",
+    ["pq_rep_prefix"] = "  préfixe %s : %s",
+    ["pq_rep_raw"] = "  événements reçus %d (mes propres %d, secrets %d)",
+    ["pq_rep_onwhisper"] = ", en chuchotement",
 })
 
 TomoMod_RegisterLocale("deDE", {
@@ -32,6 +40,10 @@ TomoMod_RegisterLocale("deDE", {
     ["pq_rep_sent"] = "  gesendet %d, abgelehnt %d, letztes Ergebnis %s (%s)",
     ["pq_rep_mine"] = "  meine gemeldeten Quests: %d",
     ["pq_rep_member"] = "  %s: empfangene Nachrichten %d, bekannte Quests %d",
+    ["pq_rep_whisper"] = "  per Flüstern gesendet %d",
+    ["pq_rep_prefix"] = "  Präfix %s: %s",
+    ["pq_rep_raw"] = "  empfangene Ereignisse %d (eigene %d, geheim %d)",
+    ["pq_rep_onwhisper"] = ", per Flüstern",
 })
 
 TomoMod_RegisterLocale("esES", {
@@ -43,6 +55,10 @@ TomoMod_RegisterLocale("esES", {
     ["pq_rep_sent"] = "  enviados %d, rechazados %d, último resultado %s (%s)",
     ["pq_rep_mine"] = "  mis misiones anunciadas: %d",
     ["pq_rep_member"] = "  %s: mensajes recibidos %d, misiones conocidas %d",
+    ["pq_rep_whisper"] = "  enviados por susurro %d",
+    ["pq_rep_prefix"] = "  prefijo %s: %s",
+    ["pq_rep_raw"] = "  eventos recibidos %d (propios %d, secretos %d)",
+    ["pq_rep_onwhisper"] = ", por susurro",
 })
 
 TomoMod_RegisterLocale("itIT", {
@@ -54,6 +70,10 @@ TomoMod_RegisterLocale("itIT", {
     ["pq_rep_sent"] = "  inviati %d, rifiutati %d, ultimo risultato %s (%s)",
     ["pq_rep_mine"] = "  mie missioni annunciate: %d",
     ["pq_rep_member"] = "  %s: messaggi ricevuti %d, missioni note %d",
+    ["pq_rep_whisper"] = "  inviati per sussurro %d",
+    ["pq_rep_prefix"] = "  prefisso %s: %s",
+    ["pq_rep_raw"] = "  eventi ricevuti %d (miei %d, segreti %d)",
+    ["pq_rep_onwhisper"] = ", per sussurro",
 })
 
 TomoMod_RegisterLocale("ptBR", {
@@ -65,4 +85,8 @@ TomoMod_RegisterLocale("ptBR", {
     ["pq_rep_sent"] = "  enviados %d, recusados %d, último resultado %s (%s)",
     ["pq_rep_mine"] = "  minhas missões anunciadas: %d",
     ["pq_rep_member"] = "  %s: mensagens recebidas %d, missões conhecidas %d",
+    ["pq_rep_whisper"] = "  enviados por sussurro %d",
+    ["pq_rep_prefix"] = "  prefixo %s: %s",
+    ["pq_rep_raw"] = "  eventos recebidos %d (meus %d, secretos %d)",
+    ["pq_rep_onwhisper"] = ", por sussurro",
 })

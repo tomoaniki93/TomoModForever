@@ -51,6 +51,7 @@ globals = {
     "TomoMod_Toasts", "TomoMod_QuestTooltip",   -- 1.3.6
     "TomoMod_ManaBar", "TomoMod_GatherTips", "TomoMod_QuestReward", "TomoMod_Fishing", "TomoMod_MapMarkers",
     "TomoMod_EdgeAlerts", "TomoMod_PartyQuests",   -- 1.3.7
+    "TomoMod_Dialogue", "TomoMod_DialogueRewards", "TomoMod_DialogueScene", "TomoMod_DialogueBook",   -- 1.3.9
     "ClickCastFrames", "ColorPickerFrame", "CompanionStatusDB", "FCF_FadeInChatFrame",
     "FCF_FadeInScrollbar", "FCF_FadeOutChatFrame", "FCF_FadeOutScrollbar", "FCF_StartDragging",
     "FCF_StopDragging", "GetMinimapShape", "SLASH_COMPANIONSTATUS1", "SLASH_TOMOCDMDEBUG1",
