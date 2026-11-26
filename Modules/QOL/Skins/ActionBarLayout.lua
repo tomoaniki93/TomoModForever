@@ -32,7 +32,9 @@
 --     side, gap, off }): it is anchored to it, so it follows its moves and
 --     its size changes. Dropping a bar against another one in Layout mode
 --     attaches it (and it joins that bar's group if it has none). The
---     first turn-on attaches the bars Blizzard had stacked.
+--     first turn-on attaches the bars Blizzard had stacked. The magnet and
+--     that first attachment only concern bars 1 to 8; pet, stance and
+--     totem bars can still be attached by hand in the settings.
 -- =====================================================================
 
 TomoMod_ActionBars = TomoMod_ActionBars or {}
@@ -589,12 +591,13 @@ local function SetupMover(f)
         local bc = BarDB(key)
         bc.x, bc.y = Round(cx * s - ux), Round(cy * s - uy)
         bc.attach = nil
-        -- Dropped against another bar: attached to it (magnet).
+        -- Dropped against another bar: attached to it (magnet). Bars 1 to 8
+        -- only: pet, stance and totem bars never stick nor get stuck to.
         local r = { Rect(f) }
-        if r[1] then
+        if r[1] and not DEF_BY[key].kind then
             local others = {}
             for k, o in pairs(frames) do
-                if k ~= key and o:IsShown() and BV(k, "enabled") ~= false and AB.CanAttach(key, k) then
+                if k ~= key and not DEF_BY[k].kind and o:IsShown() and BV(k, "enabled") ~= false and AB.CanAttach(key, k) then
                     local orr = { Rect(o) }
                     if orr[1] then others[k] = orr end
                 end
@@ -602,7 +605,7 @@ local function SetupMover(f)
             local snap = FindSnap(r, others, 16)
             if snap then
                 bc.attach = { to = snap.to, side = snap.side, gap = snap.gap, off = snap.off }
-                if not bc.group and BarDB(snap.to).group and not DEF_BY[key].kind and not DEF_BY[snap.to].kind then
+                if not bc.group and BarDB(snap.to).group then
                     AB.JoinGroup(key, BarDB(snap.to).group)
                 end
             end
@@ -699,13 +702,13 @@ local function Capture(defs)
     end
 end
 
--- Bars Blizzard had stacked (edges within 8 px, overlapping) are
+-- Bars 1 to 8 Blizzard had stacked (edges within 8 px, overlapping) are
 -- attached, from the bottom up, so they move and resize together.
 local function AttachCaptured(defs)
     local rects, order = {}, {}
     for _, d in ipairs(defs) do
         local bc = BarDB(d.key)
-        if d.kind ~= "totem" and bc.enabled ~= false and bc.x and bc.y then
+        if not d.kind and bc.enabled ~= false and bc.x and bc.y then
             local W, H = AB.Grid(d.key, AB.Count(d.key))
             rects[d.key] = { bc.x - W / 2, bc.x + W / 2, bc.y - H / 2, bc.y + H / 2 }
             order[#order + 1] = d.key
