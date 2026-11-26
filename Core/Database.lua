@@ -561,6 +561,30 @@ TomoMod_Defaults = {
             bar8   = { mouseover = false, combat = false },
             pet    = { mouseover = false, combat = false },
             stance = { mouseover = false, combat = false },
+            totem  = { mouseover = false, combat = false },
+        },
+        -- [1.4.1] Light band across the icon when a long cooldown ends.
+        readyShine    = true,
+        -- [1.4.1] TMF's own action bars (Modules/QOL/Skins/ActionBarLayout.lua).
+        -- Off by default: turning it on takes Blizzard's buttons into TMF
+        -- bars, placed where Blizzard's were (captured = that first read).
+        -- x / y are filled by the capture or by dragging (centre offsets).
+        layout = {
+            enabled  = false,
+            captured = false,
+            bars = {
+                bar1   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar2   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar3   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar4   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar5   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar6   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar7   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                bar8   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
+                pet    = { enabled = true, size = 36, count = 10, perRow = 10, spacing = 2, showEmpty = false, growUp = false },
+                stance = { enabled = true, size = 36, count = 10, perRow = 10, spacing = 2, showEmpty = false, growUp = false },
+                totem  = { enabled = true, size = 36, count = 6, perRow = 6, spacing = 2, showEmpty = false, growUp = false },
+            },
         },
     },
     blizzardAuraFrames = {

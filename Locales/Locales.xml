@@ -32,6 +32,7 @@
     <Script file="Locale_138.lua" />
     <Script file="Locale_139.lua" />
     <Script file="Locale_140.lua" />
+    <Script file="Locale_141.lua" />
     <Script file="Locale_GUI.lua" />
     <Script file="Locale_Compat.lua" />
 </Ui>

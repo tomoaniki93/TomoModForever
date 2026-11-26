@@ -23,6 +23,10 @@ local RING   = MEDIA .. "ring"
 local MASK   = MEDIA .. "mask_round"
 local GLOSS  = MEDIA .. "gloss"
 local SHADOW = MEDIA .. "shadow"
+-- [1.4.1] Forever ornate skin and the animations (Tools/gen_bar_textures.py)
+local ORNATE = MEDIA .. "ornate_frame"
+local HALO   = MEDIA .. "ornate_glow"
+local SHINE  = MEDIA .. "shine"
 
 -- ---------------------------------------------------------------------
 -- Skins. border = px, color = default border colour, inner = dark inner
@@ -35,8 +39,9 @@ ABS.SKINS = {
     shadow  = { border = 1, color = { 0, 0, 0 }, shadow = true },
     glass   = { border = 1, color = { 0.10, 0.10, 0.10 }, gloss = true, inner = true },
     round   = { round = true, color = { 0.788, 0.635, 0.322 } },
+    ornate  = { ornate = true, color = { 1, 1, 1 } },
 }
-ABS.SKIN_ORDER = { "forever", "pixel", "thick", "shadow", "glass", "round" }
+ABS.SKIN_ORDER = { "ornate", "forever", "pixel", "thick", "shadow", "glass", "round" }
 
 local BUTTONS = {
     { "ActionButton", 12 }, { "MultiBarBottomLeftButton", 12 }, { "MultiBarBottomRightButton", 12 },
@@ -106,6 +111,11 @@ local function Remember(b, st)
     if icon and icon.GetNumPoints then
         for i = 1, icon:GetNumPoints() do st.points[i] = { icon:GetPoint(i) } end
     end
+    local cd = F(b, "cooldown") or F(b, "Cooldown")
+    st.cdPoints = {}
+    if cd and cd.GetNumPoints then
+        for i = 1, cd:GetNumPoints() do st.cdPoints[i] = { cd:GetPoint(i) } end
+    end
     st.masks = {}
     if icon and icon.GetMaskTexture then
         for i = 1, 8 do
@@ -139,6 +149,23 @@ local function Layers(b, st)
     st.mask = b:CreateMaskTexture()
     st.mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     st.mask:SetAllPoints(b)
+    -- [1.4.1] Ornate frame (above the icon), its hover halo, and the clip
+    -- frame the "ready" shine sweeps through.
+    -- On the button itself, above the icon and under the keybind text.
+    st.ornate = b:CreateTexture(nil, "ARTWORK", nil, 7)
+    st.ornate:SetTexture(ORNATE)
+    st.halo = f:CreateTexture(nil, "OVERLAY", nil, 2)
+    st.halo:SetTexture(HALO)
+    st.halo:SetBlendMode("ADD")
+    st.halo:SetAlpha(0)
+    st.clip = CreateFrame("Frame", nil, b)
+    st.clip:SetFrameLevel(b:GetFrameLevel() + 1)
+    st.clip:SetClipsChildren(true)
+    st.clip:EnableMouse(false)
+    st.shine = st.clip:CreateTexture(nil, "OVERLAY")
+    st.shine:SetTexture(SHINE)
+    st.shine:SetBlendMode("ADD")
+    st.shine:SetAlpha(0)
 end
 
 local function StyleText(b)
@@ -182,7 +209,12 @@ function ABS.Skin(b, skinKey)
     if F(b, "IconMask") then b.IconMask:SetAlpha(0) end
 
     icon:ClearAllPoints()
-    if skin.round then
+    if skin.ornate then
+        local inset = math.max(2, math.floor(w * 0.11 + 0.5))
+        icon:SetPoint("TOPLEFT", b, "TOPLEFT", inset, -inset)
+        icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -inset, inset)
+        icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
+    elseif skin.round then
         icon:SetAllPoints(b)
         icon:SetTexCoord(0, 1, 0, 1)
         AddMask(icon, st.mask)
@@ -194,7 +226,27 @@ function ABS.Skin(b, skinKey)
 
     local r, g, bl = BorderColor(skin)
     st.frame:Show()
-    if skin.round then
+    st.ornate:SetShown(skin.ornate and true or false)
+    if skin.ornate then
+        st.ornate:ClearAllPoints()
+        st.ornate:SetAllPoints(b)
+        st.ornate:SetVertexColor(r, g, bl, 1)
+        local out = math.floor(w * 0.28 + 0.5)
+        st.halo:ClearAllPoints()
+        st.halo:SetPoint("TOPLEFT", b, "TOPLEFT", -out, out)
+        st.halo:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", out, -out)
+    else
+        st.halo:SetAlpha(0)
+    end
+    if skin.ornate then
+        st.frame:SetBackdrop(nil)
+        st.inner:Hide()
+        st.ring:Hide()
+        st.bg:Show()
+        st.bg:ClearAllPoints()
+        st.bg:SetAllPoints(b)
+        st.bg:SetVertexColor(0.04, 0.035, 0.03, 0.9)
+    elseif skin.round then
         st.frame:SetBackdrop(nil)
         st.inner:Hide()
         st.ring:Show()
@@ -243,10 +295,20 @@ function ABS.Skin(b, skinKey)
     end
 
     local cd = F(b, "cooldown") or F(b, "Cooldown")
+    -- [1.4.1] The swipe stays inside the border (child of a protected
+    -- button: out of combat only).
+    if cd and not InCombatLockdown() and cd.ClearAllPoints then
+        cd:ClearAllPoints()
+        cd:SetAllPoints(icon)
+    end
     if cd and cd.SetSwipeTexture then
         cd:SetSwipeTexture(skin.round and MASK or WHITE)
         cd:SetSwipeColor(0, 0, 0, 0.75)
     end
+
+    st.clip:ClearAllPoints()
+    st.clip:SetAllPoints(icon)
+    st.clip:Show()
 
     StyleText(b)
     st.skinned = true
@@ -271,9 +333,16 @@ function ABS.Unskin(b)
     for _, k in ipairs(OVERLAYS) do DelMask(F(b, k), st.mask) end
     local cd = F(b, "cooldown") or F(b, "Cooldown")
     if cd and cd.SetSwipeTexture then cd:SetSwipeTexture(WHITE) end
+    if cd and st.cdPoints and #st.cdPoints > 0 and not InCombatLockdown() then
+        cd:ClearAllPoints()
+        for _, p in ipairs(st.cdPoints) do cd:SetPoint(unpack(p)) end
+    end
+    if st.ornate then st.ornate:Hide() end
+    if st.halo then st.halo:SetAlpha(0) end
     if st.frame then st.frame:Hide() end
     if st.bg then st.bg:Hide() end
     if st.shadow then st.shadow:Hide() end
+    if st.clip then st.clip:Hide() end
     st.skinned = false
 end
 
@@ -286,9 +355,102 @@ local function Reassert(b)
     end
 end
 
+-- ---------------------------------------------------------------------
+-- [1.4.1] Animations. Both follow the global animation level (General >
+-- Animations): "none" stills them, "reduced" keeps the shine and drops
+-- the halo fade.
+--   * halo: the ornate skin's gold glow fades in under the mouse;
+--   * shine: a light band sweeps across the icon when a cooldown longer
+--     than the global cooldown ends (barSkin.readyShine).
+-- Only our own textures are animated; the hooks run after Blizzard's
+-- code and never touch the button.
+-- ---------------------------------------------------------------------
+local function AnimLevel()
+    local U = TomoMod_Utils
+    return (U and U.AnimLevel and U.AnimLevel()) or "full"
+end
+
+local function Halo(b, on)
+    local st = state[b]
+    if not (st and st.skinned and st.halo and Active()) then return end
+    local skin = ABS.SKINS[(DB() or {}).skin or "forever"]
+    if not (skin and skin.ornate) then st.halo:SetAlpha(0); return end
+    local level = AnimLevel()
+    local to = on and 0.85 or 0
+    if level ~= "full" then st.halo:SetAlpha(level == "none" and 0 or to); return end
+    if not st.haloAG then
+        st.haloAG = st.halo:CreateAnimationGroup()
+        st.haloA = st.haloAG:CreateAnimation("Alpha")
+        st.haloA:SetSmoothing("OUT")
+        st.haloAG:SetToFinalAlpha(true)
+    end
+    st.haloAG:Stop()
+    st.haloA:SetFromAlpha(st.halo:GetAlpha())
+    st.haloA:SetToAlpha(to)
+    st.haloA:SetDuration(on and 0.18 or 0.30)
+    st.halo:SetAlpha(to)
+    st.haloAG:Play()
+end
+
+function ABS.PlayShine(b)
+    local st = state[b]
+    if not (st and st.skinned and st.shine and st.clip and st.clip:IsVisible()) then return end
+    if AnimLevel() == "none" then return end
+    local w = st.clip:GetWidth() or 0
+    if w < 4 then return end
+    local sh = st.shine
+    sh:ClearAllPoints()
+    sh:SetSize(w * 0.55, w * 1.7)
+    sh:SetPoint("CENTER", st.clip, "LEFT", -w * 0.35, 0)
+    if sh.SetRotation then pcall(sh.SetRotation, sh, math.rad(-22)) end
+    if not st.shineAG then
+        local ag = sh:CreateAnimationGroup()
+        st.shineMove = ag:CreateAnimation("Translation")
+        st.shineMove:SetDuration(0.55)
+        st.shineMove:SetSmoothing("IN_OUT")
+        local fin = ag:CreateAnimation("Alpha")
+        fin:SetFromAlpha(0); fin:SetToAlpha(1); fin:SetDuration(0.15)
+        local fout = ag:CreateAnimation("Alpha")
+        fout:SetFromAlpha(1); fout:SetToAlpha(0); fout:SetDuration(0.2); fout:SetStartDelay(0.35)
+        ag:SetScript("OnFinished", function() sh:SetAlpha(0) end)
+        st.shineAG = ag
+    end
+    st.shineMove:SetOffset(w * 1.7, 0)
+    st.shineAG:Stop()
+    sh:SetAlpha(1)
+    st.shineAG:Play()
+end
+
+local function HookAnims(b)
+    if type(b.HookScript) == "function" then
+        b:HookScript("OnEnter", function(self) Halo(self, true) end)
+        b:HookScript("OnLeave", function(self) Halo(self, false) end)
+    end
+    local cd = F(b, "cooldown") or F(b, "Cooldown")
+    if not (cd and cd.HookScript and type(cd.SetCooldown) == "function") then return end
+    -- Remember whether the running cooldown is longer than a GCD.
+    hooksecurefunc(cd, "SetCooldown", function(_, _, duration)
+        local st = state[b]
+        if not st then return end
+        if issecretvalue and issecretvalue(duration) then st.cdLong = false; return end
+        st.cdLong = type(duration) == "number" and duration > 2
+    end)
+    if type(cd.Clear) == "function" then
+        hooksecurefunc(cd, "Clear", function() local st = state[b]; if st then st.cdLong = false end end)
+    end
+    pcall(cd.HookScript, cd, "OnCooldownDone", function()
+        local st = state[b]
+        if not (st and st.cdLong) then return end
+        st.cdLong = false
+        local db = DB()
+        if db and db.readyShine ~= false and Active() then ABS.PlayShine(b) end
+    end)
+end
+
 local function Hook(b)
     if hooked[b] then return end
     hooked[b] = true
+    HookAnims(b)
     for _, m in ipairs({ "UpdateButtonArt", "SetNormalAtlas", "SetNormalTexture" }) do
         if type(b[m]) == "function" then hooksecurefunc(b, m, Reassert) end
     end
@@ -324,7 +486,8 @@ local function ForEachButton(fn)
     end
 end
 
-function ABS.ApplySettings()
+-- The skin pass alone (events, TMF bars after a re-layout).
+function ABS.Refresh()
     if InCombatLockdown() then
         pending = true
         return
@@ -342,6 +505,14 @@ function ABS.ApplySettings()
     BarArt()
 end
 
+-- Settings or profile change: the skin, then TMF's own bars (1.4.1),
+-- which follow the same profile table (barSkin.layout).
+function ABS.ApplySettings()
+    ABS.Refresh()
+    local AB = TomoMod_ActionBars
+    if AB and AB.ApplySettings then AB.ApplySettings() end
+end
+
 -- =====================================================================
 -- Per-bar visibility: on mouseover and / or in combat / with a target.
 -- Alpha only (allowed in combat, never protected): the bar keeps working,
@@ -350,7 +521,7 @@ end
 -- the secure buttons. Bars always show while Blizzard's Edit Mode or the
 -- TomoMod move mode is open, and while a spell or item is on the cursor.
 -- =====================================================================
-ABS.BAR_KEYS = { "bar1", "bar2", "bar3", "bar4", "bar5", "bar6", "bar7", "bar8", "pet", "stance" }
+ABS.BAR_KEYS = { "bar1", "bar2", "bar3", "bar4", "bar5", "bar6", "bar7", "bar8", "pet", "stance", "totem" }
 local BAR_FRAMES = {
     bar1   = { "MainActionBar", "MainMenuBar" },
     bar2   = { "MultiBarBottomLeft" },
@@ -365,6 +536,13 @@ local BAR_FRAMES = {
 }
 
 local function BarFrame(key)
+    -- [1.4.1] Once TMF owns the bars, the fade works on TMF's bars.
+    local AB = TomoMod_ActionBars
+    local own = AB and AB.GetFrame and AB.GetFrame(key)
+    if own then return own end
+    -- The totem bar is only faded inside a TMF bar: alpha on Blizzard's
+    -- own totem frame is left alone.
+    if key == "totem" then return nil end
     for _, name in ipairs(BAR_FRAMES[key] or {}) do
         local f = _G[name]
         if type(f) == "table" and f.SetAlpha then return f end
@@ -470,7 +648,7 @@ ev:SetScript("OnEvent", function(_, event)
     -- Bar visibility runs whether or not the skin itself is on.
     if event == "PLAYER_ENTERING_WORLD" then ABS.ApplyFade() end
     if event == "PLAYER_REGEN_ENABLED" then
-        if pending then ABS.ApplySettings() end
+        if pending then ABS.Refresh() end
         return
     end
     if not Active() then
@@ -478,5 +656,5 @@ ev:SetScript("OnEvent", function(_, event)
         return
     end
     -- New buttons can appear (pet, stance, override): skin them out of combat.
-    C_Timer.After(0.2, ABS.ApplySettings)
+    C_Timer.After(0.2, ABS.Refresh)
 end)

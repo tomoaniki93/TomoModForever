@@ -75,6 +75,7 @@ local LAYOUT_ROUTES = {
     { "^TomoMod_Castbar_GCD",            "castbars" },
     { "^TomoMod_Castbar_",               "castbars" },
     { "^TomoMod_ResourceBars_Container", "resources" },
+    { "^TomoMod_ActionBar_",             "actionbars" },
 
     -- Groupe et raid
     { "^TomoMod_PartyAnchor",            "partyframes" },

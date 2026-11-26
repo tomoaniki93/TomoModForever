@@ -1,5 +1,34 @@
 ## ####################################
 
+## CHANGELOG 1.4.1
+
+#### TMF action bars
+
+- **New** - TMF's own action bars (`Modules/QOL/Skins/ActionBarLayout.lua`, `TomoMod_ActionBars`), idea taken from AishCore (Aishuu) and written for TMF: no button is created, Blizzard's buttons (bars 1 to 8, pet, stances, shaman totems) move into secure TMF bars (`TomoMod_ActionBar_<key>`, `SecureHandlerStateTemplate`). Spells, cooldowns, range, procs, keybinds, drag and drop and quick keybind mode stay Blizzard's untainted code. Action pages are written from the secure environment only (`Execute`, `_onstate-page`), so a click is never tainted. Everything that moves a button waits for the end of combat.
+- **New** - Per bar: shown or not, size, button count, buttons per row, spacing; expert mode: empty slots always shown, first row at the bottom, bring a lost bar back. Totem bar: Blizzard's arrangement kept, size and place only. Settings in `barSkin.layout` (follows the profiles).
+- **New** - First turn-on reads Blizzard's bars (position, icon count, rows, padding, size, shown bars): the screen looks the same right after. Off by default; turning it off gives Blizzard's bars back after a /reload (popup).
+- **New** - Bar 1 paging like Blizzard's (forms, stealth, possess, shift + wheel / number). Bars hidden in pet battles and vehicles, pet bar without a pet, stance bar without forms. Empty slots show while a spell or item is dragged.
+- **New** - Bars move with TMF's Layout mode (`/tmf layout`, new Movers entry and cog route to the Action bars page).
+- **New** - Stands down when Bartender4, Dominos, ElvUI or AishCore's action bars are there (message in the page).
+- **Changed** - The mouseover / combat fade of ActionBarSkin works on TMF's bars once they are on (`ABS.BarFrame`), totem bar included.
+- **Changed** - `ActionBarSkin`: `ABS.Refresh()` is the skin pass alone (events, after a re-layout); `ABS.ApplySettings()` = skin pass, then TMF bars (profile load).
+
+#### Forever ornate skin and animations
+
+- **New** - Skin "Forever ornate" (first tile): bronze and gold frame with corner studs, soft golden halo fading in under the mouse. Textures `Assets/Textures/ActionBars/ornate_frame.tga`, `ornate_glow.tga`, `shine.tga`, made by `Tools/gen_bar_textures.py`.
+- **New** - Ready shine (`barSkin.readyShine`, on): a golden band sweeps across the icon when a cooldown longer than the GCD ends (cooldown `SetCooldown` / `OnCooldownDone` hooks, our textures only). Halo and shine follow General > Animations (none: off, reduced: shine only).
+- **Changed** - The cooldown swipe is anchored to the icon (inside the border); the original anchors come back when the skin is turned off.
+
+#### Keybinds
+
+- **Changed** - `/kb` opens Blizzard's quick keybind mode (falls back to the keybinding settings); Keybinds button in Action bars.
+
+#### Version
+
+- **Changed** - Version 1.4.1 in both TOC files; What's new entry for 1.4.1 in the six languages (`Locales\Locale_141.lua`).
+
+## ####################################
+
 ## CHANGELOG 1.4.0b
 
 #### Dungeon maps

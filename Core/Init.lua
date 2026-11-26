@@ -589,6 +589,10 @@ SlashCmdList["TOMOMOD_RL"] = ReloadUI
 
 SLASH_TOMOMOD_KB1 = "/kb"
 SlashCmdList["TOMOMOD_KB"] = function()
+    -- [1.4.1] Quick keybind mode first: hover a button, press a key. The
+    -- buttons are Blizzard's, so it works on TMF's bars as well.
+    local AB = TomoMod_ActionBars
+    if AB and AB.OpenQuickKeybind and AB.OpenQuickKeybind() then return end
     Settings.OpenToCategory(Settings.KEYBINDINGS_CATEGORY_ID or BINDING_HEADER or "Keybindings")
 end
 
@@ -702,6 +706,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         safeInit("GameMenuSkin",       TomoMod_GameMenuSkin)
         safeInit("BlizzardAuraFrames", TomoMod_BlizzardAuraFrames)
         safeInit("ActionBarSkin",      TomoMod_ActionBarSkin)
+        safeInit("ActionBars",         TomoMod_ActionBars)
         safeInit("TooltipSkin",        TomoMod_TooltipSkin)
         safeInit("GroupManagerSkin",   TomoMod_GroupManagerSkin)
 

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Panels/ActionBars.lua -- skins for Blizzard's action bars
+-- Panels/ActionBars.lua -- action bars: TMF's own bars (1.4.1) and skins
 -- Pick a skin from live tiles; every change lands on the real bars.
 -- =====================================================================
 
@@ -10,6 +10,7 @@ local TH = W.Theme
 local WHITE = K.WHITE or "Interface\\Buttons\\WHITE8x8"
 
 local SKIN_NAMES = {
+    ornate  = { "Forever orné",     "Forever ornate" },
     forever = { "Forever",          "Forever" },
     pixel   = { "Pixel",            "Pixel" },
     thick   = { "Bordure épaisse",  "Thick border" },
@@ -25,6 +26,7 @@ local ICONS = {
     "Interface\\Icons\\Ability_Warrior_Charge",
     "Interface\\Icons\\Spell_Shadow_ShadowBolt",
     "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "Interface\\Icons\\Spell_Nature_HealingTouch",
 }
 
 -- Stand-in buttons drawn on the page, re-skinned on every change.
@@ -71,6 +73,15 @@ K.RegisterApplier("abs", function()
     Restyle()
 end, false)
 
+-- [1.4.1] TMF's own bars: moves protected buttons, so it waits for the
+-- end of combat (secure applier).
+local function ABL() return TomoMod_ActionBars end
+K.RegisterApplier("abl", function()
+    local A = ABL()
+    if A and A.ApplySettings then A.ApplySettings() end
+    Restyle()
+end, true)
+
 K.RegisterApplier("absfade", function()
     local A = ABS()
     if A and A.ApplyFade then A.ApplyFade() end
@@ -83,7 +94,92 @@ local BAR_NAMES = {
     bar8 = { "Barre 8", "Bar 8" },
     pet    = { "Barre du familier", "Pet bar" },
     stance = { "Barre de posture", "Stance bar" },
+    totem  = { "Barre des totems", "Totem bar" },
 }
+
+-- Bar picked in the layout card (kept between visits).
+local function SelectedBar(defs)
+    local sel = K.GuiDB().abBar
+    for _, d in ipairs(defs) do if d.key == sel then return sel end end
+    return defs[1] and defs[1].key or "bar1"
+end
+
+local function LayoutCards(page)
+    local A = ABL()
+    if not A then return end
+    local on = A.IsEnabled and A.IsEnabled()
+
+    local c = page:Card(T("Barres TMF", "TMF bars"))
+    c:Info(T("TMF place les boutons du jeu dans ses propres barres : tu choisis leur taille, leur nombre de boutons, leurs lignes et tu les déplaces avec le mode Disposition. Tes sorts, macros et raccourcis restent les mêmes.",
+             "TMF puts the game's buttons into its own bars: you choose their size, button count and rows, and move them with Layout mode. Your spells, macros and keybinds stay the same."))
+    c:Toggle(T("Utiliser les barres d'action TMF", "Use TMF action bars"), {
+        get = function() return K.Get("barSkin.layout.enabled") == true end,
+        set = function(v)
+            local was = K.Get("barSkin.layout.enabled") == true
+            K.Set("barSkin.layout.enabled", v and true or false)
+            if was and not v and A.IsAdopted and A.IsAdopted() then K.NeedReload() end
+            K.RefreshPage()
+        end,
+        default = false,
+    }, "abl", T("Désactivé : les barres de Blizzard reviennent après un /reload.", "Off: Blizzard's bars come back after a /reload."))
+    local other = A.Conflict and A.Conflict()
+    if other then
+        c:Info(string.format(T("|cffff8855%s gère déjà les barres d'action : les barres TMF restent en retrait.|r",
+                               "|cffff8855%s already handles the action bars: TMF bars stand down.|r"), other))
+    end
+    if not on then c:Done(); return end
+    c:Pair(function(l) l:Button(T("Déplacer les barres", "Move the bars"), function()
+                local M = TomoMod_Movers
+                if M and M.Toggle then M.Toggle() end
+            end, 170, T("Ouvre le mode Disposition : glisse les barres où tu veux, puis verrouille.", "Opens Layout mode: drag the bars where you want, then lock."))
+           end,
+           function(r) r:Button(T("Raccourcis clavier", "Keybinds"), function()
+                if not (A.OpenQuickKeybind and A.OpenQuickKeybind()) and SlashCmdList and SlashCmdList.TOMOMOD_KB then
+                    SlashCmdList.TOMOMOD_KB()
+                end
+            end, 170, T("Survole un bouton et appuie sur une touche pour l'assigner (aussi : /kb).", "Hover a button and press a key to bind it (also: /kb)."))
+           end)
+    c:Done()
+
+    local defs = A.ActiveDefs and A.ActiveDefs() or {}
+    local key = SelectedBar(defs)
+    local def
+    for _, d in ipairs(defs) do if d.key == key then def = d end end
+    local opts = {}
+    for _, d in ipairs(defs) do opts[#opts + 1] = { text = A.Label(d.key), value = d.key } end
+
+    c = page:Card(T("Disposition", "Layout"))
+    c:Seg(T("Barre à régler", "Bar to set up"), {
+        get = function() return key end,
+        set = function(v) K.GuiDB().abBar = v; K.RefreshPage() end,
+    }, opts, nil, 4)
+    local base = "barSkin.layout.bars." .. key .. "."
+    c:Toggle(T("Afficher cette barre", "Show this bar"), base .. "enabled", "abl")
+    if def and def.kind == "totem" then
+        c:Slider(T("Taille", "Size"), base .. "size", 20, 64, 1, "abl")
+        c:Info(T("Les totems gardent la disposition du jeu ; seules leur taille et leur place changent.",
+                 "Totems keep the game's arrangement; only their size and place change."))
+    else
+        local max = (def and def.count) or 12
+        c:Pair(function(l) l:Slider(T("Nombre de boutons", "Buttons"), base .. "count", 1, max, 1, "abl") end,
+               function(r) r:Slider(T("Boutons par ligne", "Buttons per row"), base .. "perRow", 1, max, 1, "abl") end)
+        c:Pair(function(l) l:Slider(T("Taille des boutons", "Button size"), base .. "size", 20, 64, 1, "abl") end,
+               function(r) r:Slider(T("Espacement", "Spacing"), base .. "spacing", 0, 12, 1, "abl") end)
+    end
+    c:Done()
+
+    c = page:Card(T("Disposition avancée", "Advanced layout"), { adv = true })
+    if not (def and def.kind == "totem") then
+        c:Toggle(T("Afficher les cases vides", "Show empty slots"), base .. "showEmpty", "abl",
+            T("Les cases vides apparaissent toujours quand tu glisses un sort ou en mode Disposition.",
+              "Empty slots always show while dragging a spell or in Layout mode."))
+        c:Toggle(T("Première ligne en bas", "First row at the bottom"), base .. "growUp", "abl")
+    end
+    c:Button(T("Remettre la barre en bas de l'écran", "Bring the bar back to the bottom"), function()
+        if A.ResetPosition then A.ResetPosition(key) end
+    end, 280, T("Pour une barre perdue hors de l'écran.", "For a bar lost off-screen."))
+    c:Done()
+end
 
 -- Tiles: one per skin, each showing a real skinned sample. Click = apply.
 local function BuildTiles(parent, y)
@@ -153,15 +249,20 @@ K.RegisterPage({
     key = "actionbars",
     section = "combat",
     label = T("Barres d'action", "Action bars"),
-    kw = "action bars barres action boutons buttons skin habillage icones icons raccourcis keybinds",
+    kw = "action bars barres action boutons buttons skin habillage icones icons raccourcis keybinds disposition layout taille size totems familier pet posture stance",
     locate = function() return _G.ActionButton1 end,
     build = function(parent)
         wipe(samples)
         return K.Page(parent, function(page)
+            local ownBars = TomoMod_ActionBars and TomoMod_ActionBars.IsEnabled and TomoMod_ActionBars.IsEnabled()
             page:Hero(T("Barres d'action", "Action bars"),
-                T("Change l'apparence des barres d'action de Blizzard. Leur position et leur taille se règlent toujours dans le Mode Édition du jeu.",
-                  "Changes the look of Blizzard's action bars. Their position and size are still set in the game's Edit Mode."),
+                ownBars and T("Les barres d'action TMF : disposition, apparence et visibilité. Déplace-les avec le mode Disposition (/tmf layout).",
+                              "TMF action bars: layout, look and visibility. Move them with Layout mode (/tmf layout).")
+                    or T("Change l'apparence des barres d'action. Active les barres TMF pour régler aussi leur taille et leur position ici ; sinon elles se règlent dans le Mode Édition du jeu.",
+                         "Changes the look of the action bars. Turn on TMF bars to also set their size and position here; otherwise they are set in the game's Edit Mode."),
                 function() return _G.ActionButton1 end, T("Barre 1", "Bar 1"))
+
+            LayoutCards(page)
 
             local A = ABS()
             if not A then
@@ -176,16 +277,22 @@ K.RegisterPage({
             c:Custom(BuildTiles)
             c:Label(T("Aperçu", "Preview"))
             c:Custom(BuildRow)
+            c:Toggle(T("Éclat quand une recharge se termine", "Shine when a cooldown ends"), "barSkin.readyShine", "abs",
+                T("Un reflet doré traverse l'icône quand un sort à longue recharge est de nouveau prêt. Suit le réglage des animations.",
+                  "A golden gleam crosses the icon when a long-cooldown spell is ready again. Follows the animation setting."))
             c:Done()
 
             c = page:Card(T("Quand afficher les barres", "When the bars show"))
             c:Info(T("Rien de coché : la barre est toujours visible. Au survol : elle apparaît sous la souris. Combat / cible : en combat ou avec une cible. Les deux : l'un ou l'autre suffit. Les raccourcis marchent toujours, même barre cachée.",
                      "Nothing ticked: the bar is always visible. Mouseover: it shows under the mouse. Combat / target: in combat or with a target. Both: either one is enough. Keybinds always work, even on a hidden bar."))
+            local AL = ABL()
             for _, key in ipairs(A.BAR_KEYS or {}) do
+              if key ~= "totem" or (AL and AL.GetFrame and AL.GetFrame("totem")) then
                 local nm = BAR_NAMES[key] or { key, key }
                 c:Label(T(nm[1], nm[2]))
                 c:Pair(function(l) l:Toggle(T("Au survol", "Mouseover"), "barSkin.bars." .. key .. ".mouseover", "absfade") end,
                        function(r) r:Toggle(T("Combat / cible", "Combat / target"), "barSkin.bars." .. key .. ".combat", "absfade") end)
+              end
             end
             c:Pair(function(l) l:Slider(T("Opacité cachée", "Hidden opacity"), "barSkin.fadeAlpha", 0, 0.8, 0.05, "absfade", "%.2f") end,
                    function(r) r:Slider(T("Durée du fondu", "Fade time"), "barSkin.fadeTime", 0.05, 1, 0.05, "absfade", "%.2f") end)

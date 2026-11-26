@@ -132,6 +132,8 @@
     <Include file="Skins\GameMenuSkin.lua" />
     <Include file="Skins\BlizzardAuraFrames.lua" />
     <Include file="Skins\ActionBarSkin.lua" />
+    <!-- 1.4.1: TMF's own action bars (Blizzard's buttons in TMF bars) -->
+    <Include file="Skins\ActionBarLayout.lua" />
     <Include file="Skins\TooltipSkin.lua" />
     <Include file="Skins\TooltipInspect.lua" />
     <Include file="Skins\TooltipInfo.lua" />
