@@ -6,7 +6,7 @@
 
 TomoMod_UnitFrames = TomoMod_UnitFrames or {}
 local UF = TomoMod_UnitFrames
-local E  = UF_Elements
+local E  = TomoMod_UFElements
 
 -- [PERF] Local caching des API WoW hot-path
 local UnitExists                  = UnitExists
@@ -63,7 +63,7 @@ end
 local function UpdateHealthTrail(frame, unit, current, max, same)
     local trail = frame.health and frame.health.trail
     if not (trail and trail:IsShown()) then return end
-    UF_Elements.TrailTo(trail, current, max, same)
+    TomoMod_UFElements.TrailTo(trail, current, max, same)
 end
 
 -- Low health: a red frame breathes around the player frame under the
@@ -120,9 +120,9 @@ local function UpdateHealth(frame)
 
     -- C-side — acceptent les secret numbers nativement
     -- [1.3.7] The fill glides (same unit), the heal gain jumps at once.
-    local same = UF_Elements.SameUnit(frame.health, unit)
+    local same = TomoMod_UFElements.SameUnit(frame.health, unit)
     frame.health:SetMinMaxValues(0, max)
-    UF_Elements.SetBarValue(frame.health, current, same and UF_Elements.SmoothOn())
+    TomoMod_UFElements.SetBarValue(frame.health, current, same and TomoMod_UFElements.SmoothOn())
     local gain = frame.health.gain
     if gain and gain:IsShown() then
         gain:SetMinMaxValues(0, max)
@@ -1254,7 +1254,7 @@ function UF.ApplyVisuals(frame, unitKey, settings)
 
     -- Les deux conteneurs d'auras sont desormais des elements du registre
     -- comme les autres : plus de branche dediee ici, et le drag en jeu ecrit
-    -- au meme endroit (UF_Elements.SaveContainerDrag).
+    -- au meme endroit (TomoMod_UFElements.SaveContainerDrag).
 
     -- Redimensionner les icônes d'aura puis ré-appliquer la grille (même layout
     -- qu'à la création — évite toute incohérence de taille/espacement entre unités).

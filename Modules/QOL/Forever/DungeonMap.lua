@@ -645,6 +645,23 @@ local function OnWorldMapShown()
     -- Next frame: the game's panel code has finished showing it.
     C_Timer.After(0, function()
         if InCombatLockdown() or not (WorldMapFrame and WorldMapFrame:IsShown()) then return end
+        -- [1.4.0] Only when the game's map opened on this dungeon: a quest
+        -- clicked in the tracker opens the map of the quest's zone, and
+        -- that one must stay.
+        local shown = WorldMapFrame.GetMapID and WorldMapFrame:GetMapID()
+        if shown then
+            local d = Data()
+            local onDungeon = false
+            for _, fl in ipairs(d.instances[key].floors) do
+                if fl == shown then onDungeon = true break end
+            end
+            if not onDungeon then
+                -- A floor we do not list: still ours only when it is the
+                -- player's own map.
+                local playerMap = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
+                if shown ~= playerMap then return end
+            end
+        end
         HideUIPanel(WorldMapFrame)
         if wasOpen then win:Hide() else DM.Show(key, f) end
         -- First time only: say where this window comes from and how to get

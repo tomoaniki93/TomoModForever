@@ -2,7 +2,7 @@
 -- Elements/Power.lua — Power (Mana/Energy/Rage/etc) Bar
 -- =====================================
 
-local UF_Elements = UF_Elements or {}
+local TomoMod_UFElements = TomoMod_UFElements or {}
 
 local TEXTURE = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\tomoaniki"
 local FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
@@ -11,7 +11,7 @@ local FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.t
 -- so the unit frame must not draw its own.
 -- [FIX] Only when the ResourceBars module is actually enabled: with it
 -- off, the setting alone left the player with no power bar anywhere.
-function UF_Elements.IsPowerBarSuppressed(unit)
+function TomoMod_UFElements.IsPowerBarSuppressed(unit)
     if unit ~= "player" then return false end
     local rb = TomoModForeverDB and TomoModForeverDB.resourceBars
     if not (rb and rb.enabled) then return false end
@@ -20,11 +20,11 @@ function UF_Elements.IsPowerBarSuppressed(unit)
         or false
 end
 
-function UF_Elements.CreatePower(parent, unit, settings)
+function TomoMod_UFElements.CreatePower(parent, unit, settings)
     if (settings.powerHeight or 0) <= 0 then return nil end
 
     -- If primary power is centered on screen, skip creating UF power bar for player
-    if UF_Elements.IsPowerBarSuppressed(unit) then
+    if TomoMod_UFElements.IsPowerBarSuppressed(unit) then
         return nil
     end
 
@@ -48,7 +48,7 @@ function UF_Elements.CreatePower(parent, unit, settings)
 
     -- Border: full border for standard bars, side-only for thin accent bars
     if settings.powerHeight > 4 then
-        UF_Elements.CreateBorder(power)
+        TomoMod_UFElements.CreateBorder(power)
     else
         -- Side borders only (left + right) to align with health/info bar edges
         local lEdge = power:CreateTexture(nil, "OVERLAY", nil, 7)
@@ -86,20 +86,20 @@ function UF_Elements.CreatePower(parent, unit, settings)
     trail:EnableMouse(false)
     power.trail = trail
     local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
-    UF_Elements.SetPowerTrail(power, not (uf and uf.powerTrail == false))
+    TomoMod_UFElements.SetPowerTrail(power, not (uf and uf.powerTrail == false))
 
     power.unit = unit
     power:EnableMouse(false)  -- Let clicks pass through
     return power
 end
 
-function UF_Elements.SetPowerTrail(power, on)
+function TomoMod_UFElements.SetPowerTrail(power, on)
     if not (power and power.trail) then return end
     power.trail:SetShown(on and true or false)
     if power.bg then power.bg:SetAlpha(on and 0 or 1) end
 end
 
-function UF_Elements.UpdatePower(frame)
+function TomoMod_UFElements.UpdatePower(frame)
     if not frame or not frame.power or not frame.unit then return end
     if not UnitExists(frame.unit) then return end
 
@@ -110,17 +110,17 @@ function UF_Elements.UpdatePower(frame)
     local max = UnitPowerMax(unit, powerType)
 
     -- [1.3.7] Glides (same unit and power type), spent trail drains after.
-    local same = UF_Elements.SameUnit(frame.power, unit) and frame.power._tmType == powerType
+    local same = TomoMod_UFElements.SameUnit(frame.power, unit) and frame.power._tmType == powerType
     frame.power._tmType = powerType
     frame.power:SetMinMaxValues(0, max)
-    if UF_Elements.SetBarValue then
-        UF_Elements.SetBarValue(frame.power, current, same and UF_Elements.SmoothOn())
+    if TomoMod_UFElements.SetBarValue then
+        TomoMod_UFElements.SetBarValue(frame.power, current, same and TomoMod_UFElements.SmoothOn())
     else
         frame.power:SetValue(current)
     end
     local trail = frame.power.trail
-    if trail and trail:IsShown() and UF_Elements.TrailTo then
-        UF_Elements.TrailTo(trail, current, max, same)
+    if trail and trail:IsShown() and TomoMod_UFElements.TrailTo then
+        TomoMod_UFElements.TrailTo(trail, current, max, same)
     end
 
     -- Color by power type
@@ -154,7 +154,7 @@ end
 -- Shows: power value + total HP, mirrored for target
 -- =====================================
 
-function UF_Elements.CreateInfoBar(parent, unit, settings)
+function TomoMod_UFElements.CreateInfoBar(parent, unit, settings)
     local font = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.font) or FONT
     local fontSize = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.fontSize) or 12
     local infoBarHeight = settings.infoBarHeight or 18
@@ -211,7 +211,7 @@ function UF_Elements.CreateInfoBar(parent, unit, settings)
     return infoBar
 end
 
-function UF_Elements.UpdateInfoBar(frame)
+function TomoMod_UFElements.UpdateInfoBar(frame)
     if not frame or not frame.infoBar or not frame.unit then return end
     if not UnitExists(frame.unit) then return end
 

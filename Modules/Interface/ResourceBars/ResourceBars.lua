@@ -668,7 +668,7 @@ local function ApplyBarTicks(bar, tickStr)
 end
 
 -- =====================================
--- BORDER (mirrors UF_Elements.CreateBorder)
+-- BORDER (mirrors TomoMod_UFElements.CreateBorder)
 -- =====================================
 local function CreateBorder(frame, styleKey, enabledForElement)
     local s = GetSettings()

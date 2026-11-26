@@ -434,7 +434,14 @@ local function Evaluate()
     local db = DB()
     if Paused() then Release() return end
     local exists = Safe(UnitExists, SOFT) == true or Safe(UnitIsGameObject, SOFT) == true
-    if not exists then SetGate(false); Release() return end
+    if not exists then
+        SetGate(false); Release()
+        -- [1.4.0] Nothing targeted: the poller sleeps until the game picks
+        -- an object again (PLAYER_SOFT_INTERACT_CHANGED wakes it).
+        if RG.poller then RG.poller:Hide() end
+        return
+    end
+    if RG.poller and not RG.poller:IsShown() then RG.poller:Show() end
 
     local cat, unable = Classify(SOFT)
     local wanted = cat and db[cat] ~= false
@@ -460,6 +467,7 @@ RG.Evaluate = Evaluate
 -- ---------------------------------------------------------------------
 local ev = CreateFrame("Frame")
 local poller = CreateFrame("Frame")
+RG.poller = poller
 local since = 0
 poller:Hide()
 poller:SetScript("OnUpdate", function(_, elapsed)
@@ -472,6 +480,7 @@ end)
 ev:SetScript("OnEvent", function(_, event, arg1)
     if event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "QUEST_LOG_UPDATE" then
         Invalidate()
+        if event == "PLAYER_SOFT_INTERACT_CHANGED" and Active() then poller:Show() end
         Evaluate()
     elseif event == "NAME_PLATE_UNIT_ADDED" then
         activeUnits[arg1] = true

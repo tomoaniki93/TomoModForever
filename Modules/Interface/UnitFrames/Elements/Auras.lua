@@ -2,7 +2,7 @@
 -- Elements/Auras.lua — Aura Icons for UnitFrames
 -- =====================================
 
-local UF_Elements = UF_Elements or {}
+local TomoMod_UFElements = TomoMod_UFElements or {}
 
 local FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.ttf"
 
@@ -42,7 +42,7 @@ local FONT = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-Medium.t
 -- calcul, valable tant qu'aucune echelle n'est en jeu.
 --
 -- Jamais de GetPoint() : c'est la regle du mover.
-function UF_Elements.SaveContainerDrag(container, parent, elementID, settings)
+function TomoMod_UFElements.SaveContainerDrag(container, parent, elementID, settings)
     if not (container and parent and settings) then return false end
 
     local R = TomoMod_Forge and TomoMod_Forge.Registry
@@ -91,7 +91,7 @@ local function NormalizeAuraType(value)
     return "HARMFUL"
 end
 
-function UF_Elements.AurasShowBoth(settings)
+function TomoMod_UFElements.AurasShowBoth(settings)
     return type(settings) == "table"
         and type(settings.auras) == "table"
         and settings.auras.enabled ~= false
@@ -149,7 +149,7 @@ local function CreateAuraEngine(container, unit, auraSettings, layout)
     })
 end
 
-function UF_Elements.CreateAuraContainer(parent, unit, settings, nameOverride)
+function TomoMod_UFElements.CreateAuraContainer(parent, unit, settings, nameOverride)
     if not settings or not settings.auras or not settings.auras.enabled then return nil end
 
     local auraSettings = settings.auras
@@ -180,7 +180,7 @@ function UF_Elements.CreateAuraContainer(parent, unit, settings, nameOverride)
     end)
     container:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        UF_Elements.SaveContainerDrag(self, parent, "auras", settings)
+        TomoMod_UFElements.SaveContainerDrag(self, parent, "auras", settings)
     end)
 
     -- SetLocked(bool) — appelé par le système Movers pour activer/désactiver le drag
@@ -217,9 +217,9 @@ end
 
 -- Réapplique en direct taille / nombre / direction / largeur de ligne sur
 -- un conteneur d'auras déjà construit, sans reconstruction complète : cf.
--- UF_Elements.RelayoutEnemyBuffs pour le pourquoi (Relayout ignorait ces
+-- TomoMod_UFElements.RelayoutEnemyBuffs pour le pourquoi (Relayout ignorait ces
 -- champs tant que la taille/le nombre ne changeaient pas aussi).
-function UF_Elements.RelayoutAuras(container, auraSettings)
+function TomoMod_UFElements.RelayoutAuras(container, auraSettings)
     if not container or not auraSettings then return false end
     local layout = ComputeAuraLayout(auraSettings)
     container:SetSize(layout.containerW, layout.containerH)
@@ -258,7 +258,7 @@ end
 -- UPDATE AURAS
 -- =====================================
 
-function UF_Elements.UpdateAuras(frame)
+function TomoMod_UFElements.UpdateAuras(frame)
     if not frame or not frame.auraContainer then return end
 
     local unit = frame.unit
@@ -272,7 +272,7 @@ function UF_Elements.UpdateAuras(frame)
     end
 
     container:Show()
-    UF_Elements.RelayoutAuras(container, settings.auras)
+    TomoMod_UFElements.RelayoutAuras(container, settings.auras)
 
     -- [12.1] Nothing to collect: the engine tracks the unit itself. Telling
     -- it which unit this frame now represents is the whole update.
@@ -317,9 +317,9 @@ local function ComputeEnemyBuffLayout(buffSettings)
 end
 
 -- nameOverride : voir CreateAuraContainer.
-function UF_Elements.CreateEnemyBuffContainer(parent, unit, settings, nameOverride)
+function TomoMod_UFElements.CreateEnemyBuffContainer(parent, unit, settings, nameOverride)
     if not settings or not settings.enemyBuffs or not settings.enemyBuffs.enabled
-        or UF_Elements.AurasShowBoth(settings) then return nil end
+        or TomoMod_UFElements.AurasShowBoth(settings) then return nil end
 
     local layout = ComputeEnemyBuffLayout(settings.enemyBuffs)
 
@@ -375,7 +375,7 @@ function UF_Elements.CreateEnemyBuffContainer(parent, unit, settings, nameOverri
     container:SetScript("OnDragStart", function(self) self:StartMoving() end)
     container:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        UF_Elements.SaveContainerDrag(self, parent, "enemyBuffs", settings)
+        TomoMod_UFElements.SaveContainerDrag(self, parent, "enemyBuffs", settings)
     end)
 
     return container
@@ -385,7 +385,7 @@ end
 -- conteneur déjà construit — appelé aussi bien par le rafraîchissement
 -- explicite (options) que par la mise à jour événementielle (UNIT_AURA),
 -- pour qu'un changement de réglage n'ait jamais besoin d'un /reload.
-function UF_Elements.RelayoutEnemyBuffs(container, buffSettings)
+function TomoMod_UFElements.RelayoutEnemyBuffs(container, buffSettings)
     if not container or not container.engine or not buffSettings then return end
     local layout = ComputeEnemyBuffLayout(buffSettings)
     container:SetSize(layout.containerW, layout.containerH)
@@ -405,9 +405,9 @@ end
 -- =====================================
 
 -- Debug: toggle with /tmf debugbuffs
-UF_Elements._debugEnemyBuffs = false
+TomoMod_UFElements._debugEnemyBuffs = false
 
-function UF_Elements.UpdateEnemyBuffs(frame)
+function TomoMod_UFElements.UpdateEnemyBuffs(frame)
     if not frame then return end
 
     local unit = frame.unit
@@ -418,7 +418,7 @@ function UF_Elements.UpdateEnemyBuffs(frame)
     local container = frame.enemyBuffContainer
 
     if not settings or not settings.enemyBuffs or not settings.enemyBuffs.enabled
-        or UF_Elements.AurasShowBoth(settings)
+        or TomoMod_UFElements.AurasShowBoth(settings)
         or not UnitExists(unit) then
         if container then container:Hide() end
         return
@@ -427,12 +427,12 @@ function UF_Elements.UpdateEnemyBuffs(frame)
     -- Créé tardivement : le conteneur peut manquer si l'unité l'a d'abord
     -- construit désactivé, ou après le hide/relayout d'un ancien profil.
     if not container then
-        container = UF_Elements.CreateEnemyBuffContainer(frame, unit, settings,
+        container = TomoMod_UFElements.CreateEnemyBuffContainer(frame, unit, settings,
             frame._tomoNameSuffix and ("TomoMod_EnemyBuffs_" .. unit .. frame._tomoNameSuffix) or nil)
         frame.enemyBuffContainer = container
         if not container then return end
     else
-        UF_Elements.RelayoutEnemyBuffs(container, settings.enemyBuffs)
+        TomoMod_UFElements.RelayoutEnemyBuffs(container, settings.enemyBuffs)
     end
 
     container:Show()
@@ -448,7 +448,7 @@ end
 -- =====================================
 
 local auraDurationTicker
-function UF_Elements.StartAuraDurationUpdater(frames)
+function TomoMod_UFElements.StartAuraDurationUpdater(frames)
     -- TWW: the Cooldown frame's built-in countdown numbers self-update C-side
     -- via SetCooldownFromDurationObject, so no Lua ticker is needed anymore.
     -- Kept as a no-op for backwards compatibility with callers.

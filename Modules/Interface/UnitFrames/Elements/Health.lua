@@ -3,7 +3,7 @@
 -- Uses oUF-style C-side APIs to handle TWW "secret numbers"
 -- =====================================
 
-UF_Elements = UF_Elements or {}
+TomoMod_UFElements = TomoMod_UFElements or {}
 
 -- [PERF] Local caching of hot-path WoW API globals
 local UnitIsTapDenied = UnitIsTapDenied
@@ -177,7 +177,7 @@ local function GetNameplateStyleColor(unit)
     return nil
 end
 
-function UF_Elements.GetHealthColor(unit, settings)
+function TomoMod_UFElements.GetHealthColor(unit, settings)
     if not settings then return 0.5, 0.5, 0.5 end
 
     -- Class color for players
@@ -228,7 +228,7 @@ local ScaleTo100 = CurveConstants and CurveConstants.ScaleTo100
 -- Sets health text directly on a FontString using C-side SetFormattedText.
 -- This avoids creating any tainted Lua strings that could propagate taint
 -- to Blizzard secure frames (CompactUnitFrame, arena frames, etc).
-function UF_Elements.SetHealthText(fontString, current, max, format, unit)
+function TomoMod_UFElements.SetHealthText(fontString, current, max, format, unit)
     if not fontString then return end
 
     -- Status check
@@ -265,7 +265,7 @@ end
 -- CREATE HEALTH BAR
 -- =====================================
 
-function UF_Elements.CreateHealth(parent, unit, settings)
+function TomoMod_UFElements.CreateHealth(parent, unit, settings)
     local tex = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.texture) or TEXTURE
     local font = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.font) or FONT
     local fontSize = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.fontSize) or 12
@@ -289,7 +289,7 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     health.bg = bg
 
     -- Border
-    UF_Elements.CreateBorder(health)
+    TomoMod_UFElements.CreateBorder(health)
 
     -- Health text
     local text = health:CreateFontString(nil, "OVERLAY")
@@ -388,8 +388,8 @@ function UF_Elements.CreateHealth(parent, unit, settings)
         end)
         hap:SetScript("OnDragStop", function(self)
             self:StopMovingOrSizing()
-            if self._unlocked and UF_Elements.SaveContainerDrag then
-                UF_Elements.SaveContainerDrag(self, parent, "happiness", settings)
+            if self._unlocked and TomoMod_UFElements.SaveContainerDrag then
+                TomoMod_UFElements.SaveContainerDrag(self, parent, "happiness", settings)
             end
         end)
         hap:Hide()
@@ -435,7 +435,7 @@ function UF_Elements.CreateHealth(parent, unit, settings)
     health.gain = gain
 
     local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
-    UF_Elements.SetHealthTrail(health, not (uf and uf.healthTrail == false))
+    TomoMod_UFElements.SetHealthTrail(health, not (uf and uf.healthTrail == false))
 
     health.unit = unit
     health:EnableMouse(false)  -- Let clicks pass through to parent SecureUnitButtonTemplate
@@ -449,7 +449,7 @@ end
 -- interpolation, C-side, secret-safe). A new unit in the frame (target
 -- swap) snaps. Off with the option, or with animations set to none.
 
-function UF_Elements.SmoothOn()
+function TomoMod_UFElements.SmoothOn()
     local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
     if uf and uf.smoothBars == false then return false end
     local U = TomoMod_Utils
@@ -458,7 +458,7 @@ function UF_Elements.SmoothOn()
 end
 
 --- True when `bar` still shows the same unit as last time (records it).
-function UF_Elements.SameUnit(bar, unit)
+function TomoMod_UFElements.SameUnit(bar, unit)
     local ok, guid = pcall(UnitGUID, unit)
     local U = TomoMod_Utils
     if not ok or (U and U.IsSecret and U.IsSecret(guid)) then guid = nil end
@@ -467,7 +467,7 @@ function UF_Elements.SameUnit(bar, unit)
     return same
 end
 
-function UF_Elements.SetBarValue(bar, value, smooth)
+function TomoMod_UFElements.SetBarValue(bar, value, smooth)
     if smooth then
         local ok = pcall(bar.SetValue, bar, value, Enum.StatusBarInterpolation.ExponentialEaseOut)
         if ok then return end
@@ -476,7 +476,7 @@ function UF_Elements.SetBarValue(bar, value, smooth)
 end
 
 -- Trail under a bar: catches up 0.4 s after the last change, eased.
-function UF_Elements.TrailTo(trail, value, max, same)
+function TomoMod_UFElements.TrailTo(trail, value, max, same)
     trail:SetMinMaxValues(0, max)
     if not same then trail:SetValue(value) return end
     trail._target = value
@@ -488,7 +488,7 @@ function UF_Elements.TrailTo(trail, value, max, same)
         -- animations set to none.
         local U = TomoMod_Utils
         local eased = Enum and Enum.StatusBarInterpolation ~= nil and not (U and U.AnimAny and not U.AnimAny())
-        UF_Elements.SetBarValue(trail, trail._target, eased)
+        TomoMod_UFElements.SetBarValue(trail, trail._target, eased)
     end)
 end
 
@@ -502,12 +502,12 @@ local function HealthBackgrounds(health)
     if health.bg then health.bg:SetAlpha((trailOn or gainOn) and 0 or 1) end
 end
 
-function UF_Elements.SetHealthTrail(health, on)
+function TomoMod_UFElements.SetHealthTrail(health, on)
     if not (health and health.trail) then return end
     health.trail:SetShown(on and true or false)
     if health.gain then
         local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
-        health.gain:SetShown(UF_Elements.SmoothOn() and not (uf and uf.healGain == false))
+        health.gain:SetShown(TomoMod_UFElements.SmoothOn() and not (uf and uf.healGain == false))
     end
     HealthBackgrounds(health)
 end
@@ -516,7 +516,7 @@ end
 -- CREATE ABSORB BAR (overlay)
 -- =====================================
 
-function UF_Elements.CreateAbsorb(parent, healthBar, settings)
+function TomoMod_UFElements.CreateAbsorb(parent, healthBar, settings)
     local tex = (TomoModForeverDB and TomoModForeverDB.unitFrames and TomoModForeverDB.unitFrames.texture) or TEXTURE
 
     local absorb = CreateFrame("StatusBar", nil, parent)
@@ -537,7 +537,7 @@ end
 -- THREAT INDICATOR (thin border glow)
 -- =====================================
 
-function UF_Elements.CreateThreatIndicator(parent)
+function TomoMod_UFElements.CreateThreatIndicator(parent)
     local threat = CreateFrame("Frame", nil, parent)
     threat:SetPoint("TOPLEFT", -2, 2)
     threat:SetPoint("BOTTOMRIGHT", 2, -2)
@@ -583,7 +583,7 @@ end
 -- TWW: UnitDetailedThreatSituation retourne des secret values →
 --   on utilise UNIQUEMENT SetFormattedText (C-side) pour l'affichage.
 --   UnitThreatSituation (int 0-3, safe) est utilisé pour les couleurs et la logique de branchement.
-function UF_Elements.CreateThreatText(healthBar, settings)
+function TomoMod_UFElements.CreateThreatText(healthBar, settings)
     local tt = settings and settings.threatText
     local globalDB = TomoModForeverDB and TomoModForeverDB.unitFrames
 
@@ -604,7 +604,7 @@ end
 -- GENERIC BORDER HELPER
 -- =====================================
 
-function UF_Elements.CreateBorder(frame)
+function TomoMod_UFElements.CreateBorder(frame)
     local function Edge(point1, point2, w, h)
         local t = frame:CreateTexture(nil, "OVERLAY", nil, 7)
         t:SetColorTexture(0, 0, 0, 1)

@@ -28,6 +28,15 @@
 - **New** - `K.AdvancedNotice` (the notice card, shared), `TomoMod_Config.RelayoutNav` (called by `K.SetExpert`; the header button follows a switch made from a page's notice).
 - **Removed** - The cards' entrance animation (each card rising into place one after another when a page opens): players found it shaky. `K.PlayEntrance` stays as a no-op.
 
+#### Audit (1.4.0)
+
+- **Fixed** - Diagnostics: the hook that keeps Blizzard's Lua error frame closed while TMF shows the errors kept closing it after TMF gave it back, until the next reload. Hooked once, acting only while suppressed.
+- **Fixed** - Nameplates: the nameplate CVars (friendly plates, overlap, insets) were written even in combat (zoning in combat, settings changed in combat), where the game blocks them. `SafeSetCVar` writes them at once out of combat, otherwise when the combat ends.
+- **Fixed** - World map shortcut: only taken when the game's map opens on the dungeon itself (or on the player's own map); a quest clicked in the tracker inside a dungeon opens the quest's zone map as before.
+- **Changed** - Resource glow: the poller sleeps while the game targets no object and wakes on PLAYER_SOFT_INTERACT_CHANGED (it ran every 0.15 s all the time).
+- **Changed** - The unit frame elements namespace was a bare global (`UF_Elements`), open to clashes with other addons: now `TomoMod_UFElements`.
+- **Checked** - 349 Lua files parse; no stray globals left (besides `GetMinimapShape`, which the minimap must provide); no lowercase global read that would be a forgotten local; every file the TOC and XML files list exists and none is left out; no locale key used without a definition; every saved list is capped (fight history, benchmarks, error log, chat history); the large locale files only build the active language; fast tickers stop when idle.
+
 ## ####################################
 
 ## CHANGELOG 1.3.9

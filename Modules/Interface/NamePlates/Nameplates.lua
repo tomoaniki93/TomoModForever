@@ -2092,6 +2092,28 @@ local function UnregisterNPUnitEvents(unit)
 end
 
 -- [PERF] Named deferred function for target changed (avoids closure alloc per event)
+-- [1.4.0] Nameplate CVars are protected in combat: a write then would be
+-- blocked (zoning in combat, settings changed in combat). Written at once
+-- out of combat, otherwise kept and written when the combat ends.
+local pendingCVars
+local cvarFlush = CreateFrame("Frame")
+cvarFlush:SetScript("OnEvent", function(self)
+    self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+    local list = pendingCVars
+    pendingCVars = nil
+    if not list then return end
+    for k, v in pairs(list) do pcall(SetCVar, k, v) end
+end)
+local function SafeSetCVar(k, v)
+    if InCombatLockdown() then
+        pendingCVars = pendingCVars or {}
+        pendingCVars[k] = v
+        cvarFlush:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+    SetCVar(k, v)
+end
+
 local function OnTargetChanged_Deferred()
     local s = DB()
     local friendlyNoDecor = (s.friendlyNameOnly ~= false)
@@ -2176,7 +2198,7 @@ eventFrame:SetScript("OnEvent", function(self, event, unit)
         -- Re-force the CVar in case the game reset it on zone change
         local s5 = DB()
         if s5.friendlyNameOnly ~= false then
-            SetCVar("nameplateShowFriends", 1)
+            SafeSetCVar("nameplateShowFriends", 1)
         end
         -- Re-hide all Blizzard frames and refresh custom plates after zone loads
         C_Timer.After(0.5, function()
@@ -2237,14 +2259,14 @@ function NP.Enable()
         nameplateOtherBottomInset = GetCVar("nameplateOtherBottomInset"),
         nameplateShowFriends = GetCVar("nameplateShowFriends"),
     }
-    SetCVar("nameplateOverlapV", s.overlapV or 1.05)
-    SetCVar("nameplateOtherTopInset", s.topInset or 0.065)
-    SetCVar("nameplateOtherBottomInset", 0.1)
+    SafeSetCVar("nameplateOverlapV", s.overlapV or 1.05)
+    SafeSetCVar("nameplateOtherTopInset", s.topInset or 0.065)
+    SafeSetCVar("nameplateOtherBottomInset", 0.1)
 
     -- Force friendly player nameplates so NAME_PLATE_UNIT_ADDED fires for party members
     -- This is required for custom friendly plates (name-only + role icons) to work
     if s.friendlyNameOnly ~= false then
-        SetCVar("nameplateShowFriends", 1)
+        SafeSetCVar("nameplateShowFriends", 1)
     end
 
     eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
@@ -2277,7 +2299,7 @@ function NP.Disable()
 
     if NP._savedCVars then
         for k, v in pairs(NP._savedCVars) do
-            if v then SetCVar(k, v) end
+            if v then SafeSetCVar(k, v) end
         end
         NP._savedCVars = nil
     end
@@ -2307,13 +2329,13 @@ end
 
 function NP.ApplySettings()
     local s = DB()
-    SetCVar("nameplateOverlapV", s.overlapV or 1.05)
-    SetCVar("nameplateOtherTopInset", s.topInset or 0.065)
+    SafeSetCVar("nameplateOverlapV", s.overlapV or 1.05)
+    SafeSetCVar("nameplateOtherTopInset", s.topInset or 0.065)
     -- Update friendly nameplate CVar when settings change
     if s.friendlyNameOnly ~= false then
-        SetCVar("nameplateShowFriends", 1)
+        SafeSetCVar("nameplateShowFriends", 1)
     elseif NP._savedCVars and NP._savedCVars.nameplateShowFriends then
-        SetCVar("nameplateShowFriends", NP._savedCVars.nameplateShowFriends)
+        SafeSetCVar("nameplateShowFriends", NP._savedCVars.nameplateShowFriends)
     end
     NP.RefreshAll()
     RefreshExperimentalCastFocusDriver()

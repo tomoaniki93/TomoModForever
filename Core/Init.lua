@@ -430,10 +430,10 @@ SlashCmdList["TOMOMOD"] = function(msg)
             TomoMod_CombatResTracker.ToggleLock()
         end
     elseif msg == "debugbuffs" then
-        if UF_Elements then
-            UF_Elements._debugEnemyBuffs = not UF_Elements._debugEnemyBuffs
-            print("|cffffd100TomoModForever|r Enemy buff debug: " .. (UF_Elements._debugEnemyBuffs and "|cff00ff00ON|r" or "|cffff0000OFF|r"))
-            if UF_Elements._debugEnemyBuffs then
+        if TomoMod_UFElements then
+            TomoMod_UFElements._debugEnemyBuffs = not TomoMod_UFElements._debugEnemyBuffs
+            print("|cffffd100TomoModForever|r Enemy buff debug: " .. (TomoMod_UFElements._debugEnemyBuffs and "|cff00ff00ON|r" or "|cffff0000OFF|r"))
+            if TomoMod_UFElements._debugEnemyBuffs then
                 print("|cffffd100TomoModForever|r Target an enemy with a buff, output will appear in chat.")
             end
         end
@@ -464,7 +464,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
             frame.enemyBuffContainer = nil
         end
         if frame and s and s.enemyBuffs then
-            frame.enemyBuffContainer = UF_Elements.CreateEnemyBuffContainer(frame, "target", s)
+            frame.enemyBuffContainer = TomoMod_UFElements.CreateEnemyBuffContainer(frame, "target", s)
             if frame.enemyBuffContainer then
                 local c = frame.enemyBuffContainer
                 c:Show()
@@ -497,7 +497,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
         end
 
         -- Step 6: Enable debug
-        UF_Elements._debugEnemyBuffs = true
+        TomoMod_UFElements._debugEnemyBuffs = true
         print("  [6] Debug ON — target a hostile mob, check chat. /tmf debugbuffs to disable")
 
         print("|cffffd100=== End Diagnostic ===|r")

@@ -11,7 +11,7 @@ local BF = TomoMod_BossFrames
 -- Constant tokens: "boss" .. i inside a loop of eight on a 0.15s ticker built
 -- roughly fifty throwaway strings a second during an encounter.
 local BOSS_UNITS = { "boss1", "boss2", "boss3", "boss4", "boss5", "boss6", "boss7", "boss8" }
-local E = UF_Elements
+local E = TomoMod_UFElements
 
 local MAX_BOSSES = 5
 local POWER_HEIGHT = 14

@@ -847,10 +847,15 @@ local function SuppressScriptErrors()
         -- Replace Show with no-op
         ScriptErrorsFrame._origShow = ScriptErrorsFrame.Show
         ScriptErrorsFrame.Show = function() end
-        -- Belt-and-suspenders
-        ScriptErrorsFrame:HookScript("OnShow", function(self)
-            self:Hide()
-        end)
+        -- Belt-and-suspenders. [1.4.0] Hooked once, and only acting while
+        -- suppressed: a hook cannot be removed, and the old one kept closing
+        -- the frame after RestoreScriptErrors until the next reload.
+        if not ScriptErrorsFrame._tmSuppressHooked then
+            ScriptErrorsFrame._tmSuppressHooked = true
+            ScriptErrorsFrame:HookScript("OnShow", function(self)
+                if suppressActive then self:Hide() end
+            end)
+        end
     end
 end
 

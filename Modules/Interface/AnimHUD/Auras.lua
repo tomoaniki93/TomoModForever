@@ -126,7 +126,7 @@ end
 
 --- Hand the unit to the engine again, enable, full update. TMF's unit
 --- frames do this on every target change and on entering the world
---- (UF_Elements.UpdateAuras -> TomoMod_AuraContainer.SetUnit): the engine
+--- (TomoMod_UFElements.UpdateAuras -> TomoMod_AuraContainer.SetUnit): the engine
 --- does not always pick the new unit up on its own.
 local function Rebind(block)
     block.unitOK = AC.SetUnit(block.container, block.spec.unit) and true or false
