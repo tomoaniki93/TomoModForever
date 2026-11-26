@@ -278,7 +278,12 @@ local function Layout()
     body:ClearAllPoints()
     body:SetPoint("TOPLEFT", child, "TOPLEFT", 0, 0)
     body:SetWidth(innerW)
-    local y = -(body:GetStringHeight() or 0) - 12
+    -- [1.4.0] The game wraps a font string's lines a frame after its width
+    -- changes: measured too early, the text looked shorter than it is and
+    -- the choices were drawn over its last lines. The larger of the two
+    -- measures, and Render lays the page out again on the next frame.
+    local textH = math.max(body:GetStringHeight() or 0, body:GetHeight() or 0)
+    local y = -textH - 12
 
     -- headings and paragraphs after the text
     local bi = 0
@@ -374,6 +379,10 @@ local function Render(page, keepText)
     Layout()
     Footer()
     if not keepText then StartTyping(body, page.text) end
+    -- Once the lines are wrapped (next frame), the measure is right.
+    C_Timer.After(0, function()
+        if current == page and panel:IsShown() then Layout() end
+    end)
 end
 
 -- ---------------------------------------------------------------------

@@ -186,7 +186,7 @@ local function GetCard(parent, i)
     c:SetScript("OnClick", function(self)
         if self.choiceIndex then
             if IsModifiedClick and IsModifiedClick("DRESSUP") and self.link then
-                DressUpItemLink(self.link)
+                if DressUpItemLink then DressUpItemLink(self.link) end
                 return
             end
             choice = self.choiceIndex
@@ -334,7 +334,7 @@ function R.Build(parent, mode, width, y, changed)
                 local c = GetCard(parent, ci)
                 c:ClearAllPoints(); c:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, y); c:SetWidth(colW)
                 c.icon:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
-                c.name:SetText(GetCoinTextureString(money)); c.name:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+                c.name:SetText(TomoMod_Utils.Money(money)); c.name:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
                 c.slot:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 0.9)
                 c.count:SetText(""); c.up:Hide(); c.purse:Hide(); c.pick:Hide(); c.num:SetText("")
                 c.itemType, c.index, c.link, c.choiceIndex = nil, nil, nil, nil
@@ -387,7 +387,7 @@ function R.Build(parent, mode, width, y, changed)
     -- money, experience, spell on one line of small cards
     local extras = {}
     if spellName then extras[#extras + 1] = { icon = spellTex, name = spellName, spellName = spellName } end
-    if money > 0 then extras[#extras + 1] = { icon = "Interface\\Icons\\INV_Misc_Coin_01", name = GetCoinTextureString(money) } end
+    if money > 0 then extras[#extras + 1] = { icon = "Interface\\Icons\\INV_Misc_Coin_01", name = TomoMod_Utils.Money(money) } end
     if xp > 0 then
         extras[#extras + 1] = { icon = "Interface\\Icons\\XP_Icon", name = (BreakUpLargeNumbers and BreakUpLargeNumbers(xp) or xp) .. " " .. T("points d'expérience", "experience"),
             tip = T("Expérience", "Experience") }

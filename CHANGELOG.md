@@ -28,6 +28,11 @@
 - **New** - `K.AdvancedNotice` (the notice card, shared), `TomoMod_Config.RelayoutNav` (called by `K.SetExpert`; the header button follows a switch made from a page's notice).
 - **Removed** - The cards' entrance animation (each card rising into place one after another when a page opens): players found it shaky. `K.PlayEntrance` stays as a no-op.
 
+#### Quest dialogue
+
+- **Fixed** - Rewards with money (quest details): Lua error "attempt to call a nil value" (`DialogueRewards.lua:390`). Forever has no global `GetCoinTextureString`; the money now goes through `TomoMod_Utils.Money`, which tries `C_CurrencyInfo`, then the global, then draws gold, silver and copper with the game's coin icons. The outfit preview on ctrl-click is guarded too.
+- **Fixed** - The NPC's choices could be drawn over the last lines of a long text: the text was measured before the game had wrapped its lines. The larger of the two measures is taken, and the page is laid out again on the next frame.
+
 #### TOC
 
 - **Changed** - `TomoModForever.toc` lists only the libraries, the localisation engine and the six language files, then one XML per block: `Locales\Locales.xml` (strings added by each update, Locale_1xx, GUI, Compat), `Core\Core.xml` (Utils to Init, the options loader, the TUI compatibility layer), `Modules\Interface\Interface.xml`. Same 306 files in exactly the same load order (checked by expanding both). A new `Locale_1xx.lua` goes in `Locales\Locales.xml`.

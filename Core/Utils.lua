@@ -1147,3 +1147,27 @@ function U.SlideIn(frame, dx, dy, duration)
     if ag:IsPlaying() then ag:Stop() end
     ag:Play()
 end
+
+-- [1.4.0] Money as text with coin icons, on every client. Forever has no
+-- global GetCoinTextureString; C_CurrencyInfo may or may not carry it.
+-- Last resort: drawn by hand with the game's coin icons.
+function U.Money(copper)
+    copper = math.floor(tonumber(copper) or 0)
+    if C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString then
+        local ok, s = pcall(C_CurrencyInfo.GetCoinTextureString, copper)
+        if ok and s then return s end
+    end
+    if GetCoinTextureString then
+        local ok, s = pcall(GetCoinTextureString, copper)
+        if ok and s then return s end
+    end
+    local g = math.floor(copper / 10000)
+    local s = math.floor((copper % 10000) / 100)
+    local c = copper % 100
+    local parts = {}
+    local icon = "|TInterface\\MoneyFrame\\UI-%sIcon:0:0:2:0|t"
+    if g > 0 then parts[#parts + 1] = g .. icon:format("Gold") end
+    if s > 0 then parts[#parts + 1] = s .. icon:format("Silver") end
+    if c > 0 or #parts == 0 then parts[#parts + 1] = c .. icon:format("Copper") end
+    return table.concat(parts, " ")
+end
