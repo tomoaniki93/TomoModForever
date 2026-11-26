@@ -629,67 +629,111 @@ end
 -- game's map anyway. Option: dungeonCodex.worldMapShortcut.
 -- ---------------------------------------------------------------------
 local bypass = false
+local fromQuestLog = false
 local hooked = false
+local closedAt            -- GetTime() when the player last closed the game's map
+local selfHiding = false  -- the shortcut itself is closing the game's map
 
 local function ShortcutOn()
     local db = TomoModForeverDB and TomoModForeverDB.dungeonCodex
     return db ~= nil and db.enabled ~= false and db.worldMapShortcut ~= false
 end
 
-local function OnWorldMapShown()
+-- First time only: say where this window comes from and how to get the
+-- game's map back (a new player would not guess it).
+local function Hint()
+    local db = TomoModForeverDB and TomoModForeverDB.dungeonCodex
+    if db and not db.mapShortcutHinted then
+        db.mapShortcutHinted = true
+        print("|cffffd100TomoModForever|r " .. T(
+            "Dans un donjon, la touche de la carte ouvre la carte du donjon de TMF. Pour la carte du jeu : bouton |cffffd100Carte du monde|r de la fenêtre. Option : Aventure > Codex.",
+            "In a dungeon, the map key opens TMF's dungeon map. For the game's map: the window's |cffffd100World map|r button. Option: Adventure > Codex."))
+    end
+end
+
+-- The game's map back, untouched by the shortcut.
+local function GameMap()
+    bypass = true
+    if ToggleWorldMap and not (WorldMapFrame and WorldMapFrame:IsShown()) then ToggleWorldMap()
+    elseif WorldMapFrame and not WorldMapFrame:IsShown() then ShowUIPanel(WorldMapFrame) end
+    if not (WorldMapFrame and WorldMapFrame:IsShown()) then bypass = false end
+end
+
+-- [1.4.0] The map key was pressed (ToggleWorldMap ran, whether the game
+-- opened its map or refused to in this dungeon). Next frame, once the
+-- game is done: inside a mapped dungeon, our window instead of its map;
+-- our window already open: both closed. The quest log (L) is never taken.
+-- Should our window fail to show, the game's map comes back and the
+-- error goes to the error handler (Diagnostics), so no key ever leaves
+-- the player without a map.
+local function AfterMapKey()
     if bypass then bypass = false return end
+    -- The key just closed the game's map (opened with the World map
+    -- button): only that.
+    if closedAt and closedAt == GetTime() then return end
     if not ShortcutOn() or InCombatLockdown() then return end
     local key, f = Here()
     if not key then return end
     local wasOpen = win ~= nil and win:IsShown()
-    -- Next frame: the game's panel code has finished showing it.
     C_Timer.After(0, function()
-        if InCombatLockdown() or not (WorldMapFrame and WorldMapFrame:IsShown()) then return end
-        -- [1.4.0] Only when the game's map opened on this dungeon: a quest
-        -- clicked in the tracker opens the map of the quest's zone, and
-        -- that one must stay.
-        local shown = WorldMapFrame.GetMapID and WorldMapFrame:GetMapID()
-        if shown then
-            local d = Data()
-            local onDungeon = false
-            for _, fl in ipairs(d.instances[key].floors) do
-                if fl == shown then onDungeon = true break end
-            end
-            if not onDungeon then
-                -- A floor we do not list: still ours only when it is the
-                -- player's own map.
-                local playerMap = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
-                if shown ~= playerMap then return end
-            end
+        if fromQuestLog or InCombatLockdown() then return end
+        if WorldMapFrame and WorldMapFrame:IsShown() then
+            selfHiding = true
+            HideUIPanel(WorldMapFrame)
+            selfHiding = false
         end
-        HideUIPanel(WorldMapFrame)
-        if wasOpen then win:Hide() else DM.Show(key, f) end
-        -- First time only: say where this window comes from and how to get
-        -- the game's map back (a new player would not guess it).
-        local db = TomoModForeverDB and TomoModForeverDB.dungeonCodex
-        if db and not wasOpen and not db.mapShortcutHinted then
-            db.mapShortcutHinted = true
-            print("|cffffd100TomoModForever|r " .. T(
-                "Dans un donjon, la touche de la carte ouvre la carte du donjon de TMF. Pour la carte du jeu : bouton |cffffd100Carte du monde|r de la fenêtre. Option : Aventure > Codex.",
-                "In a dungeon, the map key opens TMF's dungeon map. For the game's map: the window's |cffffd100World map|r button. Option: Adventure > Codex."))
+        if wasOpen then
+            if win then win:Hide() end
+            return
         end
+        -- One more frame: the game's panel code has finished hiding its map.
+        C_Timer.After(0, function()
+            if InCombatLockdown() then return end
+            local ok, err = pcall(DM.Show, key, f)
+            if ok and win and win:IsVisible() then
+                Hint()
+                return
+            end
+            if not ok then
+                local h = geterrorhandler and geterrorhandler()
+                if h then pcall(h, "TomoModForever DungeonMap: " .. tostring(err)) end
+            end
+            if win then win:Hide() end
+            GameMap()
+        end)
     end)
 end
 
+local function MarkQuestLog()
+    fromQuestLog = true
+    C_Timer.After(0.3, function() fromQuestLog = false end)
+end
+
 local function HookWorldMap()
-    if hooked or not WorldMapFrame then return end
-    hooked = true
-    WorldMapFrame:HookScript("OnShow", OnWorldMapShown)
+    if hooked then return end
+    if ToggleWorldMap then
+        hooked = true
+        hooksecurefunc("ToggleWorldMap", AfterMapKey)
+    elseif WorldMapFrame then
+        -- No ToggleWorldMap on this client: the map's own OnShow.
+        hooked = true
+        WorldMapFrame:HookScript("OnShow", AfterMapKey)
+    end
+    if not hooked then return end
+    if WorldMapFrame then
+        WorldMapFrame:HookScript("OnHide", function()
+            if not selfHiding then closedAt = GetTime() end
+        end)
+    end
+    for _, name in ipairs({ "ToggleQuestLog", "QuestLog_OpenToQuest", "QuestMapFrame_OpenToQuestDetails", "OpenQuestLog" }) do
+        if type(_G[name]) == "function" then hooksecurefunc(name, MarkQuestLog) end
+    end
 end
 
 function DM.OpenWorldMap()
     if InCombatLockdown() then return end
     if win then win:Hide() end
-    bypass = true
-    if WorldMapFrame and WorldMapFrame:IsShown() then bypass = false return end
-    if ToggleWorldMap then ToggleWorldMap() elseif WorldMapFrame then ShowUIPanel(WorldMapFrame) end
-    -- The map did not open (it was refused): no stale bypass.
-    if not (WorldMapFrame and WorldMapFrame:IsShown()) then bypass = false end
+    GameMap()
 end
 
 local ev = CreateFrame("Frame")
