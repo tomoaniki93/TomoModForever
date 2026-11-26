@@ -211,11 +211,31 @@ local function ReadItems(kind, num)
             quality = select(3, C_Item.GetItemInfo(link))
         end
         list[#list + 1] = {
-            itemType = kind, index = i, name = name or (itemID and ("item:" .. itemID)) or "...",
+            itemType = kind, index = i, itemID = itemID, name = name or (itemID and ("item:" .. itemID)) or "...",
             icon = texture, count = count, quality = quality, usable = isUsable ~= false, link = link,
         }
     end
     return list
+end
+
+-- [1.3.9] How many the player carries. The item ID first (the link of a
+-- required item is often missing on the progress page, which read 0); and
+-- when the game says the quest can be turned in, all are there.
+function R.Carried(it)
+    local need = it.count or 1
+    if IsQuestCompletable and IsQuestCompletable() then return need end
+    local n = 0
+    local count = (C_Item and C_Item.GetItemCount) or GetItemCount
+    local key = it.itemID or it.link or it.name
+    if count and key then
+        local ok, v = pcall(count, key)
+        if ok and type(v) == "number" then n = v end
+    end
+    if n == 0 and it.name and count then
+        local ok, v = pcall(count, it.name)
+        if ok and type(v) == "number" then n = v end
+    end
+    return n
 end
 
 -- ---------------------------------------------------------------------
@@ -284,7 +304,7 @@ function R.Build(parent, mode, width, y, changed)
             end
             c.name:SetText(it.name or "")
             if opts.have then
-                local carried = it.link and GetItemCount and GetItemCount(it.link) or 0
+                local carried = R.Carried(it)
                 local ok = carried >= (it.count or 1)
                 c.count:SetText(carried .. "/" .. (it.count or 1))
                 c.count:SetTextColor(ok and GREEN[1] or 1, ok and GREEN[2] or 0.35, ok and GREEN[3] or 0.3)

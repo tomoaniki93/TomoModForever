@@ -558,6 +558,7 @@ SlashCmdList["TOMOMOD"] = function(msg)
         print("  |cffffd100/tmf anim|r — " .. L["msg_help_anim"])
         print("  |cffffd100/tmf anim test|r — " .. L["msg_help_anim_test"])
         print("  |cffffd100/tmf groupe|r — " .. L["msg_help_groupe"])
+        print("  |cffffd100/tmf dialogue|r — " .. L["msg_help_dialogue"])
         print("  |cffffd100/tmf help|r — " .. L["msg_help_help"])
     else
         -- Argument purement numérique : soit une macro tierce (ex : RareScanner
