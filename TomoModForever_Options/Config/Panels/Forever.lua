@@ -890,6 +890,48 @@ K.RegisterPage({
 })
 
 -- ---------------------------------------------------------------------
+-- 1.3.9: Resource glow
+-- ---------------------------------------------------------------------
+local function RGApply() Call("TomoMod_ResourceGlow", "ApplySettings") end
+
+K.RegisterPage({
+    key = "resourceglow",
+    section = SECTION,
+    label = T("Surbrillance", "Glow"),
+    kw = "surbrillance glow lueur brille minerai filon ore mine plante herbe herb coffre chest quete quest objet object recolte gather soft target",
+    build = function(parent)
+        return K.Page(parent, function(page)
+            page:Hero(T("Surbrillance des ressources", "Resource glow"),
+                T("Les filons, les plantes, les coffres et les objets de quête brillent quand tu t'en approches. Faible quand c'est trop loin, vif avec des arcs qui tournent quand tu peux le prendre, rouge quand le jeu refuse (compétence trop basse, coffre verrouillé).",
+                  "Ore veins, herbs, chests and quest objects glow as you get close. Dim when too far, bright with turning arcs when you can take it, red when the game refuses (skill too low, locked chest)."))
+
+            local c = page:Card(T("Objets", "Objects"))
+            ModuleToggle(c, "resourceGlow", T("Activer la surbrillance", "Turn on the glow"))
+            c:Toggle(T("Filons (cuivre)", "Ore veins (copper)"), "resourceGlow.ore", RGApply)
+            c:Toggle(T("Plantes (vert)", "Herbs (green)"), "resourceGlow.herb", RGApply)
+            c:Toggle(T("Coffres (bleu)", "Chests (blue)"), "resourceGlow.chest", RGApply)
+            c:Toggle(T("Objets de quête (or)", "Quest objects (gold)"), "resourceGlow.quest", RGApply)
+            c:Toggle(T("Seulement ce que mon personnage sait récolter", "Only what my character can gather"), "resourceGlow.onlyTrained", RGApply,
+                T("Sans Herboristerie, les plantes ne brillent pas ; sans Minage, les filons non plus.",
+                  "Without Herbalism herbs do not glow; without Mining, ore veins do not either."))
+            c:Toggle(T("Rien sur ce que le jeu refuse pour l'instant", "Nothing on what the game refuses for now"), "resourceGlow.hideLocked", RGApply)
+            c:Toggle(T("Rien en combat", "Nothing in combat"), "resourceGlow.hideInCombat", RGApply)
+            c:Done()
+
+            local o = page:Card(T("Apparence", "Look"))
+            o:Slider(T("Portée (mètres)", "Range (yards)"), "resourceGlow.range", 5, 15, 1, RGApply, "%.0f",
+                T("Le jeu perd l'objet au delà de 15 mètres.", "The game loses the object past 15 yards."))
+            o:Slider(T("Taille", "Size"), "resourceGlow.size", 60, 200, 5, RGApply, "%.0f")
+            o:Slider(T("Hauteur", "Height"), "resourceGlow.offsetY", -120, 40, 5, RGApply, "%.0f")
+            o:Slider(T("Intensité", "Intensity"), "resourceGlow.intensity", 0.3, 1.5, 0.05, RGApply, "%.2f")
+            o:Info(T("Un seul objet brille à la fois : celui que le ciblage du jeu choisit, le plus proche devant toi. Les animations suivent le réglage global (Général). Le ciblage d'interaction du jeu est réglé pour ça ; tes valeurs reviennent quand tu décoches, et à chaque déconnexion. Si l'addon Lueur est installé, TMF lui laisse la place.",
+                     "One object glows at a time: the one the game's targeting picks, the closest in front of you. Animations follow the global setting (General). The game's interact targeting is set for this; your values come back when you untick, and at every logout. If the Lueur addon is installed, TMF leaves it the job."))
+            o:Done()
+        end)
+    end,
+})
+
+-- ---------------------------------------------------------------------
 -- 1.3.6: World map markers
 -- ---------------------------------------------------------------------
 local function MMApply() Call("TomoMod_MapMarkers", "ApplySettings") end

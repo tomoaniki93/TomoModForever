@@ -25,10 +25,18 @@
 - **New** - Option Skins > Chat > Overlord (`chatV4.overlordTab`, on by default), shown only when Overlord is loaded: turning it on brings a closed tab back, turning it off closes it. Six locales.
 - **Changed** - `## OptionalDeps: Overlord` so Overlord loads first.
 
+#### Resource glow (new)
+
+- **New** - `Modules/QOL/Forever/ResourceGlow.lua` (`resourceGlow.*`): ore veins, herbs, chests and quest objects glow as you get close, in their colour (copper, green, blue, gold). Far: dim, slow pulse. Ready: bright, turning arcs, expanding ring, rising sparks. Locked (skill too low, locked chest): red. One object at a time, the one the game's soft targeting picks (`softinteract`); the glow follows its nameplate.
+- **New** - What the object is: the cursor the game would show on it (`SetUnitCursorTexture`: mining pick, herb hand, lock, loot hand); quest objects by `C_QuestLog.UnitIsRelatedToActiveQuest` or a quest line in their tooltip; chests by a chest word in the name (six languages) or by an object ID already looted (learned from the loot window, `GetLootSourceInfo`). Kept per GUID until the target, the quest log or the loot changes. Only world objects: no NPC, no corpse. The fishing bobber is left to `Fishing.lua`.
+- **New** - Options: Adventure > Glow (per object kind, only what the character can gather, nothing on locked objects, nothing in combat, range 5 to 15 yards, size, height, intensity). Animations follow the global level. Module registry entry.
+- **New** - CVars while on: `SoftTargetInteract` 3, range, all-around arc, `SoftTargetInteractOnlyInRange` 0, `SoftTargetIconGameObject` 1, `nameplateGameObjectMaxDistance` at least 40. `SoftTargetNameplateInteract` is opened only for an object that should glow. The player's values are captured once (`resourceGlow.saved`), given back at logout (applied again at login) and when the option is turned off; nothing is written in combat.
+- **New** - Stands down when the Lueur addon is loaded. Idea from Lueur (no licence, all rights reserved): nothing of its code or art is used, TMF textures only.
+
 #### Changed
 
 - **Changed** - Settings migration `dialogueShiftOff`: the dialogue camera side offset is reset to 0 once.
-- **Changed** - What's New and the six locales (`Locales/Locale_139.lua`) cover the quest dialogue, the scene, rewards, books, the Overlord tab and the fixes below.
+- **Changed** - What's New and the six locales (`Locales/Locale_139.lua`) cover the quest dialogue, the scene, rewards, books, the Overlord tab, the resource glow and the fixes below.
 
 #### Fixed
 

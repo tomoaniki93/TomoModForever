@@ -799,6 +799,25 @@ TomoMod_Defaults = {
         sounds = false,
     },
 
+    -- [1.3.9] Glow on ore, herbs, chests and quest objects, hung on the
+    -- soft-target nameplate (ResourceGlow.lua). saved: the player's CVars,
+    -- kept while on; containers: object IDs learned from the loot window.
+    resourceGlow = {
+        enabled = true,
+        ore = true,
+        herb = true,
+        chest = true,
+        quest = true,
+        onlyTrained = true,       -- no glow on nodes the character cannot gather
+        hideLocked = false,
+        hideInCombat = false,
+        range = 15,               -- yards (the client loses the target past 15)
+        size = 110,
+        offsetY = -40,
+        intensity = 1.0,
+        containers = {},
+    },
+
     -- [1.3.6] World map markers and comfort (MapMarkers.lua).
     mapMarkers = {
         enabled = true,

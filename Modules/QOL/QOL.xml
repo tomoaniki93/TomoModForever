@@ -73,6 +73,7 @@
     <Include file="Forever\GatherTips.lua" />
     <Include file="Forever\QuestReward.lua" />
     <Include file="Forever\Fishing.lua" />
+    <Include file="Forever\ResourceGlow.lua" />
     <Include file="Forever\MapMarkers.lua" />
     <Include file="Forever\EdgeAlerts.lua" />
     <Include file="Forever\Triage.lua" />

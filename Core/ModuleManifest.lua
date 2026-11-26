@@ -570,6 +570,13 @@ R.Define{
 }
 
 R.Define{
+    key = "resourceGlow", label = "mod_resourceGlow", group = "qol",
+    enabledPath = "resourceGlow.enabled",
+    global = "TomoMod_ResourceGlow", applyMode = "setter", apply = "SetEnabled",
+    combatSafe = false,
+}
+
+R.Define{
     key = "mapMarkers", label = "mod_mapMarkers", group = "qol",
     enabledPath = "mapMarkers.enabled",
     global = "TomoMod_MapMarkers", applyMode = "setter", apply = "SetEnabled",
