@@ -1,5 +1,15 @@
 ## ####################################
 
+## CHANGELOG 1.4.0
+
+#### Dungeon maps
+
+- **New** - World map shortcut (`DungeonMap.lua`, `dungeonCodex.worldMapShortcut`, on by default): inside a dungeon or raid that has a map in the codex, the world map key (M) opens the TMF map of that dungeon on the floor you are on; pressed again, it closes it. Out of combat only (in combat the game's map opens as usual); dungeons without a TMF map (the new Forever dungeons for now) keep the game's map. The dungeon is found by the game's map, then by instance ID.
+- **New** - "World map" button in the map window's title bar: opens the game's map even where the shortcut applies.
+- **New** - Option in Adventure > Codex > Settings.
+
+## ####################################
+
 ## CHANGELOG 1.3.9
 
 #### Dungeon and raid maps (new)

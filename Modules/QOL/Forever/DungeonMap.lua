@@ -469,6 +469,17 @@ local function CreateWindow()
     close:SetScript("OnEnter", function(self) self.icon:SetVertexColor(YELLOW[1], YELLOW[2], YELLOW[3]) end)
     close:SetScript("OnLeave", function(self) self.icon:SetVertexColor(GOLD[1], GOLD[2], GOLD[3]) end)
     close:SetScript("OnClick", function() win:Hide() end)
+    -- [1.4.0] Way back to the game's world map (the shortcut lets it open).
+    local world = Button(bar, 118, 22, T("Carte du monde", "World map"), function() DM.OpenWorldMap() end)
+    world:SetPoint("RIGHT", close, "LEFT", -10, 0)
+    world:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine(T("Ouvrir la carte du jeu", "Open the game's map"), YELLOW[1], YELLOW[2], YELLOW[3])
+        GameTooltip:AddLine(T("Dans un donjon qui a une carte ici, la touche de la carte du monde ouvre cette fenêtre (option dans Aventure > Codex).",
+                              "In a dungeon that has a map here, the world map key opens this window (option in Adventure > Codex)."), TEXT[1], TEXT[2], TEXT[3], true)
+        GameTooltip:Show()
+    end)
+    world:HookScript("OnLeave", function() GameTooltip:Hide() end)
     local rule = win:CreateTexture(nil, "ARTWORK")
     rule:SetTexture(FC and (FC.TEX .. "divider") or WHITE)
     rule:SetHeight(FC and 10 or 1)
@@ -609,3 +620,56 @@ end
 function DM.Toggle()
     if win and win:IsShown() then win:Hide() else DM.Open() end
 end
+
+-- ---------------------------------------------------------------------
+-- [1.4.0] World map shortcut: inside a dungeon or raid that has a map
+-- here, the world map key (M) opens this window instead of the game's
+-- map; pressed again, it closes it. Not in combat (the game's map then
+-- opens as usual). The "World map" button of the window reaches the
+-- game's map anyway. Option: dungeonCodex.worldMapShortcut.
+-- ---------------------------------------------------------------------
+local bypass = false
+local hooked = false
+
+local function ShortcutOn()
+    local db = TomoModForeverDB and TomoModForeverDB.dungeonCodex
+    return db ~= nil and db.enabled ~= false and db.worldMapShortcut ~= false
+end
+
+local function OnWorldMapShown()
+    if bypass then bypass = false return end
+    if not ShortcutOn() or InCombatLockdown() then return end
+    local key, f = Here()
+    if not key then return end
+    local wasOpen = win ~= nil and win:IsShown()
+    -- Next frame: the game's panel code has finished showing it.
+    C_Timer.After(0, function()
+        if InCombatLockdown() or not (WorldMapFrame and WorldMapFrame:IsShown()) then return end
+        HideUIPanel(WorldMapFrame)
+        if wasOpen then win:Hide() else DM.Show(key, f) end
+    end)
+end
+
+local function HookWorldMap()
+    if hooked or not WorldMapFrame then return end
+    hooked = true
+    WorldMapFrame:HookScript("OnShow", OnWorldMapShown)
+end
+
+function DM.OpenWorldMap()
+    if InCombatLockdown() then return end
+    if win then win:Hide() end
+    bypass = true
+    if WorldMapFrame and WorldMapFrame:IsShown() then bypass = false return end
+    if ToggleWorldMap then ToggleWorldMap() elseif WorldMapFrame then ShowUIPanel(WorldMapFrame) end
+    -- The map did not open (it was refused): no stale bypass.
+    if not (WorldMapFrame and WorldMapFrame:IsShown()) then bypass = false end
+end
+
+local ev = CreateFrame("Frame")
+ev:RegisterEvent("PLAYER_LOGIN")
+ev:RegisterEvent("ADDON_LOADED")
+ev:SetScript("OnEvent", function(self, event, name)
+    if event == "PLAYER_LOGIN" or name == "Blizzard_WorldMap" then HookWorldMap() end
+    if hooked then self:UnregisterAllEvents() end
+end)

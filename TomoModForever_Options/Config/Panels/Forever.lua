@@ -702,6 +702,9 @@ K.RegisterPage({
 
             c = page:Card(T("Réglages", "Settings"))
             c:Toggle(T("Rappeler /codex dans le chat à la connexion", "Remind /codex in the chat at login"), "dungeonCodex.loginHint", DCApply)
+            c:Toggle(T("Dans un donjon, la touche de la carte du monde ouvre sa carte", "In a dungeon, the world map key opens its map"), "dungeonCodex.worldMapShortcut", nil,
+                T("Seulement pour les donjons et raids qui ont une carte dans le codex, hors combat. Le bouton Carte du monde de la fenêtre ouvre la carte du jeu.",
+                  "Only for the dungeons and raids that have a map in the codex, out of combat. The window's World map button opens the game's map."))
             c:Toggle(T("Butin : seulement ce qui sert à ma classe", "Loot: only what my class uses"), "dungeonCodex.lootMine", DCApply,
                 T("Même réglage que le bouton « Pour moi » de la fenêtre Butin : ton type d'armure selon ton niveau (cuir puis maille au niveau 40 pour chasseur et chaman, maille puis plaque pour guerrier et paladin), tes armes, boucliers et reliques.", "Same setting as the \"For me\" button of the Loot window: your armour type by level (leather then mail at 40 for hunter and shaman, mail then plate for warrior and paladin), your weapons, shields and relics."))
             c:Toggle(T("Ligne « Butin : boss (donjon) » dans les infobulles d'objets", "\"Loot: boss (dungeon)\" line on item tooltips"), "dungeonCodex.lootTooltip", DCApply,

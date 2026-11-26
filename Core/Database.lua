@@ -875,6 +875,7 @@ TomoMod_Defaults = {
         loginHint = true,         -- chat line at login about /codex
         lootMine = false,         -- loot tab: only what your class can wear
         lootTooltip = true,       -- "Loot: boss (dungeon)" on item tooltips
+        worldMapShortcut = true,  -- [1.4.0] in a mapped dungeon, the world map key opens its map
         scale = 1.0,
         overrides = {},           -- [key] = { map, x, y } set with /codex set
         position = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 40 },
