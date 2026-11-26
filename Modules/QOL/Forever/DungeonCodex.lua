@@ -1184,7 +1184,23 @@ local function CreateWindow()
 
     -- Header: name, levels and zone, tags. Fixed heights, so what follows
     -- does not move from one dungeon to the next.
-    det.name = FS(det, FONT_BOLD, 17, YELLOW); det.name:SetPoint("TOPLEFT"); det.name:SetWidth(DW); det.name:SetWordWrap(false)
+    det.name = FS(det, FONT_BOLD, 17, YELLOW); det.name:SetPoint("TOPLEFT"); det.name:SetWidth(DW - 92); det.name:SetWordWrap(false)
+    -- [1.3.9] Map of the dungeon (DungeonMap.lua, data from ForeverDungeonRoutes).
+    det.map2 = Flat(det, 84, 22, T("Carte", "Map"), function()
+        local M = TomoMod_DungeonMap
+        if selected and M and M.HasMap(selected.key) then M.Open(selected.key) end
+    end, nil, "chevron_r", true)
+    det.map2:SetPoint("TOPRIGHT", 0, 0)
+    det.map2:HookScript("OnEnter", function(self)
+        local M = TomoMod_DungeonMap
+        if not (selected and M) or M.HasMap(selected.key) then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(T("Pas de carte dans TMF", "No map in TMF"), YELLOW[1], YELLOW[2], YELLOW[3])
+        GameTooltip:AddLine(T("Le jeu n'a pas de carte pour les nouveaux donjons de Forever. Celles de l'addon ForeverDungeonRoutes sont de Santiago Reyes (Atlas de Azeroth: Forever) et ne peuvent pas être reprises sans son accord.",
+                              "The game has no map for the new Forever dungeons. Those of the ForeverDungeonRoutes addon are Santiago Reyes' (Atlas de Azeroth: Forever) and cannot be reused without his permission."), TEXT[1], TEXT[2], TEXT[3], true)
+        GameTooltip:Show()
+    end)
+    det.map2:HookScript("OnLeave", function() GameTooltip:Hide() end)
     det.sub  = FS(det, FONT, 11, TEXT);        det.sub:SetPoint("TOPLEFT", 0, -25); det.sub:SetWidth(DW); det.sub:SetWordWrap(false)
     det.tags = FS(det, FONT, 10, GOLD);        det.tags:SetPoint("TOPLEFT", 0, -42); det.tags:SetWidth(DW); det.tags:SetWordWrap(false)
 
@@ -1755,7 +1771,7 @@ local SRC_TEXT = {
 ShowDetail = function(d)
     local det = win.det
     local show = d ~= nil
-    for _, k in ipairs({ "name", "sub", "tags", "routeHead", "routeGem", "rline", "note", "pos", "pin", "foot", "wp", "map", "tabs", "tabLoot" }) do
+    for _, k in ipairs({ "name", "sub", "tags", "routeHead", "routeGem", "rline", "note", "pos", "pin", "foot", "wp", "map", "tabs", "tabLoot", "map2" }) do
         if show then det[k]:Show() else det[k]:Hide() end
     end
     for _, s in ipairs(steps) do s.num:Hide(); s.txt:Hide(); s.fill:Hide(); s.ring:Hide() end
@@ -1779,6 +1795,9 @@ ShowDetail = function(d)
 
     local lvl, fac = PlayerLevel(), Faction()
     det.name:SetText(DungeonName(d))
+    local M = TomoMod_DungeonMap
+    det.map2:SetShown(M ~= nil and not d.elite)
+    if M then det.map2:SetEnabled(M.HasMap(d.key)) end
 
     if d.elite then
         -- Elite zone: its elite quests, the zone map; no route, no waypoint.
@@ -1960,6 +1979,9 @@ local function Slash(msg)
         if db.overrides then db.overrides[arg] = nil end
         print(PREFIX .. string.format(T("Position personnalisée oubliée : %s", "Custom position cleared: %s"), arg))
         if win and win:IsShown() then ShowDetail(selected) end
+    elseif cmd == "carte" or cmd == "map" then
+        local M = TomoMod_DungeonMap
+        if M then M.Open(arg ~= "" and arg or nil) end
     elseif cmd == "missing" or cmd == "keys" then
         for _, d in ipairs(Data().dungeons) do
             local map, x = Entrance(d)
@@ -1969,7 +1991,7 @@ local function Slash(msg)
             end
         end
     else
-        print(PREFIX .. "/codex  |  /codex here  |  /codex set <key>  |  /codex reset <key>  |  /codex missing  |  /codex keys")
+        print(PREFIX .. "/codex  |  /codex carte  |  /codex here  |  /codex set <key>  |  /codex reset <key>  |  /codex missing  |  /codex keys")
     end
 end
 
