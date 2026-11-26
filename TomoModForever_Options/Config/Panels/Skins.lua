@@ -107,6 +107,19 @@ local function BuildChatFrameTab(parent)
     end)
     y = ny
 
+    -- ── Overlord (only when the addon is loaded) ───────────────
+    local OV = _G.TomoMod_ChatOverlord
+    if OV and OV.IsLoaded and OV.IsLoaded() then
+        local _, ny = W.CreateSectionHeader(c, L["chat_v4_overlord"], y)
+        y = ny
+        local _, ny = W.CreateCheckbox(c, L["chat_v4_overlord_tab"], db.overlordTab ~= false, y, function(v)
+            OV:SetEnabled(v)
+        end)
+        y = ny
+        local _, ny = W.CreateInfoText(c, L["chat_v4_overlord_info"], y)
+        y = ny
+    end
+
     -- ── Sidebar ────────────────────────────────────────────────
     local _, ny = W.CreateSectionHeader(c, L["chat_v4_sidebar"], y)
     y = ny

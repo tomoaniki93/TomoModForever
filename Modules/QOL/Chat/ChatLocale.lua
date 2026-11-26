@@ -337,3 +337,35 @@ TomoMod_RegisterLocale("ptBR", {
     ["chat_v4_status_dnd"] = "Não perturbe",
     ["chat_v4_copy_lines"] = "Máximo de linhas copiadas",
 })
+
+-- Overlord tab (ChatOverlord.lua). No "+", guillemets or bullets: the font may not carry them.
+TomoMod_RegisterLocale("enUS", {
+    ["chat_v4_overlord"] = "Overlord",
+    ["chat_v4_overlord_tab"] = "Overlord tab",
+    ["chat_v4_overlord_info"] = "With the Overlord addon, its messages (captures, general, kills, layers) go to their own chat tab. Closed tab: messages go back where Overlord puts them.",
+})
+TomoMod_RegisterLocale("frFR", {
+    ["chat_v4_overlord"] = "Overlord",
+    ["chat_v4_overlord_tab"] = "Onglet Overlord",
+    ["chat_v4_overlord_info"] = "Avec l'addon Overlord, ses messages (captures, général, victimes, couches) vont dans leur propre onglet du chat. Onglet fermé : les messages reviennent là où Overlord les met.",
+})
+TomoMod_RegisterLocale("deDE", {
+    ["chat_v4_overlord"] = "Overlord",
+    ["chat_v4_overlord_tab"] = "Overlord-Reiter",
+    ["chat_v4_overlord_info"] = "Mit dem Addon Overlord landen seine Meldungen (Eroberungen, General, Kills, Layer) in einem eigenen Chat-Reiter. Reiter geschlossen: die Meldungen gehen wieder dorthin, wo Overlord sie hinschreibt.",
+})
+TomoMod_RegisterLocale("esES", {
+    ["chat_v4_overlord"] = "Overlord",
+    ["chat_v4_overlord_tab"] = "Pestaña Overlord",
+    ["chat_v4_overlord_info"] = "Con el addon Overlord, sus mensajes (capturas, general, muertes, capas) van a su propia pestaña del chat. Pestaña cerrada: los mensajes vuelven a donde los pone Overlord.",
+})
+TomoMod_RegisterLocale("itIT", {
+    ["chat_v4_overlord"] = "Overlord",
+    ["chat_v4_overlord_tab"] = "Scheda Overlord",
+    ["chat_v4_overlord_info"] = "Con l'addon Overlord, i suoi messaggi (catture, generale, uccisioni, layer) vanno in una scheda della chat tutta loro. Scheda chiusa: i messaggi tornano dove li mette Overlord.",
+})
+TomoMod_RegisterLocale("ptBR", {
+    ["chat_v4_overlord"] = "Overlord",
+    ["chat_v4_overlord_tab"] = "Aba Overlord",
+    ["chat_v4_overlord_info"] = "Com o addon Overlord, as mensagens dele (capturas, general, abates, camadas) vão para uma aba própria do bate-papo. Aba fechada: as mensagens voltam para onde o Overlord as coloca.",
+})

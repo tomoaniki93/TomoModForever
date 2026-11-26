@@ -317,6 +317,7 @@ TomoMod_Defaults = {
 
     chatV4 = {
         enabled = true,
+        overlordTab = true,
         -- Position declaree : sans entree ici l'ancre n'existe pas pour le
         -- moteur de layout, donc pas de migration de schema, pas
         -- d'estampillage de reference et pas de capture par les presets

@@ -69,6 +69,7 @@ CHANGELOG = {
             L["wn_139_scene"],
             L["wn_139_rewards"],
             L["wn_139_books"],
+            L["wn_139_overlord"],
             L["wn_139_fixes"],
         },
     },

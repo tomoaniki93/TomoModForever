@@ -111,6 +111,7 @@
     <Include file="Chat\ChatCopy.lua" />
     <Include file="Chat\ChatSidebar.lua" />
     <Include file="Chat\ChatBridge.lua" />
+    <Include file="Chat\ChatOverlord.lua" />
 
     <!-- Modules: Skins -->
     <Include file="Skins\ColorPickerSkin.lua" />

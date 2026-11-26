@@ -6,7 +6,7 @@
 ## Category: |cffC9A252HUD|r
 ## 
 ## SavedVariables: TomoModForeverDB, TomoModForeverCompanionDB, TomoModForeverDamageMeterDB, TomoModForeverFlightDB, TomoModForeverMailDB
-## OptionalDeps: Blizzard_DamageMeter
+## OptionalDeps: Blizzard_DamageMeter, Overlord
 ## SavedVariablesPerCharacter: TomoModForeverCharDB
 ## X-oUF: TomoMod_oUF
 ## Author: TomoAniki

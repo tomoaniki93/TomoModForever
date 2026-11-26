@@ -17,10 +17,18 @@
 - **New** - `/tmf dialogue`: state of the panel, keyboard and scene, and the last 30 events, keys and actions, to check the dialogue in game. Listed in `/tmf help`.
 - Idea from DialogueUI by Peterodox (no licence, all rights reserved): nothing of its code or art is used.
 
+#### Overlord Forever compatibility (new)
+
+- **New** - `Modules/QOL/Chat/ChatOverlord.lua`: with the Overlord addon (Troma) loaded, TMF opens a chat tab named "Overlord" and every Overlord notification goes there (captures, general, kills, layer codes, faction calls). Without Overlord, nothing: no tab, no hook.
+- **New** - The tab is a normal Blizzard chat window (`FCF_OpenNewWindow(name, true)`) with no message group and no channel, so only Overlord lines land in it. It is created once per character (`TomoModForeverCharDB.overlordTabCreated`), docked, and the tab the player was reading stays selected. Postponed after combat if needed.
+- **New** - Routing wraps `Overlord:PrintNotification`, the one method Overlord uses for its player messages. Tab closed or option off: Overlord's own code runs unchanged (its notification tab setting included). `OverlordDB` is never written. Raid-warning banners, debug lines and the loading line stay where Overlord puts them.
+- **New** - Option Skins > Chat > Overlord (`chatV4.overlordTab`, on by default), shown only when Overlord is loaded: turning it on brings a closed tab back, turning it off closes it. Six locales.
+- **Changed** - `## OptionalDeps: Overlord` so Overlord loads first.
+
 #### Changed
 
 - **Changed** - Settings migration `dialogueShiftOff`: the dialogue camera side offset is reset to 0 once.
-- **Changed** - What's New and the six locales (`Locales/Locale_139.lua`) cover the quest dialogue, the scene, rewards, books and the fixes below.
+- **Changed** - What's New and the six locales (`Locales/Locale_139.lua`) cover the quest dialogue, the scene, rewards, books, the Overlord tab and the fixes below.
 
 #### Fixed
 

@@ -14,6 +14,9 @@ Chat.VERSION = 1
 
 local DEFAULTS = {
     enabled = true,
+    -- Tab for the Overlord addon's messages (ChatOverlord.lua), only when
+    -- Overlord is loaded.
+    overlordTab = true,
     appearance = {
         bgAlpha = 0.72,
         messageBgAlpha = 0.72,
