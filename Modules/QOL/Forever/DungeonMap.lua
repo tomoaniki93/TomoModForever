@@ -1,5 +1,5 @@
 -- =====================================================================
--- Modules/QOL/Forever/DungeonMap.lua -- dungeon and raid maps (1.3.9)
+-- Modules/QOL/Forever/DungeonMap.lua -- dungeon and raid maps (1.3.9, 1.4.0)
 --
 -- The map of every classic dungeon and raid of WoW: Forever, opened from
 -- the codex (Map button) or with /codex carte. The art is the game's own
@@ -10,8 +10,15 @@
 --
 -- Data (DungeonMapData.lua): ForeverDungeonRoutes by Checkov23 -- the
 -- dungeon list, floors and art tiles from the game's map tables, boss
--- positions, notes and links of its built-in routes. Its maps of the new
--- Forever dungeons belong to Santiago Reyes and are not included.
+-- positions, notes and links of its built-in routes.
+--
+-- [1.4.0] The new Forever dungeons are drawn on the maps of Santiago Reyes
+-- (Atlas de Azeroth: Forever, https://sreyesmaps.com/), shipped in
+-- Assets/Textures/DungeonMaps/Reyes/ in the versions with his watermark.
+-- Used with his permission (granted to TomoModForever in November 2026):
+-- they are not under the MIT licence below, all rights stay with him, and
+-- they must not be reused elsewhere without his own permission. His name
+-- and site are shown under every one of his maps in the window.
 --
 -- The Russian, Spanish (Mexico) and Italian clients of Forever lack the
 -- game's tiles of these maps (found by ForeverDungeonRoutes / OpenMap):
@@ -67,6 +74,22 @@ local KIND = {
 }
 
 local MAP_W, MAP_H, TILE = 1002, 668, 256
+
+-- [1.4.0] Floors whose map in the game is not the dungeon WoW Forever
+-- has. Wailing Caverns: the game's map is the one from patch 4.1, drawn
+-- after the eastern maze was cut out; Forever has the whole original
+-- cave. Blizzard's own map from before that patch is shipped instead
+-- (1002x668 in a 1024x1024 texture), and it needs no tiles from the
+-- client, so it also shows on the clients that lack them.
+local FULL_ART = {
+    [279] = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\DungeonMaps\\WailingCavernsFull",
+}
+local FULL_W, FULL_H = MAP_W / 1024, MAP_H / 1024   -- part of the texture these maps fill
+
+-- [1.4.0] Santiago Reyes' maps (floors with img in the data): the map fills
+-- the top 683 of the 1024 rows of the texture.
+local REYES = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\DungeonMaps\\Reyes\\"
+local REYES_H = 0.667
 local W, H        = 980, 600
 local LIST_W      = 210
 local BAR_H       = 40
@@ -207,13 +230,42 @@ local function LayoutCanvas()
         tex:SetTexCoord(0, tw / TILE, 0, th / TILE)
     end
     local size = math.max(18, math.min(30, 22 * math.sqrt(zoom)))
+    -- [1.4.0] Pins that would cover each other (Zul'Farrak's pyramid and
+    -- Gahz'rilla's pool) are pushed apart until they sit side by side;
+    -- zoomed in, they are back on their own spots.
+    local shown = {}
     for _, p in ipairs(pins) do
         if p:IsShown() then
-            p:ClearAllPoints()
-            p:SetPoint("CENTER", c, "TOPLEFT", p.x * MAP_W * s, -p.y * MAP_H * s)
-            local k = p.kind == "n" and size * 0.8 or (p.kind == "l" and size * 0.9 or size)
-            p:SetSize(k, k)
+            shown[#shown + 1] = p
+            p.px, p.py = p.x * MAP_W * s, p.y * MAP_H * s
+            p.k = p.kind == "n" and size * 0.8 or (p.kind == "l" and size * 0.9 or size)
         end
+    end
+    for _ = 1, 8 do
+        local moved = false
+        for i = 1, #shown - 1 do
+            local a = shown[i]
+            for j = i + 1, #shown do
+                local b = shown[j]
+                local need = (a.k + b.k) / 2 + 1
+                local dx, dy = b.px - a.px, b.py - a.py
+                local dist = math.sqrt(dx * dx + dy * dy)
+                if dist < need then
+                    if dist < 0.01 then dx, dy, dist = 1, 0, 1 end
+                    local push = (need - dist) / 2
+                    local ux, uy = dx / dist, dy / dist
+                    a.px, a.py = a.px - ux * push, a.py - uy * push
+                    b.px, b.py = b.px + ux * push, b.py + uy * push
+                    moved = true
+                end
+            end
+        end
+        if not moved then break end
+    end
+    for _, p in ipairs(shown) do
+        p:ClearAllPoints()
+        p:SetPoint("CENTER", c, "TOPLEFT", p.px, -p.py)
+        p:SetSize(p.k, p.k)
     end
 end
 
@@ -222,7 +274,8 @@ local function PinTooltip(p)
     if p.kind == "l" then
         local d = Data()
         local f = d.floors[p.to]
-        GameTooltip:AddLine(string.format(T("Passage %s", "Passage %s"), p.label or ""), YELLOW[1], YELLOW[2], YELLOW[3])
+        -- [1.4.0b] The passage's name is p.name (p.label is the pin's FontString).
+        GameTooltip:AddLine(string.format(T("Passage %s", "Passage %s"), tostring(N(p.name) or "")), YELLOW[1], YELLOW[2], YELLOW[3])
         GameTooltip:AddLine(string.format(T("Vers : %s  (clic)", "To: %s  (click)"), f and N(f.n) or "?"), TEXT[1], TEXT[2], TEXT[3])
     elseif p.kind == "n" then
         GameTooltip:AddLine(N(p.name), TEXT[1], TEXT[2], TEXT[3], true)
@@ -280,7 +333,8 @@ local function ShowPins()
             p.note, p.to, p.num = nil, nil, nil
             p.icon:Hide(); p.label:Hide(); p.disc:Show(); p.ring:Show()
             if kind == "l" then
-                p.label:SetText(name ~= "" and name or ">")
+                local ln = N(name)
+                p.label:SetText((ln and ln ~= "") and ln or ">")
                 p.to = extra
                 p.label:Show()
                 p.ring:SetVertexColor(BRONZE[1], BRONZE[2], BRONZE[3])
@@ -324,10 +378,29 @@ function DM.SetFloor(f)
     floor = f
     local d = Data()
     local fl = d.floors[f]
+    local reyes = fl and fl.img
+    local art = FULL_ART[f] or (reyes and REYES .. reyes)
     for i, tex in ipairs(win.tiles) do
-        local id = fl and fl.t[i]
+        local id = not art and fl and fl.t and fl.t[i]
         if id then tex:SetTexture(TilePath(id)); tex:Show() else tex:Hide() end
     end
+    if art then
+        win.art:SetTexture(art)
+        if reyes then win.art:SetTexCoord(0, 1, 0, REYES_H) else win.art:SetTexCoord(0, FULL_W, 0, FULL_H) end
+        win.art:Show()
+    else
+        win.art:Hide()
+    end
+    -- Whose map this is, under it.
+    if reyes then
+        win.foot:SetText(T("Carte : Santiago Reyes, Atlas de Azeroth: Forever (sreyesmaps.com), avec sa permission  -  boss et notes : ForeverDungeonRoutes (Checkov23, licence MIT)  -  molette : zoom, glisser : déplacer",
+                           "Map: Santiago Reyes, Atlas de Azeroth: Forever (sreyesmaps.com), used with his permission  -  bosses and notes: ForeverDungeonRoutes (Checkov23, MIT licence)  -  wheel: zoom, drag: move"))
+    else
+        win.foot:SetText(T("Cartes du jeu  -  boss, notes et passages : ForeverDungeonRoutes (Checkov23, licence MIT)  -  molette : zoom, glisser : déplacer",
+                           "Game maps  -  bosses, notes and passages: ForeverDungeonRoutes (Checkov23, MIT licence)  -  wheel: zoom, drag: move"))
+    end
+    -- No tiles on this client: the message only where they are needed.
+    if win.noTiles then win.msg:SetShown(not art) end
     for _, b in ipairs(floorButtons) do b:SetActive(b.floor == f) end
     zoom, panX, panY = 1, 0, 0
     ShowPins()
@@ -520,6 +593,10 @@ local function CreateWindow()
     win.canvas = canvas
     win.tiles = {}
     for i = 1, 12 do win.tiles[i] = canvas:CreateTexture(nil, "ARTWORK") end
+    win.art = canvas:CreateTexture(nil, "ARTWORK")
+    win.art:SetPoint("TOPLEFT"); win.art:SetPoint("BOTTOMRIGHT")
+    win.art:SetTexCoord(0, FULL_W, 0, FULL_H)
+    win.art:Hide()
 
     view:SetScript("OnMouseWheel", function(self, delta)
         local old = zoom
@@ -579,7 +656,8 @@ function DM.Show(key, onFloor)
     win.title:SetText(N(inst.n))
     win.sub:SetText(inst.raid and string.format(T("Raid  -  niveau %d", "Raid  -  level %d"), inst.max)
         or string.format(T("Niveaux %d-%d", "Levels %d-%d"), inst.min, inst.max))
-    if NO_GAME_TILES and not FDRInstalled() then
+    win.noTiles = NO_GAME_TILES and not FDRInstalled()
+    if win.noTiles then
         win.msg:SetText(T("Ce client du jeu n'a pas les images de ces cartes : installe ForeverDungeonRoutes pour les voir.",
                           "This game client lacks the pictures of these maps: install ForeverDungeonRoutes to see them."))
         win.msg:Show()

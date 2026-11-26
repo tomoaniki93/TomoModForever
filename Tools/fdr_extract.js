@@ -4,7 +4,7 @@ const fs=require('fs');
 const base=process.argv[2];
 const L=lauxlib.luaL_newstate(); lualib.luaL_openlibs(L);
 const lib=`
-local DR = {}
+local DR = { Rooms = {}, Floors = {} }
 local function run(path)
   local src = SRC[path]
   local chunk = assert(load(src, "@"..path))
@@ -12,6 +12,7 @@ local function run(path)
 end
 run(BASE.."/Data/Dungeons.lua")
 run(BASE.."/Data/Floors.lua")
+run(BASE.."/Data/Pictures.lua")
 run(BASE.."/Data/DefaultRoutes.lua")
 local function esc(s) return (s:gsub('\\\\','\\\\\\\\'):gsub('"','\\\\"'):gsub('\\n','\\\\n')) end
 local function enc(v)
@@ -35,7 +36,7 @@ OUT = enc({ dungeons = DR.Dungeons, floors = DR.Floors, routes = DR.DefaultRoute
 `;
 lua.lua_pushstring(L,to_luastring(base)); lua.lua_setglobal(L,to_luastring("BASE"));
 lua.lua_newtable(L);
-for (const f of ["Dungeons","Floors","DefaultRoutes"]) {
+for (const f of ["Dungeons","Floors","Pictures","DefaultRoutes"]) {
   const path = base + "/Data/" + f + ".lua";
   lua.lua_pushstring(L, to_luastring(fs.readFileSync(path, "utf8")));
   lua.lua_setfield(L, -2, to_luastring(path));

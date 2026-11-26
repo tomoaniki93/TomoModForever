@@ -1,0 +1,19 @@
+Dungeon maps of the new WoW: Forever dungeons in this folder:
+
+  hallofthanes, ruinsoflordaeron, excavationsite, dalaran, dalaran_underbelly,
+  drownedcity, drownedcity_atalbyzal, kroldok, alcazprison,
+  alcazprison_maximumsecurity, blackmawhold, blackmawhold_festeringgrotto,
+  blackmawhold_fallengrove, blackmawhold_elders, blackmawhold_burrow,
+  blackmawhold_forbiddenmagic, shapersterrace
+
+Artwork by Santiago Reyes, Atlas de Azeroth: Forever
+https://sreyesmaps.com/
+
+Used in TomoModForever with his permission (granted to TomoAniki in November 2026),
+in the versions with his watermark, unchanged. These pictures are not covered by any
+licence of TomoModForever or of ForeverDungeonRoutes: all rights stay with Santiago
+Reyes. Please do not reuse them without his own permission.
+
+If you like his work, you can support the project on his site.
+
+Boss positions and notes on these maps: ForeverDungeonRoutes by Checkov23 (MIT License).

@@ -1196,8 +1196,8 @@ local function CreateWindow()
         if not (selected and M) or M.HasMap(selected.key) then return end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine(T("Pas de carte dans TMF", "No map in TMF"), YELLOW[1], YELLOW[2], YELLOW[3])
-        GameTooltip:AddLine(T("Le jeu n'a pas de carte pour les nouveaux donjons de Forever. Celles de l'addon ForeverDungeonRoutes sont de Santiago Reyes (Atlas de Azeroth: Forever) et ne peuvent pas être reprises sans son accord.",
-                              "The game has no map for the new Forever dungeons. Those of the ForeverDungeonRoutes addon are Santiago Reyes' (Atlas de Azeroth: Forever) and cannot be reused without his permission."), TEXT[1], TEXT[2], TEXT[3], true)
+        GameTooltip:AddLine(T("Aucune carte n'est encore disponible pour ce donjon.",
+                              "No map is available for this dungeon yet."), TEXT[1], TEXT[2], TEXT[3], true)
         GameTooltip:Show()
     end)
     det.map2:HookScript("OnLeave", function() GameTooltip:Hide() end)

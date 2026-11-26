@@ -1,5 +1,22 @@
 ## ####################################
 
+## CHANGELOG 1.4.0b
+
+#### Dungeon maps
+
+- **New** - Maps of the 9 new WoW: Forever dungeons, by **Santiago Reyes** (Atlas de Azeroth: Forever, https://sreyesmaps.com/), used with his permission: The Hall of Thanes, Ruins of Lordaeron, Excavation Site: Wetlands, City of Dalaran (and The Underbelly), The Drowned City (and Atal'Byzal), Krol'dok Stronghold, Alcaz Prison (and Maximum Security), Blackmaw Hold (and its five depths), The Shaper's Terrace. 17 floors in `Assets/Textures/DungeonMaps/Reyes/` (his watermarked versions, unchanged, `CREDITS.txt` beside them), with the bosses, rares, notes and passages of the ForeverDungeonRoutes routes (MIT). His name and site are shown under each of his maps. Every dungeon of the codex now has a map, the codex Map button works for all 35, and the map key opens them inside these dungeons too. They need no tiles from the client, so they also show on the Russian, Spanish (Mexico) and Italian clients.
+- **Changed** - Codex: the Map button's tooltip on a dungeon without a map no longer speaks of a missing permission; it only says no map is available yet (no codex dungeon is left without one).
+- **Changed** - `Tools/fdr_extract.js` also reads the `Pictures.lua` of ForeverDungeonRoutes; `Tools/gen_mapdata.py` maps the 9 new Forever dungeons to their routes and writes `img` floors (`floors[id] = { n, img }`, id = 1000000 + map ID * 10 + level) beside the tiled ones. `newForever` is empty.
+- **Fixed** - Wailing Caverns map: the game's map is the one from patch 4.1, drawn after the eastern maze was cut out, so Lord Pythas, Skum and the Deviate Faerie Dragon stood on empty parchment. WoW Forever has the whole original cave: TMF now shows Blizzard's own full map from before that patch (`Assets/Textures/DungeonMaps/WailingCavernsFull.tga`, English labels), every pin in its room. It needs no tiles from the client, so it also shows on the Russian, Spanish (Mexico) and Italian clients.
+- **Fixed** - Dungeon maps: hovering a passage to another floor raised a Lua error ("bad argument #2 to 'format'", `DungeonMap.lua:277`) since 1.3.9: the tooltip read the pin's FontString (`p.label`) instead of the passage's name (`p.name`).
+- **Fixed** - Dungeon maps: pins that covered each other (Zul'Farrak: Nekrum and Sezz'ziz on the pyramid, Hydromancer Velratha under Gahz'rilla and Dustwraith) are pushed apart until they sit side by side; zoomed in, they are back on their own spots. Applies to every map.
+
+#### Version
+
+- **Changed** - Version 1.4.0b in both TOC files; What's new entry for 1.4.0b in the six languages (`Locales\Locale_140.lua`).
+
+## ####################################
+
 ## CHANGELOG 1.4.0
 
 #### Dungeon maps and codex
