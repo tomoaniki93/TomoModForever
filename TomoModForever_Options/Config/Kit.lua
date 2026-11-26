@@ -566,6 +566,8 @@ function K.Expert() return K.GuiDB().expert == true end
 function K.SetExpert(v)
     K.GuiDB().expert = v and true or false
     if TomoMod_Config and TomoMod_Config.InvalidatePanels then TomoMod_Config.InvalidatePanels() end
+    -- [1.4.0] Some pages are expert-only: the sidebar lists them or not.
+    if TomoMod_Config and TomoMod_Config.RelayoutNav then TomoMod_Config.RelayoutNav() end
 end
 
 -- ---------------------------------------------------------------------
@@ -847,53 +849,30 @@ function P:Hero(title, text, locate, locateLabel)
     return f
 end
 
+--- [1.4.0] The "N advanced groups hidden" card, also used by the older
+-- panels (General, Skins). Returns the new y; nothing when hidden is 0.
+function K.AdvancedNotice(parent, y, hidden)
+    if not hidden or hidden <= 0 then return y end
+    local card, cy = W.CreateCard(parent, nil, y)
+    local _, ny = W.CreateInfoText(card.inner, string.format(T(
+        "%d groupe(s) de réglages avancés sont masqués pour garder la page simple.",
+        "%d advanced setting group(s) are hidden to keep this page simple."), hidden), cy)
+    local _, ny2 = W.CreateButton(card.inner, T("Afficher les réglages avancés", "Show advanced settings"), 240, ny, function()
+        K.SetExpert(true)
+    end)
+    return W.FinalizeCard(card, ny2)
+end
+
 function P:Finish()
-    if self.hidden > 0 then
-        local card, cy = W.CreateCard(self.c, nil, self.y)
-        local _, ny = W.CreateInfoText(card.inner, string.format(T(
-            "%d groupe(s) de réglages avancés sont masqués pour garder la page simple.",
-            "%d advanced setting group(s) are hidden to keep this page simple."), self.hidden), cy)
-        local _, ny2 = W.CreateButton(card.inner, T("Afficher les réglages avancés", "Show advanced settings"), 240, ny, function()
-            K.SetExpert(true)
-        end)
-        self.y = W.FinalizeCard(card, ny2)
-    end
+    self.y = K.AdvancedNotice(self.c, self.y, self.hidden)
     self.c:SetHeight(math.abs(self.y) + 24)
     if self.scroll.UpdateScroll then self.scroll.UpdateScroll() end
     self.scroll._tmCards = self.cards
 end
 
--- [1.3.7] Page entrance: the hero and the cards rise into place one after
--- another (a few hundredths of a second apart, the first eight only).
--- Engine-side animations; nothing moves for good, the layout is untouched.
-local STAGGER_MAX, STAGGER_STEP = 8, 0.045
-
-local function RiseAnim(f)
-    local ag = f._tmRise
-    if ag then return ag end
-    ag = f:CreateAnimationGroup()
-    local out = ag:CreateAnimation("Translation"); out:SetOffset(0, -10); out:SetDuration(0); out:SetOrder(1)
-    local hide = ag:CreateAnimation("Alpha"); hide:SetFromAlpha(0); hide:SetToAlpha(0); hide:SetDuration(0); hide:SetOrder(1)
-    local back = ag:CreateAnimation("Translation"); back:SetOffset(0, 10); back:SetDuration(0.22); back:SetSmoothing("OUT"); back:SetOrder(2)
-    local fade = ag:CreateAnimation("Alpha"); fade:SetFromAlpha(0); fade:SetToAlpha(1); fade:SetDuration(0.22); fade:SetSmoothing("OUT"); fade:SetOrder(2)
-    ag._back, ag._fade = back, fade
-    f._tmRise = ag
-    return ag
-end
-
-function K.PlayEntrance(panel)
-    local list = panel and panel._tmCards
-    if not (list and K.Animated()) then return end
-    for i, f in ipairs(list) do
-        if i > STAGGER_MAX then break end
-        local ag = RiseAnim(f)
-        local delay = (i - 1) * STAGGER_STEP
-        ag._back:SetStartDelay(delay)
-        ag._fade:SetStartDelay(delay)
-        if ag:IsPlaying() then ag:Stop() end
-        ag:Play()
-    end
-end
+-- [1.4.0] The page entrance (cards rising one after another) is gone:
+-- players found it shaky. Kept as a no-op for any caller.
+function K.PlayEntrance() end
 
 --- [1.3.7] Soft hover: a texture fades in and out instead of switching.
 function K.HoverFade(tex, onAlpha, duration)

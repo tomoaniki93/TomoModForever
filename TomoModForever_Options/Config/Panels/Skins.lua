@@ -13,10 +13,16 @@ local T = W.Theme
 -- TAB: CHAT FRAME V4 — live Chat V4 controls
 -- =====================================================================
 
+-- [1.4.0] Simple mode: fine tuning waits for expert mode (each tab counts
+-- what it hides and ends with the usual notice).
+local K = TomoMod_Kit
+local function Expert() return K and K.Expert and K.Expert() end
+
 local function BuildChatFrameTab(parent)
     local scroll = W.CreateScrollPanel(parent)
     local c = scroll.child
     local y = -10
+    local hidden = 0
 
     local Chat = TomoMod_ChatFrameSkin
     if not Chat or not Chat.GetDB then
@@ -67,6 +73,7 @@ local function BuildChatFrameTab(parent)
     end, "%.0f%%")
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local _, ny = W.CreateSlider(c, L["opt_chat_message_bg_alpha"], (appearance.messageBgAlpha or appearance.bgAlpha or 0.72) * 100, 0, 100, 5, y, function(v)
         appearance.messageBgAlpha = v / 100
         Apply()
@@ -80,6 +87,7 @@ local function BuildChatFrameTab(parent)
     end, "%.0f%%")
     y = ny
 
+    else hidden = hidden + 1 end
     local _, ny = W.CreateSlider(c, L["opt_chat_skin_font_size"], appearance.fontSize or 13, 9, 20, 1, y, function(v)
         appearance.fontSize = v
         Apply()
@@ -152,6 +160,7 @@ local function BuildChatFrameTab(parent)
     end)
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local _, ny = W.CreateSlider(c, L["chat_v4_sidebar_width"], sidebar.width or 32, 26, 48, 1, y, function(v)
         sidebar.width = v
         Apply()
@@ -193,6 +202,8 @@ local function BuildChatFrameTab(parent)
         y = rowY
     end
 
+    else hidden = hidden + 1 end
+    if Expert() then -- [1.4.0] advanced: expert mode only
     -- ── Copy Chat ──────────────────────────────────────────────
     local _, ny = W.CreateSectionHeader(c, L["chat_v4_copy"], y)
     y = ny
@@ -202,6 +213,8 @@ local function BuildChatFrameTab(parent)
     end, "%.0f")
     y = ny
 
+    else hidden = hidden + 1 end
+    if K and K.AdvancedNotice then y = K.AdvancedNotice(c, y, hidden) end
     c:SetHeight(math.abs(y) + 40)
     if scroll.UpdateScroll then scroll.UpdateScroll() end
     return scroll
@@ -285,6 +298,7 @@ local function BuildBagsTab(parent)
     local scroll = W.CreateScrollPanel(parent)
     local c = scroll.child
     local y = -10
+    local hidden = 0
 
     local Bags = TomoMod_BagSkin
     if not Bags or not Bags.GetDB then
@@ -354,12 +368,14 @@ local function BuildBagsTab(parent)
     end, "%.0f")
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local _, ny = W.CreateSlider(c, Loc("bags_v4_gui_spacing", "Slot spacing"), layout.spacing or 4, 0, 10, 1, y, function(v)
         layout.spacing = math.floor(v + 0.5)
         Apply()
     end, "%.0f")
     y = ny
 
+    else hidden = hidden + 1 end
     local _, ny = W.CreateSlider(c, Loc("opt_skin_bags_scale", "Scale"), (appearance.scale or 1) * 100, 70, 140, 5, y, function(v)
         appearance.scale = v / 100
         Apply()
@@ -439,6 +455,7 @@ local function BuildBagsTab(parent)
     end)
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     -- Pinned / Recent ---------------------------------------------------
     local _, ny = W.CreateSectionHeader(c, Loc("bags_v4_gui_sidebar", "Pinned & Recent"), y)
     y = ny
@@ -455,6 +472,8 @@ local function BuildBagsTab(parent)
     end, "%.0f")
     y = ny
 
+    else hidden = hidden + 1 end
+    if K and K.AdvancedNotice then y = K.AdvancedNotice(c, y, hidden) end
     c:SetHeight(math.abs(y) + 40)
     if scroll.UpdateScroll then scroll.UpdateScroll() end
     return scroll
@@ -468,6 +487,7 @@ local function BuildObjectiveTrackerTab(parent)
     local scroll = W.CreateScrollPanel(parent)
     local c = scroll.child
     local y = -10
+    local hidden = 0
     local db = TomoModForeverDB.objectiveTracker
 
     -- [1.3.5] TMF draws its own quest tracker.
@@ -527,17 +547,19 @@ local function BuildObjectiveTrackerTab(parent)
         sorts[#sorts + 1] = { value = "distance", text = L["ot_sort_distance"] }
     end
     Dropdown("questSort", L["ot_qm_sort"], sorts, "level")
+    Check("groupByZone",             L["ot_qm_group"], true)
+    Slider("maxQuestsShown", L["opt_obj_tracker_max_quests"], 0, 25, 1, 0)
+    if Expert() then -- [1.4.0] advanced: expert mode only
     Dropdown("zoneSort", L["ot_qm_zones"], {
         { value = "level", text = L["ot_zsort_level"] },
         { value = "name",  text = L["ot_zsort_name"] },
         { value = "log",   text = L["ot_zsort_log"] },
     }, "level")
-    Check("groupByZone",             L["ot_qm_group"], true)
     Check("separateComplete",        L["ot_qm_complete"], true)
     Check("autoFoldZones",           L["ot_qm_autofold"], true)
     Check("hideCompletedObjectives", L["ot_qm_hidedone"], false)
     Check("hideWhenEmpty",           L["opt_obj_tracker_hide_empty"], true)
-    Slider("maxQuestsShown", L["opt_obj_tracker_max_quests"], 0, 25, 1, 0)
+    else hidden = hidden + 1 end
 
     local _, ny = W.CreateSeparator(c, y)
     y = ny
@@ -546,9 +568,12 @@ local function BuildObjectiveTrackerTab(parent)
     local _, ny = W.CreateSubLabel(c, L["opt_ot_look"], y)
     y = ny
     Check("showLevel",         L["opt_ot_show_level"], true)
+    Check("showProgressBar",   L["opt_ot_progress_bar"], true)
+    Slider("width",       L["opt_ot_width"], 200, 400, 10, 260)
+    Slider("bgAlpha",     L["opt_obj_tracker_bg_alpha"], 0, 1, 0.05, 0.65, "%.2f")
+    if Expert() then -- [1.4.0] advanced: expert mode only
     Check("titleByDifficulty", L["opt_ot_title_difficulty"], false)
     Check("showTags",          L["opt_ot_show_tags"], true)
-    Check("showProgressBar",   L["opt_ot_progress_bar"], true)
     Check("animateProgress",   L["opt_ot_animate"], true)
     Check("zoneBanner",        L["opt_ot_zone_banner"], true)
     Check("shareProgress",     L["opt_ot_share"], true)
@@ -558,9 +583,7 @@ local function BuildObjectiveTrackerTab(parent)
         { value = "left",  text = L["opt_ot_item_left"] },
         { value = "right", text = L["opt_ot_item_right"] },
     }, "left")
-    Slider("width",       L["opt_ot_width"], 200, 400, 10, 260)
     Slider("maxHeight",   L["opt_ot_max_height"], 0, 1000, 20, 0)
-    Slider("bgAlpha",     L["opt_obj_tracker_bg_alpha"], 0, 1, 0.05, 0.65, "%.2f")
     Slider("combatAlpha", L["opt_ot_combat_alpha"], 0, 1, 0.05, 1, "%.2f")
 
     local _, ny = W.CreateSeparator(c, y)
@@ -570,6 +593,8 @@ local function BuildObjectiveTrackerTab(parent)
     Slider("categoryFontSize",  L["opt_obj_tracker_cat_size"], 8, 18, 1, 11)
     Slider("questFontSize",     L["opt_obj_tracker_quest_size"], 8, 18, 1, 12)
     Slider("objectiveFontSize", L["opt_obj_tracker_obj_size"], 8, 16, 1, 11)
+
+    else hidden = hidden + 1 end
 
     -- 1.3.4: the way back when the tracker ends up off screen.
     local _, ny = W.CreateSeparator(c, y)
@@ -585,6 +610,7 @@ local function BuildObjectiveTrackerTab(parent)
     end)
     y = ny
 
+    if K and K.AdvancedNotice then y = K.AdvancedNotice(c, y, hidden) end
     c:SetHeight(math.abs(y) + 40)
     if scroll.UpdateScroll then scroll.UpdateScroll() end
     return scroll
@@ -635,6 +661,7 @@ local function BuildTooltipSkinTab(parent)
     local scroll = W.CreateScrollPanel(parent)
     local c = scroll.child
     local y = -10
+    local hidden = 0
 
     local _, ny = W.CreateSectionHeader(c, L["section_tooltip_skin"], y)
     y = ny
@@ -656,6 +683,7 @@ local function BuildTooltipSkinTab(parent)
     end, "%.0f%%")
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     -- Border alpha
     local _, ny = W.CreateSlider(c, L["opt_tooltip_border_alpha"], (TomoModForeverDB.tooltipSkin.borderAlpha or 0.8) * 100, 0, 100, 5, y, function(v)
         TomoModForeverDB.tooltipSkin.borderAlpha = v / 100
@@ -679,6 +707,7 @@ local function BuildTooltipSkinTab(parent)
     end)
     y = ny
 
+    else hidden = hidden + 1 end
     -- Position de l'infobulle (defaut / souris / coin / personnalise)
     local _, ny = W.CreateSeparator(c, y)
     y = ny
@@ -750,6 +779,7 @@ local function BuildTooltipSkinTab(parent)
     end)
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     -- Guild name color
     local _, ny = W.CreateSeparator(c, y)
     y = ny
@@ -765,6 +795,7 @@ local function BuildTooltipSkinTab(parent)
     end)
     y = ny
 
+    else hidden = hidden + 1 end
     -- ─────────────────────────────────────────────
     -- Unit information (TooltipInfo)
     -- ─────────────────────────────────────────────
@@ -809,6 +840,7 @@ local function BuildTooltipSkinTab(parent)
     end, "%.0f")
     y = ny
 
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local _, ny = W.CreateSeparator(c, y); y = ny
 
     local _, ny = W.CreateCheckbox(c, L["opt_tooltip_guild_rank"], TomoModForeverDB.tooltipSkin.showTooltipGuildRank ~= false, y, function(v)
@@ -880,6 +912,8 @@ local function BuildTooltipSkinTab(parent)
     local _, ny = W.CreateInfoText(c, L["info_tooltip_inspect"], y)
     y = ny
 
+    else hidden = hidden + 1 end
+    if K and K.AdvancedNotice then y = K.AdvancedNotice(c, y, hidden) end
     c:SetHeight(math.abs(y) + 40)
     if scroll.UpdateScroll then scroll.UpdateScroll() end
     return scroll

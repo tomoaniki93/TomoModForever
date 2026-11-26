@@ -307,6 +307,9 @@ K.RegisterPage({
     key = "graphics",
     section = SECTION,
     label = T("Graphismes", "Graphics"),
+    -- [1.4.0] Fine tuning a new player does not need: expert mode only.
+    visible = function() return TomoMod_Kit and TomoMod_Kit.Expert and TomoMod_Kit.Expert() end,
+    fallback = "adventuretweaks",
     kw = "graphisme graphics cvar joli pretty herbe grass vegetation vegetal densite density distance netteté sharpen objet object relief terrain reflet reflection eau water meteo weather pluie rain neige snow",
     build = function(parent)
         return K.Page(parent, function(page)
@@ -637,6 +640,9 @@ K.RegisterPage({
     key = "spellranks",
     section = SECTION,
     label = T("Nouveaux rangs", "New ranks"),
+    -- [1.4.0] Fine tuning a new player does not need: expert mode only.
+    visible = function() return TomoMod_Kit and TomoMod_Kit.Expert and TomoMod_Kit.Expert() end,
+    fallback = "adventuretweaks",
     kw = "rang rangs rank ranks sort sorts spell spells barre barres bar bars action grimoire spellbook maitre trainer mise a jour update downrank",
     noCache = true,   -- the pending count changes after each trainer visit
     build = function(parent)

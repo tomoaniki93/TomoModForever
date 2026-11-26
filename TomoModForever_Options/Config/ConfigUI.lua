@@ -113,7 +113,9 @@ local LEGACY = {
     { key = "bagmicro",    section = "comfort",   label = T("Sacs & micro-menu", "Bags & micro menu"), build = QOLPage("bagmicro"), kw = "sacs bags micro menu" },
     { key = "profiles",    section = "tools",     label = T("Profils", "Profiles"), build = LegacyPanel("TomoMod_ConfigPanel_Profiles"), kw = "profil profile import export sauvegarde backup reset", noCache = true },
     { key = "changelog",   section = "tools",     label = T("Nouveautés", "What's new"), build = LegacyPanel("TomoMod_ConfigPanel_Changelog"), kw = "changelog nouveautes version", noCache = true },
-    { key = "diagnostics", section = "tools",     label = T("Diagnostics", "Diagnostics"), build = LegacyPanel("TomoMod_ConfigPanel_Diagnostics"), kw = "diagnostic debug erreurs performance", noCache = true },
+    -- [1.4.0] A developer's tool: listed in expert mode only.
+    { key = "diagnostics", section = "tools",     label = T("Diagnostics", "Diagnostics"), build = LegacyPanel("TomoMod_ConfigPanel_Diagnostics"), kw = "diagnostic debug erreurs performance", noCache = true,
+      visible = function() return K.Expert() end, fallback = "profiles" },
 }
 
 local PAGES, PAGE_BY_KEY = {}, {}
@@ -364,7 +366,6 @@ function C.SwitchCategory(key)
         entry.holder:SetAllPoints(content)
         entry.holder:Show()
         if not C._noGlide and K.Animated() and TomoMod_Utils.SlideIn then TomoMod_Utils.SlideIn(entry.holder, 16, 0, 0.18) end
-        if not C._noGlide and K.PlayEntrance then K.PlayEntrance(entry.panel) end
     end
     if def.onShow then pcall(def.onShow) end
     SetCrumb(def)
@@ -641,6 +642,17 @@ local function SearchResults(q)
     return out
 end
 C._SearchResults = SearchResults
+
+-- [1.4.0] Called by K.SetExpert: expert-only pages come and go, and the
+-- header button follows when the switch came from a page's notice.
+function C.RelayoutNav()
+    if C._expertBtn then C._expertBtn:SetOn(K.Expert()) end
+    if RelayoutNav then RelayoutNav() end
+    -- The page shown just left the list (expert mode off): its fallback.
+    if current and PAGE_BY_KEY[current] and not PageVisible(PAGE_BY_KEY[current]) and C.SwitchCategory then
+        C_Timer.After(0, function() C.SwitchCategory(ResolveKey(current)) end)
+    end
+end
 
 function RelayoutNav()
     if not navChild then return end
@@ -979,6 +991,7 @@ local function CreateWindow()
         end)
     expertBtn:SetPoint("RIGHT", ghostBtn, "LEFT", -6, 0)
     expertBtn:SetOn(K.Expert())
+    C._expertBtn = expertBtn
 
     -- ---- sidebar ----------------------------------------------------------
     local side = CreateFrame("Frame", nil, frame)

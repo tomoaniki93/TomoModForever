@@ -81,6 +81,10 @@ function TomoMod_ConfigPanel_General(parent)
     local scroll = W.CreateScrollPanel(parent)
     local c = scroll.child
     local y = -12
+    -- [1.4.0] Simple mode: the fine-tuning cards wait for expert mode.
+    local K = TomoMod_Kit
+    local function Expert() return K and K.Expert and K.Expert() end
+    local hidden = 0
 
     -- ═══════════════════════════════════════════════
     -- MINIMAP
@@ -181,6 +185,7 @@ function TomoMod_ConfigPanel_General(parent)
     -- ═══════════════════════════════════════════════
     -- INDICATEURS DE LA MINIMAP (position / taille)
     -- ═══════════════════════════════════════════════
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local cardI, ciy = W.CreateCard(c, L["section_minimap_indicators"], y)
 
     -- État courant : quel indicateur on configure
@@ -279,10 +284,12 @@ function TomoMod_ConfigPanel_General(parent)
         end)
 
     y = W.FinalizeCard(cardI, ciy)
+    else hidden = hidden + 1 end
 
     -- ═══════════════════════════════════════════════
     -- BOUTONS D'ADDON (collecteur)
     -- ═══════════════════════════════════════════════
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local cardB, cby = W.CreateCard(c, L["section_buttonbag"], y)
 
     local function EnsureBag()
@@ -359,6 +366,7 @@ function TomoMod_ConfigPanel_General(parent)
     end)
 
     y = W.FinalizeCard(cardB, cby)
+    else hidden = hidden + 1 end
 
     -- ═══════════════════════════════════════════════
     -- INFO PANEL
@@ -441,6 +449,7 @@ function TomoMod_ConfigPanel_General(parent)
     -- ═══════════════════════════════════════════════
     -- BLIZZARD FLOATING COMBAT TEXT
     -- ═══════════════════════════════════════════════
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local fctCard, fty = W.CreateCard(c, L["section_blizzard_fct"], y)
     local _, fty = W.CreateInfoText(fctCard.inner, L["info_blizzard_fct"], fty)
 
@@ -469,11 +478,13 @@ function TomoMod_ConfigPanel_General(parent)
         end)
 
     y = W.FinalizeCard(fctCard, fty)
+    else hidden = hidden + 1 end
 
     -- ═══════════════════════════════════════════════
     -- BLIZZARD COOLDOWN MANAGER — VISIBILITY
     -- Moved here from the legacy Combat > Cooldowns panel.
     -- ═══════════════════════════════════════════════
+    if Expert() then -- [1.4.0] advanced: expert mode only
     local cdmCard, cdy = W.CreateCard(c, L["section_blizzard_cdm_visibility"], y)
     local _, cdy = W.CreateInfoText(cdmCard.inner, L["info_blizzard_cdm_visibility"], cdy)
 
@@ -497,6 +508,7 @@ function TomoMod_ConfigPanel_General(parent)
         IsViewerHidden("buffBar"), cdy, function(v) SetViewerHidden("buffBar", v) end)
 
     y = W.FinalizeCard(cdmCard, cdy)
+    else hidden = hidden + 1 end
 
     -- ═══════════════════════════════════════════════
     -- CURSOR RING
@@ -583,6 +595,7 @@ function TomoMod_ConfigPanel_General(parent)
     -- backups that undo it. TOMOMOD_RESET_ALL stays defined below for it.
 
     y = W.FinalizeCard(card4, cy)
+    if K and K.AdvancedNotice then y = K.AdvancedNotice(c, y, hidden) end
 
     c:SetHeight(math.abs(y) + 20)
     if scroll.UpdateScroll then scroll.UpdateScroll() end

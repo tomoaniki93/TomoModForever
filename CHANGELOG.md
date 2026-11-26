@@ -21,6 +21,13 @@
 - **New** - Installer step "Your look", right after the setup choice (both paths, so the archetype preset never overwrites it): unit frame style as three cards (TMF, Forever, Animation) and the colour of the Forever patterns (Forever, Gold, Black, Class colour) with a live tinted preview. The colour is written to the chat, the minimap and the damage meter at once (the meter moves to its Forever skin, bar settings kept) and shows behind the installer on click; the frame style follows at the reload. The recap names the look chosen.
 - **New** - First time the world map key opens a TMF dungeon map, one chat line says where the window comes from, how to reach the game's map and where the option is.
 
+#### Settings window: simple mode
+
+- **Changed** - Interface > General and Interface > Skins now follow the simple / expert switch like the card pages. Simple mode keeps the essentials and ends each page or tab with the usual "N advanced groups hidden" card and its button. Hidden in simple mode: General: minimap indicators, addon button collector, Blizzard combat text, cooldown manager visibility. Skins > Chat: fine transparencies, sidebar size and buttons, copy window. Skins > Bags: slot spacing, pinned and recent items. Skins > Objective tracker: zone order, completed quests apart, auto-fold, hide done objectives, hide when empty, the finer look options and the font sizes (kept: display, sort, group by zone, max quests, level, progress bar, width, background). Skins > Tooltips: border opacity and colours, guild name colour, guild rank, realm, target, score, mount, speed, location and inspect lines.
+- **Changed** - Expert mode only, left out of the sidebar otherwise: Tools > Diagnostics, Adventure > Graphics, Adventure > New ranks. The sidebar follows the switch at once; a page that leaves the list sends you to a neighbour.
+- **New** - `K.AdvancedNotice` (the notice card, shared), `TomoMod_Config.RelayoutNav` (called by `K.SetExpert`; the header button follows a switch made from a page's notice).
+- **Removed** - The cards' entrance animation (each card rising into place one after another when a page opens): players found it shaky. `K.PlayEntrance` stays as a no-op.
+
 ## ####################################
 
 ## CHANGELOG 1.3.9
