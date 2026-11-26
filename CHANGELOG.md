@@ -16,6 +16,11 @@
 - **Changed** - Minimap: the border choice is now the colour of the Forever patterns, for every choice (Forever, Gold, Class colour, Black); the info panel plates follow. The plain border only remains without the Forever look.
 - **Changed** - Damage meter: Pattern colour (Forever skin) in Appearance, under the skin (`foreverColor`).
 
+#### Installer and new players
+
+- **New** - Installer step "Your look", right after the setup choice (both paths, so the archetype preset never overwrites it): unit frame style as three cards (TMF, Forever, Animation) and the colour of the Forever patterns (Forever, Gold, Black, Class colour) with a live tinted preview. The colour is written to the chat, the minimap and the damage meter at once (the meter moves to its Forever skin, bar settings kept) and shows behind the installer on click; the frame style follows at the reload. The recap names the look chosen.
+- **New** - First time the world map key opens a TMF dungeon map, one chat line says where the window comes from, how to reach the game's map and where the option is.
+
 ## ####################################
 
 ## CHANGELOG 1.3.9

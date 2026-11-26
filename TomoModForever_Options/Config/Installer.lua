@@ -47,6 +47,16 @@ if TomoMod_RegisterLocale then
         ["ins_recap_preset"]         = "Setup applied: |cffffd100%s|r",
         ["ins_recap_custom"]         = "Your custom setup is ready",
         ["ins_recap_desc"]           = "Reload your interface to apply everything. You can reopen this assistant anytime with |cffffd100/tmf install|r, and open the full configuration panel with |cffffd100/tmf|r.",
+        -- [1.4.0] Look step
+        ["ins_look_title"]           = "Your look",
+        ["ins_look_intro"]           = "Choose how your interface looks. Everything changes again later in |cffffd100/tmf|r.",
+        ["ins_look_frames"]          = "Unit frames",
+        ["ins_look_tmf_desc"]        = "Clean and compact bars. The default.",
+        ["ins_look_forever_desc"]    = "Class name strip, bronze and gold border.",
+        ["ins_look_anim_desc"]       = "Animated halo around your character.",
+        ["ins_look_colour"]          = "Colour of the patterns",
+        ["ins_look_colour_info"]     = "Moulding, corners and plates of the chat, the minimap and the damage meter.",
+        ["ins_look_recap"]           = "Look: |cffffd100%s|r frames, |cffffd100%s|r patterns",
     })
     TomoMod_RegisterLocale("frFR", {
         ["ins_v3_welcome_desc"]      = "Bienvenue ! Cet assistant rapide te prépare une interface propre et complète en quelques secondes.\n\nChoisis une configuration qui correspond à ta façon de jouer — tu pourras tout ajuster ensuite via |cffffd100/tmf|r. Tu préfères choisir chaque option toi-même ? Prends |cffc89530Personnalisé|r.",
@@ -63,6 +73,16 @@ if TomoMod_RegisterLocale then
         ["ins_recap_preset"]         = "Configuration appliquée : |cffffd100%s|r",
         ["ins_recap_custom"]         = "Ta configuration personnalisée est prête",
         ["ins_recap_desc"]           = "Recharge ton interface pour tout appliquer. Tu peux rouvrir cet assistant à tout moment avec |cffffd100/tmf install|r, et ouvrir le panneau de configuration complet avec |cffffd100/tmf|r.",
+        -- [1.4.0] Étape Visuel
+        ["ins_look_title"]           = "Ton visuel",
+        ["ins_look_intro"]           = "Choisis l'apparence de ton interface. Tout se change encore ensuite dans |cffffd100/tmf|r.",
+        ["ins_look_frames"]          = "Cadres d'unité",
+        ["ins_look_tmf_desc"]        = "Barres nettes et compactes. Le style par défaut.",
+        ["ins_look_forever_desc"]    = "Bandeau de nom de classe, cadre bronze et or.",
+        ["ins_look_anim_desc"]       = "Halo animé autour de ton personnage.",
+        ["ins_look_colour"]          = "Couleur des motifs",
+        ["ins_look_colour_info"]     = "Moulures, coins et plaques du chat, de la minimap et du damage meter.",
+        ["ins_look_recap"]           = "Visuel : cadres |cffffd100%s|r, motifs |cffffd100%s|r",
     })
 end
 
@@ -95,7 +115,7 @@ local stepDots      = {}     -- pool of MAX_DOTS dot textures
 local prevBtn, nextBtn, skipBtn, stepLabel
 -- One dot per step. FLOW_CUSTOM is the longest flow and gained a step,
 -- so the pool has to grow with it or the last dot is never drawn.
-local MAX_DOTS      = 7
+local MAX_DOTS      = 8
 
 local selectedPreset = "complet"
 local currentIndex   = 1
@@ -103,8 +123,10 @@ local currentIndex   = 1
 -- "resolution" comes before "picker": the type sizes a resolution preset
 -- writes are the ground the archetype presets build on. Choosing the
 -- screen first and the role second is the order that does not undo work.
-local FLOW_PRESET = { "welcome", "resolution", "picker", "recap" }
-local FLOW_CUSTOM = { "welcome", "resolution", "picker", "custom_frames", "custom_barsskins", "custom_mythicqol", "recap" }
+-- [1.4.0] "look" right after the picker: the archetype preset is written
+-- when leaving the picker, so the look chosen next is never overwritten.
+local FLOW_PRESET = { "welcome", "resolution", "picker", "look", "recap" }
+local FLOW_CUSTOM = { "welcome", "resolution", "picker", "look", "custom_frames", "custom_barsskins", "custom_mythicqol", "recap" }
 local flow = FLOW_PRESET
 
 local function RebuildFlow()
@@ -624,6 +646,161 @@ pages.custom_mythicqol = {
     end,
 }
 
+-- ── Visuel (1.4.0) ─────────────────────────────────────────
+-- Style des cadres d'unité (TMF, Forever, Animation) et couleur des motifs
+-- Forever (chat, minimap, damage meter). Écrit tout de suite : le chat, la
+-- minimap et le meter, visibles derrière l'assistant, changent au clic ;
+-- les cadres d'unité suivent au rechargement.
+local LOOK_STYLES = {
+    { value = "tmf",       name = "TMF",       desc = "ins_look_tmf_desc" },
+    { value = "forever",   name = "Forever",   desc = "ins_look_forever_desc" },
+    { value = "animation", name = "Animation", desc = "ins_look_anim_desc" },
+}
+local LOOK_COLOURS = {
+    { value = "forever", label = "tint_forever" },
+    { value = "gold",    label = "tint_gold" },
+    { value = "black",   label = "tint_black" },
+    { value = "class",   label = "tint_class" },
+}
+
+local function CurrentColour()
+    local c = dbGet("chatV4.chromeColor", "forever")
+    return c or "forever"
+end
+
+local function ApplyColour(mode)
+    dbSet("chatV4.chromeColor", mode)
+    dbSet("minimap.borderColor", mode)
+    local FC = TomoMod_ForeverChrome
+    if FC then
+        FC.SetGroupTint("chat", mode)
+        FC.SetGroupTint("minimap", mode)
+        FC.SetGroupTint("installer", mode)
+    end
+    if TomoMod_Minimap and TomoMod_Minimap.CreateBorder then TomoMod_Minimap.CreateBorder() end
+    -- Damage meter: the colour belongs to its Forever skin, so the skin goes
+    -- with it (bar settings kept).
+    if type(TomoModForeverDamageMeterDB) == "table" then
+        TomoModForeverDamageMeterDB.foreverColor = mode
+        local DMns = TomoMod and TomoMod.DM
+        if DMns and DMns.db and DMns.db.skin ~= "FOREVER" and DMns.ApplySkin then DMns.ApplySkin("FOREVER", false) end
+        if FC then FC.SetGroupTint("meter", mode) end
+    end
+end
+
+local function LookCard(parent, w, h)
+    local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    b:SetSize(w, h)
+    b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+    function b:SetSelected(sel)
+        self._selected = sel
+        if sel then
+            self:SetBackdropColor(A[1] * 0.18, A[2] * 0.18, A[3] * 0.18, 1)
+            self:SetBackdropBorderColor(1, 0.82, 0, 0.95)
+        else
+            self:SetBackdropColor(0.085, 0.072, 0.056, 1)
+            self:SetBackdropBorderColor(BD[1], BD[2], BD[3], 1)
+        end
+    end
+    b:SetScript("OnEnter", function(self)
+        if not self._selected then self:SetBackdropBorderColor(A[1], A[2], A[3], 0.9) end
+    end)
+    b:SetScript("OnLeave", function(self) self:SetSelected(self._selected) end)
+    return b
+end
+
+pages.look = {
+    title = L["ins_look_title"],
+    icon  = ICON_PATH .. "icon_skins.tga",
+    build = function(c, p)
+        local y = -6
+        y = Info(c, L["ins_look_intro"], y)
+
+        -- Cadres d'unité : trois cartes
+        y = Sec(c, L["ins_look_frames"], y)
+        local MARGIN, GAP = 14, 10
+        local cw = math.floor((CONTENT_W - MARGIN * 2 - GAP * 2) / 3)
+        local styleCards = {}
+        local function PaintStyles()
+            local cur = dbGet("unitFrames.style", "tmf") or "tmf"
+            for _, card in ipairs(styleCards) do card:SetSelected(card.value == cur) end
+        end
+        for i, st in ipairs(LOOK_STYLES) do
+            local card = LookCard(c, cw, 62)
+            card:SetPoint("TOPLEFT", MARGIN + (i - 1) * (cw + GAP), y)
+            card.value = st.value
+            local name = card:CreateFontString(nil, "OVERLAY")
+            name:SetFont(FONT_BOLD, 14, ""); name:SetPoint("TOPLEFT", 12, -10)
+            name:SetTextColor(1, 0.82, 0, 1); name:SetText(st.name)
+            local d = card:CreateFontString(nil, "OVERLAY")
+            d:SetFont(FONT, 10, ""); d:SetPoint("TOPLEFT", 12, -32); d:SetPoint("RIGHT", -10, 0)
+            d:SetJustifyH("LEFT"); d:SetWordWrap(true)
+            d:SetTextColor(TX[1], TX[2], TX[3], 0.85); d:SetText(L[st.desc])
+            card:SetScript("OnClick", function()
+                dbSet("unitFrames.style", st.value)
+                PaintStyles()
+            end)
+            styleCards[i] = card
+        end
+        y = y - 62 - 14
+
+        -- Couleur des motifs : quatre choix et un aperçu teinté en direct
+        y = Sec(c, L["ins_look_colour"], y)
+        local FC = TomoMod_ForeverChrome
+        local previewW, previewH = 250, 112
+        local preview = CreateFrame("Frame", nil, c)
+        preview:SetSize(previewW, previewH)
+        preview:SetPoint("TOPRIGHT", -MARGIN - 8, y - 10)
+        if FC then
+            FC.Frame(preview, { group = "installer", outset = 4, edge = 8, corner = 26, crest = true,
+                crestWidth = 96, crestY = 8, fill = true, fillAlpha = 0.95, glintDelay = 4 })
+            local plateHost = CreateFrame("Frame", nil, preview)
+            plateHost:SetSize(170, 30); plateHost:SetPoint("TOP", 0, -26)
+            plateHost:SetFrameLevel(preview:GetFrameLevel() + 20)
+            FC.Plate(plateHost, "ARTWORK", nil, "installer")
+            local t = plateHost:CreateFontString(nil, "OVERLAY")
+            t:SetFont(FONT_BOLD, 12, ""); t:SetPoint("CENTER"); t:SetTextColor(1, 0.82, 0, 1)
+            t:SetText("TomoMod Forever")
+            local dv = preview:CreateTexture(nil, "ARTWORK")
+            dv:SetSize(200, 10); dv:SetPoint("TOP", 0, -68)
+            FC.Track(dv, "divider", "installer", 0.9)
+            FC.SetGroupTint("installer", CurrentColour())
+        end
+
+        local colourBtns = {}
+        local function PaintColours()
+            local cur = CurrentColour()
+            for _, b in ipairs(colourBtns) do b:SetSelected(b.value == cur) end
+        end
+        local by = y - 6
+        for _, col in ipairs(LOOK_COLOURS) do
+            local b = LookCard(c, 250, 28)
+            b:SetPoint("TOPLEFT", MARGIN + 8, by)
+            b.value = col.value
+            local sw = b:CreateTexture(nil, "OVERLAY")
+            sw:SetSize(14, 14); sw:SetPoint("LEFT", 8, 0)
+            local rgb = (FC and FC.TintColor(col.value)) or (FC and FC.C.bronze) or { 0.62, 0.42, 0.21 }
+            if col.value == "forever" and FC then rgb = FC.C.bronze end
+            sw:SetColorTexture(rgb[1], rgb[2], rgb[3], 1)
+            local lbl = b:CreateFontString(nil, "OVERLAY")
+            lbl:SetFont(FONT_BOLD, 11, ""); lbl:SetPoint("LEFT", sw, "RIGHT", 8, 0)
+            lbl:SetTextColor(TX[1], TX[2], TX[3], 1); lbl:SetText(L[col.label])
+            b:SetScript("OnClick", function()
+                ApplyColour(col.value)
+                PaintColours()
+            end)
+            colourBtns[#colourBtns + 1] = b
+            by = by - 32
+        end
+        y = math.min(by, y - previewH - 20) - 6
+        y = Info(c, L["ins_look_colour_info"], y)
+
+        p.Refresh = function() PaintStyles(); PaintColours() end
+        PaintStyles(); PaintColours()
+        return y
+    end,
+}
+
 -- ── Récap / Reload ─────────────────────────────────────────
 pages.recap = {
     title = L["ins_recap_title"],
@@ -653,6 +830,10 @@ pages.recap = {
         end, true, 280)
 
         -- Rafraîchit le libellé de preset à l'entrée
+        local lookLbl = c:CreateFontString(nil, "OVERLAY")
+        lookLbl:SetFont(FONT, 11, ""); lookLbl:SetPoint("TOP", presetLbl, "BOTTOM", 0, -6)
+        lookLbl:SetTextColor(DM[1], DM[2], DM[3], 1)
+
         p.Refresh = function()
             if selectedPreset == "custom" then
                 presetLbl:SetText(L["ins_recap_custom"])
@@ -661,6 +842,9 @@ pages.recap = {
                 local name = def and L["preset_" .. def.key .. "_name"] or selectedPreset
                 presetLbl:SetText(string.format(L["ins_recap_preset"], name))
             end
+            local styleName = ({ tmf = "TMF", forever = "Forever", animation = "Animation" })[dbGet("unitFrames.style", "tmf") or "tmf"] or "TMF"
+            local colourName = L["tint_" .. CurrentColour()] or CurrentColour()
+            lookLbl:SetText(string.format(L["ins_look_recap"], styleName, colourName))
         end
 
         return -300
@@ -818,6 +1002,7 @@ function INS.GoTo(index)
     if key == "picker" and panel.Select  then panel.Select(selectedPreset) end
     if key == "resolution" and panel.Refresh then panel.Refresh() end
     if key == "recap"  and panel.Refresh then panel.Refresh() end
+    if key == "look"   and panel.Refresh then panel.Refresh() end
 
     if panel._upd then C_Timer.After(0, panel._upd) end
     UpdateChrome()

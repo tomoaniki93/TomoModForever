@@ -647,6 +647,15 @@ local function OnWorldMapShown()
         if InCombatLockdown() or not (WorldMapFrame and WorldMapFrame:IsShown()) then return end
         HideUIPanel(WorldMapFrame)
         if wasOpen then win:Hide() else DM.Show(key, f) end
+        -- First time only: say where this window comes from and how to get
+        -- the game's map back (a new player would not guess it).
+        local db = TomoModForeverDB and TomoModForeverDB.dungeonCodex
+        if db and not wasOpen and not db.mapShortcutHinted then
+            db.mapShortcutHinted = true
+            print("|cffffd100TomoModForever|r " .. T(
+                "Dans un donjon, la touche de la carte ouvre la carte du donjon de TMF. Pour la carte du jeu : bouton |cffffd100Carte du monde|r de la fenêtre. Option : Aventure > Codex.",
+                "In a dungeon, the map key opens TMF's dungeon map. For the game's map: the window's |cffffd100World map|r button. Option: Adventure > Codex."))
+        end
     end)
 end
 
