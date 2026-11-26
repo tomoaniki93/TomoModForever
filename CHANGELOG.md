@@ -28,6 +28,10 @@
 - **New** - `K.AdvancedNotice` (the notice card, shared), `TomoMod_Config.RelayoutNav` (called by `K.SetExpert`; the header button follows a switch made from a page's notice).
 - **Removed** - The cards' entrance animation (each card rising into place one after another when a page opens): players found it shaky. `K.PlayEntrance` stays as a no-op.
 
+#### TOC
+
+- **Changed** - `TomoModForever.toc` lists only the libraries, the localisation engine and the six language files, then one XML per block: `Locales\Locales.xml` (strings added by each update, Locale_1xx, GUI, Compat), `Core\Core.xml` (Utils to Init, the options loader, the TUI compatibility layer), `Modules\Interface\Interface.xml`. Same 306 files in exactly the same load order (checked by expanding both). A new `Locale_1xx.lua` goes in `Locales\Locales.xml`.
+
 #### Audit (1.4.0)
 
 - **Fixed** - Diagnostics: the hook that keeps Blizzard's Lua error frame closed while TMF shows the errors kept closing it after TMF gave it back, until the next reload. Hooked once, acting only while suppressed.

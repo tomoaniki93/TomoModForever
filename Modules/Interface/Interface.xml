@@ -1,0 +1,12 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+    <!-- Interface modules, in load order. -->
+    <Include file="Shared\Shared.xml" />
+    <Include file="UnitFrames\UnitFrames.xml" />
+    <Include file="Castbars\CastBars.xml" />
+    <Include file="AnimHUD\AnimHUD.xml" />
+    <Include file="ResourceBars\ResourceBars.xml" />
+    <Include file="NamePlates\Nameplates.xml" />
+    <Include file="PartyFrame\PartyFrame.xml" />
+    <Include file="RaidFrame\RaidFrame.xml" />
+</Ui>

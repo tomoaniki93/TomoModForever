@@ -28,109 +28,23 @@ Locales\deDE.lua
 Locales\esES.lua
 Locales\itIT.lua
 Locales\ptBR.lua
-Locales\Locale_300.lua
-Locales\Locale_Modules.lua
-Locales\Locale_401.lua
-Locales\Locale_407.lua
-Locales\Locale_410.lua
-Locales\Locale_100.lua
-Locales\Locale_101.lua
-Locales\Locale_110.lua
-Locales\Locale_111.lua
-Locales\Locale_113.lua
-Locales\Locale_120.lua
-Locales\Locale_121.lua
-Locales\Locale_122.lua
-Locales\Locale_123.lua
-Locales\Locale_124.lua
-Locales\Locale_125.lua
-Locales\Locale_126.lua
-Locales\Locale_127.lua
-Locales\Locale_128.lua
-Locales\Locale_129.lua
-Locales\Locale_130.lua
-Locales\Locale_131.lua
-Locales\Locale_132.lua
-Locales\Locale_133.lua
-Locales\Locale_134.lua
-Locales\Locale_135.lua
-Locales\Locale_136.lua
-Locales\Locale_137.lua
-Locales\Locale_138.lua
-Locales\Locale_139.lua
-Locales\Locale_140.lua
-Locales\Locale_GUI.lua
-Locales\Locale_Compat.lua
+## Strings added by each update (Locale_1xx, GUI, Compat)
+Locales\Locales.xml
 
 ## =====================
-## Core
+## Core (Utils, Forever look, Compat, Forge, Database, modules,
+## profiles, Init, options loader, TUI compatibility layer)
 ## =====================
-Core\Utils.lua
-## WoW: Forever look shared by the chat, minimap, info panel and meter (1.3.9)
-Core\ForeverChrome.lua
-## Client flavour gate. Loads before Database.lua because it patches the
-## defaults, and before every module because each blocked module file
-## opens with a guard that reads it.
-Core\Compat.lua
-Core\Forge\Forge.lua
-Core\Forge\ForgeIO.lua
-Core\Forge\ForgeText.lua
-Core\Forge\ForgeEdit.lua
-Core\Forge\ForgeRegistry.lua
-Core\Forge\ForgeCanvas.lua
-Core\Forge\ForgeAssets.lua
-Core\Forge\ForgeSchema.lua
-Core\Database.lua
-## Module inventory: the engine, then the manifests that populate it.
-## Both must load after Database.lua -- the manifests are validated
-## against TomoMod_Defaults -- and before Profiles.lua, which will read
-## the inventory for selective import.
-Core\ModuleRegistry.lua
-Core\ModuleManifest.lua
-Core\ModuleLifecycle.lua
-Core\ModuleReloadUI.lua
-Core\LayoutEngine.lua
-Core\LayoutV41.lua
-Core\ResolutionPresets.lua
-Core\ProfileSafety.lua
-Core\LayoutShare.lua
-Core\Profiles.lua
-Core\ContextProfiles.lua
-Core\SelectiveImport.lua
-Core\WhatsNew.lua
-Core\Init.lua
+Core\Core.xml
 
 ## =====================
-## Config UI
-## =====================
-## Moved to the TomoMod_Options sub-addon (## LoadOnDemand: 1) -- 28 files,
-## ~17900 lines that most sessions never open. Core/OptionsLoader.lua pulls
-## it in on first use.
-Core\OptionsLoader.lua
-
-## =====================
-## TUI compatibility layer (must load before any ported TUI module)
-Core\TuiCompat\TuiCompat.xml
-
-## QOL Modules (unchanged)
+## Modules
 ## =====================
 Modules\QOL\QOL.xml
-
-## =====================
-## Interface Modules
-## =====================
-Modules\Interface\Shared\Shared.xml
-Modules\Interface\UnitFrames\UnitFrames.xml
-Modules\Interface\Castbars\CastBars.xml
-Modules\Interface\AnimHUD\AnimHUD.xml
-Modules\Interface\ResourceBars\ResourceBars.xml
-Modules\Interface\NamePlates\Nameplates.xml
-Modules\Interface\PartyFrame\PartyFrame.xml
-Modules\Interface\RaidFrame\RaidFrame.xml
+Modules\Interface\Interface.xml
 
 ## =====================
 ## Damage Meter (also published standalone as TomoDamageMeter;
 ## Guard.lua stands this copy down when that addon is installed)
 ## =====================
 Modules\DamageMeter\DamageMeter.xml
-
