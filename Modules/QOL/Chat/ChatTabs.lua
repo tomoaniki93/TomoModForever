@@ -66,9 +66,10 @@ end
 local function ForeverButtonBackdrop(b, alpha)
     local FC = TomoMod_ForeverChrome
     if not FC then return false end
-    FC.Backdrop(b, alpha or 0.88, true)
+    FC.Backdrop(b, alpha or 0.88, true, "chat")
     b:SetBackdropColor(0.82, 0.82, 0.82, alpha or 0.88)
-    local c = FC.C.bronze
+    if b.fcLine then b.fcLine.alpha = 0.55 end
+    local c = FC.GroupLine("chat")
     b:SetBackdropBorderColor(c[1], c[2], c[3], 0.55)
     b.fcBackdrop = true
     return true
@@ -78,11 +79,11 @@ local function ForeverHover(b, on)
     local FC = TomoMod_ForeverChrome
     if on then
         b:SetBackdropColor(1, 1, 1, 0.96)
-        local c = FC.C.antique
-        b:SetBackdropBorderColor(c[1], c[2], c[3], 0.95)
+        local c = FC.GroupLine("chat")
+        b:SetBackdropBorderColor(math.min(1, c[1] * 1.3), math.min(1, c[2] * 1.3), math.min(1, c[3] * 1.3), 1)
     else
         b:SetBackdropColor(0.82, 0.82, 0.82, 0.88)
-        local c = FC.C.bronze
+        local c = FC.GroupLine("chat")
         b:SetBackdropBorderColor(c[1], c[2], c[3], 0.55)
     end
     return true

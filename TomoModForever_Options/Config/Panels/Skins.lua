@@ -48,6 +48,18 @@ local function BuildChatFrameTab(parent)
     -- ── Appearance ─────────────────────────────────────────────
     local _, ny = W.CreateSectionHeader(c, L["chat_v4_appearance"], y)
     y = ny
+    -- [1.4.0] Colour of the Forever patterns around the chat.
+    local _, ny = W.CreateDropdown(c, L["opt_forever_color"], {
+        { text = L["tint_forever"], value = "forever" },
+        { text = L["tint_gold"],    value = "gold" },
+        { text = L["tint_black"],   value = "black" },
+        { text = L["tint_class"],   value = "class" },
+    }, db.chromeColor or "forever", y, function(v)
+        db.chromeColor = v
+        local FC = _G.TomoMod_ForeverChrome
+        if FC then FC.SetGroupTint("chat", v) end
+    end)
+    y = ny
 
     local _, ny = W.CreateSlider(c, L["opt_chat_skin_bg_alpha"], (appearance.bgAlpha or 0.72) * 100, 0, 100, 5, y, function(v)
         appearance.bgAlpha = v / 100

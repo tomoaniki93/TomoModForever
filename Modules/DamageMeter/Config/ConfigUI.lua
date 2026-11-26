@@ -256,6 +256,23 @@ local function CreateSettingsPanel()
             end)
         AddWidget(skinDD, 30)
 
+        -- [1.4.0] Colour of the Forever skin's patterns (moulding, corners,
+        -- crest, divider). Applies with the Forever skin.
+        local tintDD = ns.Widgets.CreateDropdown(parent, L["SETTINGS_FOREVER_COLOR"],
+            {
+                { value = "forever", label = L["TINT_FOREVER"] },
+                { value = "gold",    label = L["TINT_GOLD"] },
+                { value = "black",   label = L["TINT_BLACK"] },
+                { value = "class",   label = L["TINT_CLASS"] },
+            },
+            function() return ns.db.foreverColor or "forever" end,
+            function(val)
+                ns.db.foreverColor = val
+                local FC = _G.TomoMod_ForeverChrome
+                if FC then FC.SetGroupTint("meter", val) end
+            end)
+        AddWidget(tintDD, 30)
+
         -- Bar texture (every statusbar registered in LibSharedMedia)
         local texDD = ns.Widgets.CreateDropdown(parent, L["SETTINGS_BAR_TEXTURE"],
             ns.GetTextureList,   -- live: LSM textures can be registered after us

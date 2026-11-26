@@ -35,6 +35,95 @@ FC.C = {
     green      = { 0.450, 0.900, 0.450 },
 }
 
+-- ---------------------------------------------------------------------
+-- [1.4.0] Tints. The metal pieces exist twice: in Forever colours, and
+-- in grey (name_g) to be tinted: gold, black or the class colour. Every
+-- tinted piece belongs to a group ("chat", "minimap", "meter") and the
+-- whole group is tinted again with FC.SetGroupTint(group, mode).
+--   mode: "forever" (or nil) | "gold" | "black" | "class"
+-- ---------------------------------------------------------------------
+FC.TINTS = {
+    gold  = { 1.00, 0.82, 0.45 },
+    black = { 0.46, 0.46, 0.48 },
+}
+FC.MODES = { "forever", "gold", "black", "class" }
+
+local groupMode = {}
+local registry = {}   -- group -> { entries }
+
+--- Colour of a mode, or nil for the Forever textures.
+function FC.TintColor(mode)
+    if mode == "class" then
+        local U = TomoMod_Utils
+        local r, g, b = 1, 1, 1
+        if U and U.GetClassColor then r, g, b = U.GetClassColor() end
+        return { r, g, b }
+    end
+    return FC.TINTS[mode]
+end
+
+--- Colour of the thin lines (button and panel edges) in a mode.
+function FC.LineColor(mode)
+    if mode == "gold" then return FC.C.antique end
+    if mode == "black" then return { 0.30, 0.30, 0.32 } end
+    if mode == "class" then return FC.TintColor("class") end
+    return FC.C.bronze
+end
+
+function FC.GroupMode(group) return groupMode[group] or "forever" end
+function FC.GroupLine(group) return FC.LineColor(FC.GroupMode(group)) end
+
+local function Flip(tex, fx, fy)
+    local l, r = fx and 1 or 0, fx and 0 or 1
+    local t, b = fy and 1 or 0, fy and 0 or 1
+    tex:SetTexCoord(l, r, t, b)
+end
+
+local function PaintTex(e, mode)
+    local c = FC.TintColor(mode)
+    if c then
+        e.tex:SetTexture(FC.TEX .. e.name .. "_g")
+        e.tex:SetVertexColor(c[1], c[2], c[3], e.alpha or 1)
+    else
+        e.tex:SetTexture(FC.TEX .. e.name)
+        e.tex:SetVertexColor(1, 1, 1, e.alpha or 1)
+    end
+    if e.flip then Flip(e.tex, e.flip[1], e.flip[2]) end
+end
+
+local function PaintLine(e, mode)
+    local c = FC.LineColor(mode)
+    if e.frame.SetBackdropBorderColor then
+        e.frame:SetBackdropBorderColor(c[1], c[2], c[3], e.alpha or 0.9)
+    end
+end
+
+local function Register(group, e)
+    group = group or "default"
+    registry[group] = registry[group] or {}
+    table.insert(registry[group], e)
+    if e.tex then PaintTex(e, FC.GroupMode(group)) else PaintLine(e, FC.GroupMode(group)) end
+    return e
+end
+
+--- A metal texture of the set (name without _g), tinted with its group.
+function FC.Track(tex, name, group, alpha, fx, fy)
+    return Register(group, { tex = tex, name = name, alpha = alpha, flip = (fx or fy) and { fx, fy } or nil })
+end
+
+--- A thin backdrop edge, coloured with its group.
+function FC.TrackLine(frame, group, alpha)
+    return Register(group, { frame = frame, alpha = alpha })
+end
+
+function FC.SetGroupTint(group, mode)
+    if mode == "forever" then mode = nil end
+    groupMode[group] = mode
+    for _, e in ipairs(registry[group] or {}) do
+        if e.tex then PaintTex(e, mode) else PaintLine(e, mode) end
+    end
+end
+
 local function AnimLevel()
     local U = TomoMod_Utils
     return (U and U.AnimLevel and U.AnimLevel()) or "full"
@@ -53,8 +142,9 @@ function FC.Fill(tex, alpha)
     tex:SetVertexColor(1, 1, 1, alpha or 1)
 end
 
---- Tiled leather as a frame's backdrop; edge: thin bronze line.
-function FC.Backdrop(frame, alpha, edge)
+--- Tiled leather as a frame's backdrop; edge: thin line in the colour
+-- of `group` (bronze by default).
+function FC.Backdrop(frame, alpha, edge, group)
     if not frame.SetBackdrop then return end
     frame:SetBackdrop({
         bgFile = FC.TEX .. "fill", tile = true, tileSize = 256,
@@ -62,8 +152,13 @@ function FC.Backdrop(frame, alpha, edge)
     })
     frame:SetBackdropColor(1, 1, 1, alpha or 0.94)
     if edge then
-        local b = FC.C.bronze
-        frame:SetBackdropBorderColor(b[1], b[2], b[3], 0.9)
+        if group then
+            if frame.fcLine then PaintLine(frame.fcLine, FC.GroupMode(group))
+            else frame.fcLine = FC.TrackLine(frame, group, 0.9) end
+        else
+            local b = FC.C.bronze
+            frame:SetBackdropBorderColor(b[1], b[2], b[3], 0.9)
+        end
     end
 end
 
@@ -71,12 +166,6 @@ end
 -- Frame chrome: moulding, corners, crest, glint
 -- ---------------------------------------------------------------------
 local chromes = {}
-
-local function Flip(tex, fx, fy)
-    local l, r = fx and 1 or 0, fx and 0 or 1
-    local t, b = fy and 1 or 0, fy and 0 or 1
-    tex:SetTexCoord(l, r, t, b)
-end
 
 local function LayoutGlint(ch)
     if not ch.glint then return end
@@ -98,7 +187,7 @@ local function PlayGlint(ch)
 end
 
 --- Chrome around `host`.
--- opts: outset (4), edge (8), corner (30), crest (false), crestWidth (112),
+-- opts: group (tint group), outset (4), edge (8), corner (30), crest (false), crestWidth (112),
 --       crestY (centre on the top moulding),
 --       vignette (true), fill (false), fillAlpha (0.92), glint (true),
 --       strata, level.
@@ -132,9 +221,10 @@ function FC.Frame(host, opts)
     end
 
     local e = opts.edge
+    local group = opts.group
     local function Edge(file, p1, p2, horiz)
         local t = ch:CreateTexture(nil, "BORDER")
-        t:SetTexture(FC.TEX .. file)
+        FC.Track(t, file, group)
         t:SetPoint(p1)
         t:SetPoint(p2)
         if horiz then t:SetHeight(e) else t:SetWidth(e) end
@@ -148,10 +238,9 @@ function FC.Frame(host, opts)
     local c, n = opts.corner, -3
     local function Corner(point, fx, fy, x, y)
         local t = ch:CreateTexture(nil, "ARTWORK")
-        t:SetTexture(FC.TEX .. "corner")
+        FC.Track(t, "corner", group, nil, fx, fy)
         t:SetSize(c, c)
         t:SetPoint(point, ch, point, x, y)
-        Flip(t, fx, fy)
         return t
     end
     ch.corners = {
@@ -164,7 +253,7 @@ function FC.Frame(host, opts)
     if opts.crest then
         local cw = opts.crestWidth or 112
         ch.crest = ch:CreateTexture(nil, "OVERLAY")
-        ch.crest:SetTexture(FC.TEX .. "crest")
+        FC.Track(ch.crest, "crest", group)
         ch.crest:SetSize(cw, cw / 4)
         ch.crest:SetPoint("CENTER", ch, "TOP", 0, opts.crestY or (-e / 2))
     end
@@ -218,15 +307,15 @@ end
 -- ---------------------------------------------------------------------
 -- Title plate (3-slice): the frame's whole area is the plate.
 -- ---------------------------------------------------------------------
-function FC.Plate(frame, layer, sub)
+function FC.Plate(frame, layer, sub, group)
     layer = layer or "BACKGROUND"
     local p = {}
     p.l = frame:CreateTexture(nil, layer, nil, sub)
     p.m = frame:CreateTexture(nil, layer, nil, sub)
     p.r = frame:CreateTexture(nil, layer, nil, sub)
-    p.l:SetTexture(FC.TEX .. "plate_l")
-    p.m:SetTexture(FC.TEX .. "plate_m")
-    p.r:SetTexture(FC.TEX .. "plate_r")
+    FC.Track(p.l, "plate_l", group)
+    FC.Track(p.m, "plate_m", group)
+    FC.Track(p.r, "plate_r", group)
     p.l:SetPoint("TOPLEFT"); p.l:SetPoint("BOTTOMLEFT")
     p.r:SetPoint("TOPRIGHT"); p.r:SetPoint("BOTTOMRIGHT")
     p.m:SetPoint("TOPLEFT", p.l, "TOPRIGHT")
@@ -257,10 +346,10 @@ local STATE_COLOR = {
     good    = FC.C.green,
 }
 
-function FC.Socket(button, inset)
+function FC.Socket(button, inset, group)
     if button.fcSocket then return button.fcSocket end
     local s = button:CreateTexture(nil, "BACKGROUND", nil, 2)
-    s:SetTexture(FC.TEX .. "socket")
+    FC.Track(s, "socket", group)
     local i = inset or -1
     s:SetPoint("TOPLEFT", -i, i)
     s:SetPoint("BOTTOMRIGHT", i, -i)

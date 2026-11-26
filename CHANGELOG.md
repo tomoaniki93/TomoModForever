@@ -8,6 +8,14 @@
 - **New** - "World map" button in the map window's title bar: opens the game's map even where the shortcut applies.
 - **New** - Option in Adventure > Codex > Settings.
 
+#### Colour of the Forever patterns
+
+- **New** - The Forever patterns (moulding, filigree corners, crest, title plates, button settings, gem dividers, thin edges) can be tinted: Forever (bronze and gold, the textures as drawn), Gold, Black or Class colour. Grey variants of the metal pieces (`Assets/Textures/Forever/*_g.tga`, `Tools/gen_forever_grey.py`) take the colour; the leather and the glows keep theirs.
+- **New** - `ForeverChrome.lua`: tint groups. Every metal piece belongs to a group ("chat", "minimap", "meter") and `FC.SetGroupTint(group, mode)` tints the whole group at once; `FC.Track`, `FC.TrackLine`, `FC.LineColor`, `FC.GroupLine`.
+- **Changed** - Chat: Skins > Chat > Appearance > Pattern colour (`chatV4.chromeColor`). Tab and input edges follow the colour.
+- **Changed** - Minimap: the border choice is now the colour of the Forever patterns, for every choice (Forever, Gold, Class colour, Black); the info panel plates follow. The plain border only remains without the Forever look.
+- **Changed** - Damage meter: Pattern colour (Forever skin) in Appearance, under the skin (`foreverColor`).
+
 ## ####################################
 
 ## CHANGELOG 1.3.9

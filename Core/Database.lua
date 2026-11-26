@@ -319,6 +319,7 @@ TomoMod_Defaults = {
     chatV4 = {
         enabled = true,
         overlordTab = true,
+        chromeColor = "forever",   -- [1.4.0] forever | gold | black | class
         -- Position declaree : sans entree ici l'ancre n'existe pas pour le
         -- moteur de layout, donc pas de migration de schema, pas
         -- d'estampillage de reference et pas de capture par les presets

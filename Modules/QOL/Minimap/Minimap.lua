@@ -85,16 +85,24 @@ end
 -- [1.3.9] WoW: Forever look (border "forever", the default): bronze
 -- moulding with filigree corners, buttons set in bronze, leather panels.
 local minimapChrome
+-- [1.4.0] The Forever patterns for every border choice: the choice is
+-- their colour (forever | gold | black | class).
 local function IsForever()
-    return TomoMod_ForeverChrome ~= nil and TomoModForeverDB.minimap.borderColor == "forever"
+    return TomoMod_ForeverChrome ~= nil
 end
+local function Tint()
+    local c = TomoModForeverDB.minimap.borderColor
+    if c == "gold" or c == "black" or c == "class" then return c end
+    return "forever"
+end
+TomoMod_Minimap.Tint = Tint
 TomoMod_Minimap.IsForever = IsForever
 
 -- Bronze setting on a small minimap button (tracking, addon collector).
 local function ForeverButton(btn, on)
     local FC = TomoMod_ForeverChrome
     if on and FC then
-        FC.Socket(btn, 3)
+        FC.Socket(btn, 3, "minimap")
         btn.fcSocket:Show()
         if btn.bg then btn.bg:SetColorTexture(0, 0, 0, 0) end
         if not btn.fcHooked then
@@ -121,7 +129,7 @@ end
 -- Leather panel with a bronze line (tracking panel, addon collector box).
 local function ForeverPanel(frame)
     local FC = TomoMod_ForeverChrome
-    FC.Backdrop(frame, 0.97, true)
+    FC.Backdrop(frame, 0.97, true, "minimap")
 end
 
 -- [1.3.9] Opacity of the border (Forever moulding or the plain border), to
@@ -149,11 +157,13 @@ function TomoMod_Minimap.CreateBorder()
         minimapBorder:SetBackdrop(nil)
         if not minimapChrome then
             minimapChrome = TomoMod_ForeverChrome.Frame(Minimap, {
+                group = "minimap",
                 outset = 6, edge = 8, corner = 30, vignette = false,
                 level = Minimap:GetFrameLevel() + 2, glintDelay = 10,
             })
         end
         minimapChrome:Toggle(true)
+        TomoMod_ForeverChrome.SetGroupTint("minimap", Tint())
         TomoMod_Minimap.ApplyFrameAlpha()
         if TomoMod_InfoPanel and TomoMod_InfoPanel.UpdateAppearance then
             TomoMod_InfoPanel.UpdateAppearance()
@@ -545,7 +555,9 @@ function TomoMod_Minimap.CreateTrackingButton()
     trackingButton.ico:SetVertexColor(r, g, b, 1)
     ForeverButton(trackingButton, IsForever())
     if IsForever() then
-        local c = TomoMod_ForeverChrome.C.antique
+        local FC = TomoMod_ForeverChrome
+        local c = Tint() == "forever" and FC.C.antique or FC.LineColor(Tint())
+        if Tint() == "black" then c = FC.C.muted end
         trackingButton.ico:SetVertexColor(c[1], c[2], c[3], 1)
     else
         trackingButton.bg:SetColorTexture(0, 0, 0, 0.45)

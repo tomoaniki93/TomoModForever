@@ -166,7 +166,7 @@ local function CreateButton(parent, key)
     b.accent = accent
     local FC = TomoMod_ForeverChrome
     if FC then
-        FC.Socket(b, -1)
+        FC.Socket(b, -1, "chat")
         shadow:Hide()
         gloss:Hide()
     end

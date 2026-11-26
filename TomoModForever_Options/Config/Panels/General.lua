@@ -161,6 +161,7 @@ function TomoMod_ConfigPanel_General(parent)
 
     local _, cy = W.CreateDropdown(card.inner, L["opt_border"], {
         { text = L["border_forever"], value = "forever" },
+        { text = L["border_gold"], value = "gold" },
         { text = L["border_class"], value = "class"  },
         { text = L["border_black"],              value = "black"  },
     }, TomoModForeverDB.minimap.borderColor, cy, function(v)

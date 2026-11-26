@@ -32,8 +32,7 @@ end
 -- [1.3.9] WoW: Forever look (minimap border "forever"): zone name and clock
 -- on gold plates set on the minimap's bronze moulding.
 local function Forever()
-    return TomoMod_ForeverChrome ~= nil and TomoModForeverDB and TomoModForeverDB.minimap
-        and TomoModForeverDB.minimap.borderColor == "forever"
+    return TomoMod_ForeverChrome ~= nil and TomoModForeverDB ~= nil and TomoModForeverDB.minimap ~= nil
 end
 IP.IsForever = Forever
 local zonePlate, clockPlate
@@ -362,8 +361,8 @@ function IP.ApplyStyle()
     local forever = Forever()
 
     if forever and not zonePlate then
-        zonePlate = FC.Plate(zoneBar, "BACKGROUND")
-        clockPlate = FC.Plate(clockBar, "BACKGROUND")
+        zonePlate = FC.Plate(zoneBar, "BACKGROUND", nil, "minimap")
+        clockPlate = FC.Plate(clockBar, "BACKGROUND", nil, "minimap")
     end
     if zonePlate then zonePlate:SetShown(forever) end
     if clockPlate then clockPlate:SetShown(forever) end

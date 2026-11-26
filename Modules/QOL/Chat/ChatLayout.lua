@@ -107,13 +107,13 @@ function Layout:Initialize()
         FC.Backdrop(messageHost, 0.72)
         FC.Backdrop(tabsHost, 0.72)
         FC.Backdrop(sidebarHost, 0.80)
-        FC.Backdrop(inputHost, 0.80, true)
+        FC.Backdrop(inputHost, 0.80, true, "chat")
         self.chrome = FC.Frame(panel, {
+            group = "chat",
             outset = 6, edge = 8, corner = 28, fill = true, fillAlpha = 0.72,
             strata = "MEDIUM", level = 99, glintDelay = 12,
         })
-        divider:SetTexture(FC.TEX .. "divider")
-        divider:SetVertexColor(1, 1, 1, 0.9)
+        FC.Track(divider, "divider", "chat", 0.9)
         divider:SetHeight(10)
         self.fcDivider = true
         -- The divider sits over the message surface, under the chrome.
@@ -298,8 +298,8 @@ function Layout:ApplySettings(enabled)
         self.sidebarHost:SetBackdropColor(0.85, 0.85, 0.85, math.min(0.96, frameAlpha + 0.08))
         self.sidebarHost:SetBackdropBorderColor(0, 0, 0, 0)
         self.inputHost:SetBackdropColor(0.85, 0.85, 0.85, math.min(0.96, frameAlpha + 0.08))
-        local b = TomoMod_ForeverChrome.C.bronze
-        self.inputHost:SetBackdropBorderColor(b[1], b[2], b[3], math.max(0.4, a.borderAlpha or 0.22))
+        -- [1.4.0] Colour of the patterns: Forever, gold, black or class.
+        TomoMod_ForeverChrome.SetGroupTint("chat", Chat.GetDB().chromeColor or "forever")
     else
         self.panel:SetBackdropColor(BG_R, BG_G, BG_B, 0)
         self.panel:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)

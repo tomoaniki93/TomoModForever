@@ -17,6 +17,8 @@ local DEFAULTS = {
     -- Tab for the Overlord addon's messages (ChatOverlord.lua), only when
     -- Overlord is loaded.
     overlordTab = true,
+    -- [1.4.0] Colour of the Forever patterns: forever | gold | black | class
+    chromeColor = "forever",
     appearance = {
         bgAlpha = 0.72,
         messageBgAlpha = 0.72,

@@ -277,11 +277,12 @@ function ns.CreateMeterWindow(cfg)
     local chrome, fcDivider
     if FC then
         chrome = FC.Frame(window, {
+            group = "meter",
             outset = 5, edge = 7, corner = 22, crest = true, crestWidth = 88, crestY = 9,
             vignette = true, level = window:GetFrameLevel() + 6, glintDelay = 14,
         })
         fcDivider = window:CreateTexture(nil, "OVERLAY", nil, 2)
-        fcDivider:SetTexture(FC.TEX .. "divider")
+        FC.Track(fcDivider, "divider", "meter")
         fcDivider:SetHeight(8)
         fcDivider:SetPoint("LEFT", headerSep2, "LEFT", 4, 0)
         fcDivider:SetPoint("RIGHT", headerSep2, "RIGHT", -4, 0)
@@ -290,6 +291,8 @@ function ns.CreateMeterWindow(cfg)
     local function ApplyForever()
         local on = chrome ~= nil and ns.FOREVER_SKIN == true
         if chrome then chrome:Toggle(on) end
+        -- [1.4.0] Colour of the patterns: forever | gold | black | class.
+        if on then FC.SetGroupTint("meter", (ns.db and ns.db.foreverColor) or "forever") end
         if fcDivider then fcDivider:SetShown(on) end
         for _, t in ipairs(plainBorders) do t:SetShown(not on) end
         headerSep:SetShown(not on)
