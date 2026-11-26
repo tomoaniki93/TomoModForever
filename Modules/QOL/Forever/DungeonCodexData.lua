@@ -216,7 +216,7 @@ D.dungeons = {
     },
     {
         key = "stocks", en = "The Stockade", fr = "La Prison",
-        min = 25, max = 29, zone = "stormwind", pos = { 40.5, 55.9 }, src = "approx", side = "A",
+        min = 25, max = 29, zone = "stormwind", pos = { 50.8, 66.9 }, src = "guide", side = "A",   -- [1.4.0] entrance checked in game
         routes = {
             A = { fr = { "Dans Hurlevent : la prison est au bord d'un canal, côté quartier des Mages.",
                          "Suis le waypoint : la porte est gardée, au pied d'un pont." },

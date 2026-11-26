@@ -2,24 +2,26 @@
 
 ## CHANGELOG 1.4.0
 
-#### Dungeon maps
+#### Dungeon maps and codex
 
 - **New** - World map shortcut (`DungeonMap.lua`, `dungeonCodex.worldMapShortcut`, on by default): inside a dungeon or raid that has a map in the codex, the world map key (M) opens the TMF map of that dungeon on the floor you are on; pressed again, it closes it. Out of combat only (in combat the game's map opens as usual); dungeons without a TMF map (the new Forever dungeons for now) keep the game's map. The dungeon is found by the game's map, then by instance ID.
+- **New** - The shortcut follows the map key itself (`ToggleWorldMap`) rather than the map's opening, so it also works where the game refuses to open its map in the dungeon (M or L used to show no map at all there). With the game's map opened by the "World map" button, M simply closes it. The quest log (L) and quests opened from the tracker are never taken and open as usual. Should the TMF window fail to show, the game's map comes back and the error goes to Diagnostics: the map key never leaves the player without a map.
 - **New** - "World map" button in the map window's title bar: opens the game's map even where the shortcut applies.
+- **New** - First time the map key opens a TMF dungeon map, one chat line says where the window comes from, how to reach the game's map and where the option is.
 - **New** - Option in Adventure > Codex > Settings.
+- **Fixed** - Codex: The Stockade entrance moved to its real place in Stormwind (50.8, 66.9, checked in game; it was the Classic guess 40.5, 55.9).
 
 #### Colour of the Forever patterns
 
 - **New** - The Forever patterns (moulding, filigree corners, crest, title plates, button settings, gem dividers, thin edges) can be tinted: Forever (bronze and gold, the textures as drawn), Gold, Black or Class colour. Grey variants of the metal pieces (`Assets/Textures/Forever/*_g.tga`, `Tools/gen_forever_grey.py`) take the colour; the leather and the glows keep theirs.
-- **New** - `ForeverChrome.lua`: tint groups. Every metal piece belongs to a group ("chat", "minimap", "meter") and `FC.SetGroupTint(group, mode)` tints the whole group at once; `FC.Track`, `FC.TrackLine`, `FC.LineColor`, `FC.GroupLine`.
+- **New** - `ForeverChrome.lua`: tint groups. Every metal piece belongs to a group ("chat", "minimap", "meter", "installer") and `FC.SetGroupTint(group, mode)` tints the whole group at once; `FC.Track`, `FC.TrackLine`, `FC.LineColor`, `FC.GroupLine`.
 - **Changed** - Chat: Skins > Chat > Appearance > Pattern colour (`chatV4.chromeColor`). Tab and input edges follow the colour.
 - **Changed** - Minimap: the border choice is now the colour of the Forever patterns, for every choice (Forever, Gold, Class colour, Black); the info panel plates follow. The plain border only remains without the Forever look.
 - **Changed** - Damage meter: Pattern colour (Forever skin) in Appearance, under the skin (`foreverColor`).
 
-#### Installer and new players
+#### Installer
 
 - **New** - Installer step "Your look", right after the setup choice (both paths, so the archetype preset never overwrites it): unit frame style as three cards (TMF, Forever, Animation) and the colour of the Forever patterns (Forever, Gold, Black, Class colour) with a live tinted preview. The colour is written to the chat, the minimap and the damage meter at once (the meter moves to its Forever skin, bar settings kept) and shows behind the installer on click; the frame style follows at the reload. The recap names the look chosen.
-- **New** - First time the world map key opens a TMF dungeon map, one chat line says where the window comes from, how to reach the game's map and where the option is.
 
 #### Settings window: simple mode
 
@@ -28,23 +30,27 @@
 - **New** - `K.AdvancedNotice` (the notice card, shared), `TomoMod_Config.RelayoutNav` (called by `K.SetExpert`; the header button follows a switch made from a page's notice).
 - **Removed** - The cards' entrance animation (each card rising into place one after another when a page opens): players found it shaky. `K.PlayEntrance` stays as a no-op.
 
+#### Resource bars
+
+- **Fixed** - The centred power bar now glides and leaves the pale spent trail like the unit frames' power bar (seen only on the Forever frames until now). Its smoothing was a Lua lerp that stood still on the secret values `UnitPower` returns; it uses the engine's easing now (`Enum.StatusBarInterpolation`), the lerp staying as a fallback. The trail drains 0.4 s after mana or energy is spent and follows the unit frames' "Pale trail" option and the animation setting; a new power type (druid form) snaps.
+
 #### Quest dialogue
 
 - **Fixed** - Rewards with money (quest details): Lua error "attempt to call a nil value" (`DialogueRewards.lua:390`). Forever has no global `GetCoinTextureString`; the money now goes through `TomoMod_Utils.Money`, which tries `C_CurrencyInfo`, then the global, then draws gold, silver and copper with the game's coin icons. The outfit preview on ctrl-click is guarded too.
 - **Fixed** - The NPC's choices could be drawn over the last lines of a long text: the text was measured before the game had wrapped its lines. The larger of the two measures is taken, and the page is laid out again on the next frame.
 
-#### TOC
-
-- **Changed** - `TomoModForever.toc` lists only the libraries, the localisation engine and the six language files, then one XML per block: `Locales\Locales.xml` (strings added by each update, Locale_1xx, GUI, Compat), `Core\Core.xml` (Utils to Init, the options loader, the TUI compatibility layer), `Modules\Interface\Interface.xml`. Same 306 files in exactly the same load order (checked by expanding both). A new `Locale_1xx.lua` goes in `Locales\Locales.xml`.
-
-#### Audit (1.4.0)
+#### Fixes and audit
 
 - **Fixed** - Diagnostics: the hook that keeps Blizzard's Lua error frame closed while TMF shows the errors kept closing it after TMF gave it back, until the next reload. Hooked once, acting only while suppressed.
 - **Fixed** - Nameplates: the nameplate CVars (friendly plates, overlap, insets) were written even in combat (zoning in combat, settings changed in combat), where the game blocks them. `SafeSetCVar` writes them at once out of combat, otherwise when the combat ends.
-- **Fixed** - World map shortcut: in a dungeon, M or L sometimes showed no map at all. The shortcut now follows the map key itself (`ToggleWorldMap`) rather than the map's opening, so it also works where the game refuses to open its map in the dungeon. M opens the TMF dungeon map, M again closes it; with the game's map opened by the "World map" button, M simply closes it. The quest log (L) and quests opened from the tracker are never taken and open as usual. Should the TMF window fail to show, the game's map comes back and the error goes to Diagnostics: the map key never leaves the player without a map.
 - **Changed** - Resource glow: the poller sleeps while the game targets no object and wakes on PLAYER_SOFT_INTERACT_CHANGED (it ran every 0.15 s all the time).
 - **Changed** - The unit frame elements namespace was a bare global (`UF_Elements`), open to clashes with other addons: now `TomoMod_UFElements`.
 - **Checked** - 349 Lua files parse; no stray globals left (besides `GetMinimapShape`, which the minimap must provide); no lowercase global read that would be a forgotten local; every file the TOC and XML files list exists and none is left out; no locale key used without a definition; every saved list is capped (fight history, benchmarks, error log, chat history); the large locale files only build the active language; fast tickers stop when idle.
+
+#### TOC
+
+- **Changed** - `TomoModForever.toc` lists only the libraries, the localisation engine and the six language files, then one XML per block: `Locales\Locales.xml` (strings added by each update, Locale_1xx, GUI, Compat), `Core\Core.xml` (Utils to Init, the options loader, the TUI compatibility layer), `Modules\Interface\Interface.xml`. Same 306 files in exactly the same load order (checked by expanding both). A new `Locale_1xx.lua` goes in `Locales\Locales.xml`.
+- **Changed** - Version 1.4.0 in both TOC files; What's new entry for 1.4.0 in the six languages (`Locales\Locale_140.lua`).
 
 ## ####################################
 

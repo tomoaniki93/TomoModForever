@@ -1104,7 +1104,45 @@ local function CreatePrimaryPowerBar(parent, width, height)
     text:SetPoint("CENTER"); text:SetTextColor(1, 1, 1, 0.85)
     bar.text = text
 
+    -- [1.4.0] Spent trail, as on the unit frames' power bar: a pale bar
+    -- under the fill that drains 0.4 s after mana / energy is spent. A
+    -- sibling one level below (a child would draw over the fill); it
+    -- carries the background while shown and follows the bar's visibility.
+    local trail = CreateFrame("StatusBar", nil, parent)
+    trail:SetAllPoints(bar)
+    trail:SetFrameLevel(bar:GetFrameLevel())
+    bar:SetFrameLevel(trail:GetFrameLevel() + 1)
+    trail:SetStatusBarTexture(tex)
+    trail:GetStatusBarTexture():SetHorizTile(false)
+    trail:SetStatusBarColor(1, 1, 1, 0.45)
+    trail:SetMinMaxValues(0, 100); trail:SetValue(100)
+    local tbg = trail:CreateTexture(nil, "BACKGROUND")
+    tbg:SetAllPoints()
+    StyleBarBackground(tbg, tex, "power")
+    trail:EnableMouse(false)
+    trail:Hide()
+    bar.trail = trail
+    bar:HookScript("OnHide", function() trail:Hide() end)
+
     return bar
+end
+
+-- The trail follows the unit frames' option (one setting for every
+-- power bar), and animations set to none.
+local function PowerTrailOn()
+    local uf = TomoModForeverDB and TomoModForeverDB.unitFrames
+    if uf and uf.powerTrail == false then return false end
+    local U = TomoMod_Utils
+    if U and U.AnimAny and not U.AnimAny() then return false end
+    return true
+end
+
+-- Engine easing (C-side, accepts the secret numbers UnitPower returns;
+-- the Lua lerp of SetBarValueSmooth only runs on plain numbers).
+local function EngineEase()
+    local U = TomoMod_Utils
+    if U and U.AnimAny and not U.AnimAny() then return nil end
+    return Enum and Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.ExponentialEaseOut
 end
 
 local function UpdatePrimaryPower()
@@ -1115,8 +1153,33 @@ local function UpdatePrimaryPower()
     local current = UnitPower("player", powerType)
     local max = UnitPowerMax("player", powerType)
 
-    primaryPowerBar:SetMinMaxValues(0, max)
-    SetBarValueSmooth(primaryPowerBar, current)
+    local s = GetSettings()
+
+    -- [1.4.0] Glides with the engine's easing, so it also moves when the
+    -- value is secret (the Lua lerp left the bar jumping). A new power type
+    -- (druid form) snaps.
+    local bar = primaryPowerBar
+    local same = bar._tmType == powerType
+    bar._tmType = powerType
+    bar:SetMinMaxValues(0, max)
+    local ease = same and s and s.smoothBars and EngineEase()
+    if ease and pcall(bar.SetValue, bar, current, ease) then
+        bar._smoothCur, bar._smoothTarget = nil, nil
+        smoothFrames[bar] = nil
+    else
+        SetBarValueSmooth(bar, current)
+    end
+
+    -- Spent trail (drains 0.4 s later), as on the unit frames.
+    local trail = bar.trail
+    if trail then
+        local on = PowerTrailOn() and bar:IsShown()
+        trail:SetShown(on)
+        if bar.bg then bar.bg:SetAlpha(on and 0 or 1) end
+        if on and TomoMod_UFElements and TomoMod_UFElements.TrailTo then
+            TomoMod_UFElements.TrailTo(trail, current, max, same)
+        end
+    end
 
     -- Color by power type (reuse TomoMod_Utils if available, fallback to PowerBarColor)
     local r, g, b
@@ -1130,7 +1193,6 @@ local function UpdatePrimaryPower()
 
     -- v2.8 : seuil « ressource basse » — player power non secret en pratique,
     -- garde issecretvalue par sécurité (skip la couleur d'alerte si secret)
-    local s = GetSettings()
     if s and s.powerThresholdEnabled
        and not issecret(current) and not issecret(max) and max and max > 0 then
         local pct = current / max * 100

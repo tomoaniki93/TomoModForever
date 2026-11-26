@@ -63,6 +63,18 @@ local PANEL_H = 480
 local CHANGELOG
 CHANGELOG = {
     {
+        version = "1.4.0",
+        highlights = {
+            L["wn_140_colour"],
+            L["wn_140_look"],
+            L["wn_140_mapkey"],
+            L["wn_140_simple"],
+            L["wn_140_power"],
+            L["wn_140_dialogue"],
+            L["wn_140_fixes"],
+        },
+    },
+    {
         version = "1.3.9",
         highlights = {
             L["wn_139_dialogue"],
