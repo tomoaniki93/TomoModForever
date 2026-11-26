@@ -61,6 +61,13 @@ local function BuildChatFrameTab(parent)
     end, "%.0f%%")
     y = ny
 
+    -- [1.3.9] Opacity of the Forever frame (moulding, corners, divider).
+    local _, ny = W.CreateSlider(c, L["opt_chat_frame_alpha"], (appearance.frameAlpha or 1) * 100, 0, 100, 5, y, function(v)
+        appearance.frameAlpha = v / 100
+        Apply()
+    end, "%.0f%%")
+    y = ny
+
     local _, ny = W.CreateSlider(c, L["opt_chat_skin_font_size"], appearance.fontSize or 13, 9, 20, 1, y, function(v)
         appearance.fontSize = v
         Apply()

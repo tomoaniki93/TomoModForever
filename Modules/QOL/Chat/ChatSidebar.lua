@@ -94,7 +94,7 @@ local function SetTooltip(button, title, text)
         GameTooltip:SetOwner(self, Chat.GetDB().sidebar.side == "RIGHT" and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
         GameTooltip:SetText(title, 1, 1, 1)
         if text and text ~= "" then
-            GameTooltip:AddLine(text, 0.72, 0.76, 0.78, true)
+            GameTooltip:AddLine(text, 0.76, 0.70, 0.60, true)
         end
         GameTooltip:Show()
     end)
@@ -105,23 +105,31 @@ end
 
 local function ButtonVisualState(button, mode)
     mode = mode or "default"
+    -- [1.3.9] Forever: a bronze setting, the state shows as a coloured glow.
+    if button.fcSocket then
+        button:SetBackdropColor(0, 0, 0, 0)
+        button:SetBackdropBorderColor(0, 0, 0, 0)
+        button.accent:Hide()
+        TomoMod_ForeverChrome.SocketState(button, mode ~= "default" and mode or nil)
+        return
+    end
     if mode == "active" then
-        button:SetBackdropColor(0.08, 0.11, 0.12, 0.94)
+        button:SetBackdropColor(0.120, 0.092, 0.060, 0.94)
         button:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.72)
         button.accent:SetColorTexture(TEAL_R, TEAL_G, TEAL_B, 1)
         button.accent:Show()
     elseif mode == "danger" then
-        button:SetBackdropColor(0.11, 0.07, 0.07, 0.94)
+        button:SetBackdropColor(0.120, 0.060, 0.045, 0.94)
         button:SetBackdropBorderColor(RED_R, RED_G, RED_B, 0.72)
         button.accent:SetColorTexture(RED_R, RED_G, RED_B, 1)
         button.accent:Show()
     elseif mode == "warning" then
-        button:SetBackdropColor(0.11, 0.095, 0.05, 0.94)
+        button:SetBackdropColor(0.120, 0.095, 0.045, 0.94)
         button:SetBackdropBorderColor(YELLOW_R, YELLOW_G, YELLOW_B, 0.72)
         button.accent:SetColorTexture(YELLOW_R, YELLOW_G, YELLOW_B, 1)
         button.accent:Show()
     else
-        button:SetBackdropColor(0.055, 0.07, 0.075, 0.84)
+        button:SetBackdropColor(0.085, 0.066, 0.046, 0.84)
         button:SetBackdropBorderColor(1, 1, 1, 0.10)
         button.accent:SetColorTexture(TEAL_R, TEAL_G, TEAL_B, 0.75)
         button.accent:Hide()
@@ -130,6 +138,8 @@ end
 
 local function CreateButton(parent, key)
     local b = CreateFrame("Button", "TomoMod_ChatV4_" .. key, parent, "BackdropTemplate")
+    -- [1.3.9] Over the Forever chrome's corners (level 99).
+    b:SetFrameLevel(101)
     b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
 
     local shadow = b:CreateTexture(nil, "BACKGROUND")
@@ -154,6 +164,12 @@ local function CreateButton(parent, key)
     accent:SetHeight(2)
     accent:Hide()
     b.accent = accent
+    local FC = TomoMod_ForeverChrome
+    if FC then
+        FC.Socket(b, -1)
+        shadow:Hide()
+        gloss:Hide()
+    end
     ButtonVisualState(b, "default")
 
     local hover = b:CreateTexture(nil, "HIGHLIGHT")
@@ -186,11 +202,17 @@ local function CreateButton(parent, key)
     countShadow:SetTexture(WHITE)
     countShadow:SetPoint("BOTTOMRIGHT", -1, 2)
     countShadow:SetSize(12, 8)
-    countShadow:SetColorTexture(0.02, 0.03, 0.035, 0.85)
+    countShadow:SetColorTexture(0.040, 0.030, 0.022, 0.85)
     countShadow:Hide()
     b.countShadow = countShadow
 
     b:SetScript("OnEnter", function(self)
+        if self.fcSocket then
+            if not self._stateMode or self._stateMode == "default" then
+                TomoMod_ForeverChrome.SocketState(self, "hover")
+            end
+            return
+        end
         self.hover:Show()
         if not self._stateLocked then
             self:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.58)
@@ -205,15 +227,24 @@ local function CreateButton(parent, key)
         end
     end)
     b:SetScript("OnMouseDown", function(self)
-        self:SetBackdropColor(0.03, 0.045, 0.05, 0.96)
+        if self.fcSocket then
+            self.iconHost:SetPoint("TOPLEFT", 5, -5)
+            self.iconHost:SetPoint("BOTTOMRIGHT", -3, 3)
+            return
+        end
+        self:SetBackdropColor(0.050, 0.040, 0.030, 0.96)
     end)
     b:HookScript("OnMouseUp", function(self)
+        if self.fcSocket then
+            self.iconHost:SetPoint("TOPLEFT", 4, -4)
+            self.iconHost:SetPoint("BOTTOMRIGHT", -4, 4)
+        end
         if self._stateMode then
             ButtonVisualState(self, self._stateMode)
         else
             ButtonVisualState(self, "default")
         end
-        if self:IsMouseOver() and not self._stateLocked then
+        if self:IsMouseOver() and not self._stateLocked and not self.fcSocket then
             self:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.58)
         end
     end)
@@ -285,7 +316,7 @@ local function BuildStatusMenu(owner)
     menu:SetSize(136, 74)
     menu:SetFrameStrata("DIALOG")
     menu:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-    menu:SetBackdropColor(0.025, 0.045, 0.05, 0.98)
+    menu:SetBackdropColor(0.072, 0.056, 0.040, 0.98)
     menu:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.45)
     menu:Hide()
     Sidebar.statusMenu = menu
@@ -334,7 +365,7 @@ local function BuildSettingsMenu()
     menu:SetSize(204, 50)
     menu:SetFrameStrata("DIALOG")
     menu:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-    menu:SetBackdropColor(0.025, 0.045, 0.05, 0.98)
+    menu:SetBackdropColor(0.072, 0.056, 0.040, 0.98)
     menu:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.45)
     menu:Hide()
     Sidebar.settingsMenu = menu

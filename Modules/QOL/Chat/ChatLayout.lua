@@ -10,7 +10,7 @@ local Layout = {}
 Chat.RegisterModule("Layout", Layout)
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local BG_R, BG_G, BG_B = 0.025, 0.045, 0.05
+local BG_R, BG_G, BG_B = 0.072, 0.056, 0.040
 local TEAL_R, TEAL_G, TEAL_B = 0.788, 0.635, 0.322
 
 local function IsSecret(value)
@@ -82,7 +82,9 @@ function Layout:Initialize()
     local sidebarHost = CreateFrame("Frame", "TomoMod_ChatV4SidebarHost", UIParent, "BackdropTemplate")
     sidebarHost:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
     sidebarHost:SetFrameStrata("MEDIUM")
-    sidebarHost:SetFrameLevel(99)
+    -- [1.3.9] 96: the Forever chrome (99) goes over the surfaces, under
+    -- the sidebar buttons and the tabs (100).
+    sidebarHost:SetFrameLevel(96)
     sidebarHost:Hide()
     self.sidebarHost = sidebarHost
 
@@ -96,6 +98,31 @@ function Layout:Initialize()
     divider:SetColorTexture(TEAL_R, TEAL_G, TEAL_B, 0.55)
     divider:SetHeight(1)
     self.divider = divider
+
+    -- [1.3.9] WoW: Forever chrome. Leather on every surface, bronze moulding
+    -- and filigree corners around the whole chat, a gem divider under the
+    -- tabs. The panel's own fill shows in the gaps between the surfaces.
+    local FC = TomoMod_ForeverChrome
+    if FC then
+        FC.Backdrop(messageHost, 0.72)
+        FC.Backdrop(tabsHost, 0.72)
+        FC.Backdrop(sidebarHost, 0.80)
+        FC.Backdrop(inputHost, 0.80, true)
+        self.chrome = FC.Frame(panel, {
+            outset = 6, edge = 8, corner = 28, fill = true, fillAlpha = 0.72,
+            strata = "MEDIUM", level = 99, glintDelay = 12,
+        })
+        divider:SetTexture(FC.TEX .. "divider")
+        divider:SetVertexColor(1, 1, 1, 0.9)
+        divider:SetHeight(10)
+        self.fcDivider = true
+        -- The divider sits over the message surface, under the chrome.
+        local dividerHost = CreateFrame("Frame", nil, panel)
+        dividerHost:SetFrameStrata("MEDIUM")
+        dividerHost:SetFrameLevel(95)
+        dividerHost:SetAllPoints(panel)
+        divider:SetParent(dividerHost)
+    end
 
     self:RegisterMover()
 
@@ -230,12 +257,14 @@ function Layout:RefreshGeometry()
     self.sidebarHost:SetSize(sideW, panelHeight)
 
     self.divider:ClearAllPoints()
+    -- Forever divider (10 px, gem): centred on the gap under the tabs.
+    local dy = self.fcDivider and (-tabH - gap / 2 + 5) or (-tabH - gap)
     if sideRight then
-        self.divider:SetPoint("TOPRIGHT", self.panel, "TOPRIGHT", -sideW - gap, -tabH - gap)
-        self.divider:SetPoint("TOPLEFT", self.panel, "TOPLEFT", 0, -tabH - gap)
+        self.divider:SetPoint("TOPRIGHT", self.panel, "TOPRIGHT", -sideW - gap, dy)
+        self.divider:SetPoint("TOPLEFT", self.panel, "TOPLEFT", 0, dy)
     else
-        self.divider:SetPoint("TOPLEFT", self.panel, "TOPLEFT", sideW + gap, -tabH - gap)
-        self.divider:SetPoint("TOPRIGHT", self.panel, "TOPRIGHT", 0, -tabH - gap)
+        self.divider:SetPoint("TOPLEFT", self.panel, "TOPLEFT", sideW + gap, dy)
+        self.divider:SetPoint("TOPRIGHT", self.panel, "TOPRIGHT", 0, dy)
     end
 
     local renderer = Chat.Modules.Renderer
@@ -259,15 +288,38 @@ function Layout:ApplySettings(enabled)
     -- The outer panel owns only the border. Each visible surface owns its own
     -- fill so the message area can be made transparent without also fading the
     -- tabs, sidebar or input box (and without a global backdrop showing through).
-    self.panel:SetBackdropColor(BG_R, BG_G, BG_B, 0)
-    self.panel:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)
-    self.messageHost:SetBackdropColor(BG_R, BG_G, BG_B, messageAlpha)
-    self.tabsHost:SetBackdropColor(BG_R, BG_G, BG_B, frameAlpha)
-    self.sidebarHost:SetBackdropColor(BG_R, BG_G, BG_B, math.min(0.96, frameAlpha + 0.08))
-    self.sidebarHost:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)
-    self.inputHost:SetBackdropColor(BG_R, BG_G, BG_B, math.min(0.96, frameAlpha + 0.08))
-    self.inputHost:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)
+    if self.chrome then
+        -- Forever: leather textures, tinted white; the moulding is the border.
+        self.panel:SetBackdropColor(0, 0, 0, 0)
+        self.panel:SetBackdropBorderColor(0, 0, 0, 0)
+        if self.chrome.fill then self.chrome.fill:SetVertexColor(1, 1, 1, frameAlpha) end
+        self.messageHost:SetBackdropColor(1, 1, 1, messageAlpha)
+        self.tabsHost:SetBackdropColor(0.85, 0.85, 0.85, frameAlpha)
+        self.sidebarHost:SetBackdropColor(0.85, 0.85, 0.85, math.min(0.96, frameAlpha + 0.08))
+        self.sidebarHost:SetBackdropBorderColor(0, 0, 0, 0)
+        self.inputHost:SetBackdropColor(0.85, 0.85, 0.85, math.min(0.96, frameAlpha + 0.08))
+        local b = TomoMod_ForeverChrome.C.bronze
+        self.inputHost:SetBackdropBorderColor(b[1], b[2], b[3], math.max(0.4, a.borderAlpha or 0.22))
+    else
+        self.panel:SetBackdropColor(BG_R, BG_G, BG_B, 0)
+        self.panel:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)
+        self.messageHost:SetBackdropColor(BG_R, BG_G, BG_B, messageAlpha)
+        self.tabsHost:SetBackdropColor(BG_R, BG_G, BG_B, frameAlpha)
+        self.sidebarHost:SetBackdropColor(BG_R, BG_G, BG_B, math.min(0.96, frameAlpha + 0.08))
+        self.sidebarHost:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)
+        self.inputHost:SetBackdropColor(BG_R, BG_G, BG_B, math.min(0.96, frameAlpha + 0.08))
+        self.inputHost:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, a.borderAlpha or 0.22)
+    end
 
+    if self.chrome then
+        self.chrome:Toggle(enabled)
+        -- [1.3.9] Frame opacity: moulding, corners, glint and gem divider,
+        -- to draw less attention to the chat; surfaces and text unchanged.
+        local fa = tonumber(a.frameAlpha) or 1
+        fa = math.max(0, math.min(1, fa))
+        self.chrome:SetAlpha(fa)
+        if self.fcDivider and self.divider then self.divider:SetAlpha(fa) end
+    end
     if enabled then
         self.panel:Show()
         self.messageHost:Show()

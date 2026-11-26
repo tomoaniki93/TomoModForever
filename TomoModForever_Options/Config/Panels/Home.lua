@@ -230,6 +230,8 @@ K.RegisterPage({
             }, function()
                 local CF = TomoMod_Campfire
                 if CF and CF.ApplySettings then CF.ApplySettings() end
+                local FC = TomoMod_ForeverChrome
+                if FC and FC.RefreshAnimations then FC.RefreshAnimations() end
             end, 3)
             c:Info(T("Complètes : tout est animé. Réduites : seulement des fondus courts, sans mouvement, rebond ni clignotement. Aucune : tout apparaît et disparaît d'un coup. Vaut pour TMF entier : montée de niveau, notifications, suivi des quêtes, alertes, campement, fenêtre des options.",
                      "Full: everything moves. Reduced: short fades only, no movement, bounce or blinking. None: everything appears and disappears at once. Applies to all of TMF: level up, notifications, quest tracker, alerts, camp, options window."))

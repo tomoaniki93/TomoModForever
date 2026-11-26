@@ -160,12 +160,20 @@ function TomoMod_ConfigPanel_General(parent)
         end)
 
     local _, cy = W.CreateDropdown(card.inner, L["opt_border"], {
+        { text = L["border_forever"], value = "forever" },
         { text = L["border_class"], value = "class"  },
         { text = L["border_black"],              value = "black"  },
     }, TomoModForeverDB.minimap.borderColor, cy, function(v)
         TomoModForeverDB.minimap.borderColor = v
         if TomoMod_Minimap then TomoMod_Minimap.CreateBorder() end
+        if TomoMod_InfoPanel and TomoMod_InfoPanel.UpdateAppearance then TomoMod_InfoPanel.UpdateAppearance() end
     end)
+
+    -- [1.3.9] Opacity of the border, to draw less attention to the minimap.
+    local _, cy = W.CreateSlider(card.inner, L["opt_minimap_frame_alpha"], (TomoModForeverDB.minimap.frameAlpha or 1) * 100, 0, 100, 5, cy, function(v)
+        TomoModForeverDB.minimap.frameAlpha = v / 100
+        if TomoMod_Minimap and TomoMod_Minimap.ApplyFrameAlpha then TomoMod_Minimap.ApplyFrameAlpha() end
+    end, "%.0f%%")
 
     y = W.FinalizeCard(card, cy)
 

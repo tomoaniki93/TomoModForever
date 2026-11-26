@@ -71,6 +71,7 @@ CHANGELOG = {
             L["wn_139_books"],
             L["wn_139_overlord"],
             L["wn_139_glow"],
+            L["wn_139_forever"],
             L["wn_139_fixes"],
         },
     },

@@ -37,11 +37,55 @@ local CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 
 local function CreateDot(parent, size)
     local dot = parent:CreateTexture(nil, "OVERLAY")
+    local FC = TomoMod_ForeverChrome
+    if FC then
+        -- [1.3.9] Forever: a small gold gem that breathes.
+        dot:SetTexture(FC.TEX .. "gem")
+        dot:SetSize((size or 5) + 5, (size or 5) + 5)
+        dot:Hide()
+        FC.Pulse(dot, 0.35, 0.8)
+        return dot
+    end
     dot:SetTexture(CIRCLE)
     dot:SetSize(size or 5, size or 5)
     dot:SetVertexColor(TEAL_R, TEAL_G, TEAL_B, 1)
     dot:Hide()
     return dot
+end
+
+-- [1.3.9] Forever tab colours.
+local FC_TITLE = { 1.000, 0.820, 0.000 }
+local FC_MUTED = { 0.76, 0.70, 0.60 }
+local function TabTextColor(text, active, hover)
+    if hover then text:SetTextColor(1, 1, 1, 1)
+    elseif active then text:SetTextColor(FC_TITLE[1], FC_TITLE[2], FC_TITLE[3], 1)
+    else text:SetTextColor(FC_MUTED[1], FC_MUTED[2], FC_MUTED[3], 1) end
+end
+
+-- Leather backdrop for the small buttons of the tab row (tabs, +, more).
+local function ForeverButtonBackdrop(b, alpha)
+    local FC = TomoMod_ForeverChrome
+    if not FC then return false end
+    FC.Backdrop(b, alpha or 0.88, true)
+    b:SetBackdropColor(0.82, 0.82, 0.82, alpha or 0.88)
+    local c = FC.C.bronze
+    b:SetBackdropBorderColor(c[1], c[2], c[3], 0.55)
+    b.fcBackdrop = true
+    return true
+end
+local function ForeverHover(b, on)
+    if not b.fcBackdrop then return false end
+    local FC = TomoMod_ForeverChrome
+    if on then
+        b:SetBackdropColor(1, 1, 1, 0.96)
+        local c = FC.C.antique
+        b:SetBackdropBorderColor(c[1], c[2], c[3], 0.95)
+    else
+        b:SetBackdropColor(0.82, 0.82, 0.82, 0.88)
+        local c = FC.C.bronze
+        b:SetBackdropBorderColor(c[1], c[2], c[3], 0.55)
+    end
+    return true
 end
 
 -- A glyph made of plain rectangles centred on the parent.
@@ -178,7 +222,7 @@ local function CreateCommunityMenu()
     menu:SetClampedToScreen(true)
     menu:EnableMouse(true)
     menu:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-    menu:SetBackdropColor(0.025, 0.035, 0.045, 0.98)
+    menu:SetBackdropColor(0.060, 0.047, 0.034, 0.98)
     menu:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.75)
     menu:Hide()
 
@@ -205,7 +249,7 @@ local function CreateCommunityMenu()
         local box = row:CreateTexture(nil, "ARTWORK")
         box:SetSize(14, 14)
         box:SetPoint("LEFT", 5, 0)
-        box:SetColorTexture(0.16, 0.19, 0.22, 1)
+        box:SetColorTexture(0.20, 0.15, 0.10, 1)
 
         local mark = row:CreateTexture(nil, "OVERLAY")
         mark:SetSize(8, 8)
@@ -285,7 +329,19 @@ end
 local function CreateGhost()
     local g = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     g:SetBackdrop({ bgFile = WHITE })
-    g:SetBackdropColor(0.025, 0.045, 0.05, 0.88)
+    g:SetBackdropColor(0.072, 0.056, 0.040, 0.88)
+    ForeverButtonBackdrop(g, 0.88)
+    if g.fcBackdrop then
+        -- Active tab: warm light rising from the bottom.
+        local glow = g:CreateTexture(nil, "ARTWORK")
+        glow:SetTexture(TomoMod_ForeverChrome.TEX .. "tabglow")
+        glow:SetBlendMode("ADD")
+        glow:SetPoint("TOPLEFT", 1, -1)
+        glow:SetPoint("BOTTOMRIGHT", -1, 1)
+        glow:SetAlpha(0.55)
+        glow:Hide()
+        g.fcGlow = glow
+    end
     g:SetFrameStrata("MEDIUM")
     g:SetFrameLevel(100)
     g:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -294,7 +350,7 @@ local function CreateGhost()
 
     local text = g:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     text:SetPoint("CENTER", 0, 1)
-    text:SetTextColor(0.72, 0.76, 0.78, 1)
+    text:SetTextColor(0.76, 0.70, 0.60, 1)
     g.text = text
 
     local underline = g:CreateTexture(nil, "OVERLAY")
@@ -310,13 +366,21 @@ local function CreateGhost()
     g.dot = dot
 
     g:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(0.045, 0.075, 0.08, 0.96)
+        if not ForeverHover(self, true) then
+            self:SetBackdropColor(0.115, 0.088, 0.058, 0.96)
+        end
         self.text:SetTextColor(1, 1, 1, 1)
     end)
     g:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(0.025, 0.045, 0.05, 0.88)
+        if not ForeverHover(self, false) then
+            self:SetBackdropColor(0.072, 0.056, 0.040, 0.88)
+        end
         local active = self.cf == Tabs:GetSelectedFrame()
-        self.text:SetTextColor(active and 1 or 0.72, active and 1 or 0.76, active and 1 or 0.78, 1)
+        if self.fcBackdrop then
+            TabTextColor(self.text, active)
+        else
+            self.text:SetTextColor(active and 1 or 0.72, active and 1 or 0.76, active and 1 or 0.78, 1)
+        end
     end)
     g:SetScript("OnClick", function(self, button)
         if Tabs.overflowList then Tabs.overflowList:Hide() end
@@ -339,7 +403,8 @@ local LIST_WIDTH = 170
 local function CreateOverflowButton()
     local b = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     b:SetBackdrop({ bgFile = WHITE })
-    b:SetBackdropColor(0.025, 0.045, 0.05, 0.88)
+    b:SetBackdropColor(0.072, 0.056, 0.040, 0.88)
+    ForeverButtonBackdrop(b, 0.88)
     b:SetFrameStrata("MEDIUM")
     b:SetFrameLevel(100)
     b:RegisterForClicks("LeftButtonUp")
@@ -353,14 +418,14 @@ local function CreateOverflowButton()
     b.dot = dot
 
     b:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(0.045, 0.075, 0.08, 0.96)
+        if not ForeverHover(self, true) then self:SetBackdropColor(0.115, 0.088, 0.058, 0.96) end
         self.glyph:SetColor(1, 1, 1)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText(Localize("chat_v4_more_tabs", "More tabs"), 1, 1, 1)
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(0.025, 0.045, 0.05, 0.88)
+        if not ForeverHover(self, false) then self:SetBackdropColor(0.072, 0.056, 0.040, 0.88) end
         self.glyph:SetColor(TEAL_R, TEAL_G, TEAL_B)
         GameTooltip:Hide()
     end)
@@ -378,7 +443,7 @@ local function CreateOverflowList()
     list:SetClampedToScreen(true)
     list:EnableMouse(true)
     list:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-    list:SetBackdropColor(0.025, 0.035, 0.045, 0.98)
+    list:SetBackdropColor(0.060, 0.047, 0.034, 0.98)
     list:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.75)
     list:Hide()
     list.rows = {}
@@ -564,7 +629,8 @@ end
 local function CreateAddButton()
     local b = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     b:SetBackdrop({ bgFile = WHITE })
-    b:SetBackdropColor(0.025, 0.045, 0.05, 0.88)
+    b:SetBackdropColor(0.072, 0.056, 0.040, 0.88)
+    ForeverButtonBackdrop(b, 0.88)
     b:SetFrameStrata("MEDIUM")
     b:SetFrameLevel(100)
     b:RegisterForClicks("LeftButtonUp")
@@ -574,7 +640,7 @@ local function CreateAddButton()
     b.glyph:SetColor(TEAL_R, TEAL_G, TEAL_B)
 
     b:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(0.045, 0.075, 0.08, 0.96)
+        if not ForeverHover(self, true) then self:SetBackdropColor(0.115, 0.088, 0.058, 0.96) end
         self.glyph:SetColor(1, 1, 1)
         if not (Tabs.newTabMenu and Tabs.newTabMenu:IsShown()) then
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -583,7 +649,7 @@ local function CreateAddButton()
         end
     end)
     b:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(0.025, 0.045, 0.05, 0.88)
+        if not ForeverHover(self, false) then self:SetBackdropColor(0.072, 0.056, 0.040, 0.88) end
         self.glyph:SetColor(TEAL_R, TEAL_G, TEAL_B)
         GameTooltip:Hide()
     end)
@@ -602,7 +668,7 @@ local function CreateNewTabMenu()
     menu:EnableMouse(true)
     menu:SetWidth(MENU_WIDTH)
     menu:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-    menu:SetBackdropColor(0.025, 0.035, 0.045, 0.98)
+    menu:SetBackdropColor(0.060, 0.047, 0.034, 0.98)
     menu:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.75)
     menu:Hide()
     menu.rows = {}
@@ -623,7 +689,7 @@ local function CreateNewTabMenu()
     edit:SetFontObject(GameFontHighlightSmall)
     edit:SetTextInsets(6, 6, 0, 0)
     edit:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-    edit:SetBackdropColor(0.06, 0.07, 0.08, 1)
+    edit:SetBackdropColor(0.050, 0.040, 0.030, 1)
     edit:SetBackdropBorderColor(TEAL_R, TEAL_G, TEAL_B, 0.45)
     local placeholder = edit:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     placeholder:SetPoint("LEFT", 6, 0)
@@ -905,7 +971,13 @@ function Tabs:Refresh()
         x = x + entry.width + GAP
 
         local active = entry.cf == selected
-        g.text:SetTextColor(active and 1 or 0.72, active and 1 or 0.76, active and 1 or 0.78, 1)
+        if g.fcBackdrop then
+            TabTextColor(g.text, active, g:IsMouseOver())
+            if g.fcGlow then g.fcGlow:SetShown(active) end
+            g.underline:SetColorTexture(FC_TITLE[1], FC_TITLE[2], FC_TITLE[3], 1)
+        else
+            g.text:SetTextColor(active and 1 or 0.72, active and 1 or 0.76, active and 1 or 0.78, 1)
+        end
         g.underline:SetShown(active)
         g.dot:SetShown(self.unread[entry.cf] == true and not active)
         g:Show()

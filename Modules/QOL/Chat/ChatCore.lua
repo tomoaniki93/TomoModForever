@@ -24,6 +24,7 @@ local DEFAULTS = {
         tabHeight = 25,
         inputHeight = 30,
         borderAlpha = 0.22,
+        frameAlpha = 1.0,
         maxLines = 512,
     },
     messages = {

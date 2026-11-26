@@ -29,6 +29,16 @@ local function DB()
     return TomoModForeverDB and TomoModForeverDB.infoPanel
 end
 
+-- [1.3.9] WoW: Forever look (minimap border "forever"): zone name and clock
+-- on gold plates set on the minimap's bronze moulding.
+local function Forever()
+    return TomoMod_ForeverChrome ~= nil and TomoModForeverDB and TomoModForeverDB.minimap
+        and TomoModForeverDB.minimap.borderColor == "forever"
+end
+IP.IsForever = Forever
+local zonePlate, clockPlate
+local lastZone
+
 -- =====================================
 -- DURABILITY POSITION (configurable — [12.0.7] the new expansion
 -- minimap button can overlap the durability text corner)
@@ -40,6 +50,11 @@ function IP.ApplyDurabilityPosition()
     local anchor = (db and db.durabilityAnchor) or "BOTTOMLEFT"
     local x = (db and db.durabilityX) or 6
     local y = (db and db.durabilityY) or 6
+    -- Forever: clear of the moulding and of the plates.
+    if Forever() then
+        if anchor:find("TOP") then y = y - 12 elseif anchor:find("BOTTOM") then y = y + 12 end
+        if anchor:find("LEFT") then x = x + 4 elseif anchor:find("RIGHT") then x = x - 4 end
+    end
     durabilityText:ClearAllPoints()
     durabilityText:SetPoint(anchor, Minimap, anchor, x, y)
 end
@@ -328,6 +343,73 @@ local function CreateUI()
         clockText:SetTextColor(0.949, 0.922, 0.859, 1)
         GameTooltip:Hide()
     end)
+
+    IP.ApplyStyle()
+    -- Plates follow the minimap size (options slider).
+    minimap:HookScript("OnSizeChanged", function()
+        if Forever() then IP.ApplyStyle() end
+    end)
+end
+
+-- =====================================
+-- STYLE (TMF bars or Forever plates)
+-- =====================================
+
+function IP.ApplyStyle()
+    if not zoneBar or not clockBar then return end
+    local minimap = Minimap
+    local FC = TomoMod_ForeverChrome
+    local forever = Forever()
+
+    if forever and not zonePlate then
+        zonePlate = FC.Plate(zoneBar, "BACKGROUND")
+        clockPlate = FC.Plate(clockBar, "BACKGROUND")
+    end
+    if zonePlate then zonePlate:SetShown(forever) end
+    if clockPlate then clockPlate:SetShown(forever) end
+
+    zoneBar:ClearAllPoints()
+    clockBar:ClearAllPoints()
+    subZoneText:ClearAllPoints()
+    coordsText:ClearAllPoints()
+    if forever then
+        local C = FC.C
+        zoneBar:SetBackdrop(nil)
+        clockBar:SetBackdrop(nil)
+        -- Plates sit on the moulding, centred, narrower than the map.
+        local w = minimap:GetWidth() or 200
+        zoneBar:SetSize(math.max(120, w * 0.82), 28)
+        zoneBar:SetPoint("CENTER", minimap, "TOP", 0, 7)
+        clockBar:SetSize(math.max(96, w * 0.56), 32)
+        clockBar:SetPoint("CENTER", minimap, "BOTTOM", 0, -8)
+        zoneText:SetTextColor(C.title[1], C.title[2], C.title[3], 1)
+        clockText:SetTextColor(C.text[1], C.text[2], C.text[3], 1)
+        clockLabel:SetTextColor(C.antique[1], C.antique[2], C.antique[3], 1)
+        coordsText:SetTextColor(C.text[1], C.text[2], C.text[3], 1)
+        subZoneText:SetPoint("TOPLEFT", minimap, "TOPLEFT", 10, -18)
+        coordsText:SetPoint("BOTTOM", minimap, "BOTTOM", 0, 20)
+        zoneBar:SetFrameLevel(minimap:GetFrameLevel() + 8)
+        clockBar:SetFrameLevel(minimap:GetFrameLevel() + 8)
+    else
+        zoneBar:SetHeight(24)
+        zoneBar:SetPoint("BOTTOMLEFT", minimap, "TOPLEFT", 0, 2)
+        zoneBar:SetPoint("BOTTOMRIGHT", minimap, "TOPRIGHT", 0, 2)
+        clockBar:SetHeight(28)
+        clockBar:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, -2)
+        clockBar:SetPoint("TOPRIGHT", minimap, "BOTTOMRIGHT", 0, -2)
+        local edge = { bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 2 }
+        zoneBar:SetBackdrop(edge)
+        clockBar:SetBackdrop(edge)
+        zoneBar:SetBackdropColor(0.075, 0.063, 0.050, 0.90)
+        clockBar:SetBackdropColor(0.075, 0.063, 0.050, 0.90)
+        zoneText:SetTextColor(0.949, 0.922, 0.859, 1)
+        clockText:SetTextColor(0.949, 0.922, 0.859, 1)
+        clockLabel:SetTextColor(0.45, 0.45, 0.50, 1)
+        coordsText:SetTextColor(0.85, 0.85, 0.85, 1)
+        subZoneText:SetPoint("TOPLEFT", minimap, "TOPLEFT", 6, -6)
+        coordsText:SetPoint("BOTTOM", minimap, "BOTTOM", 0, 6)
+    end
+    IP.ApplyDurabilityPosition()
 end
 
 -- =====================================
@@ -342,8 +424,13 @@ function IP.Update()
     -- Also discover the native frame if it was created after initialization.
     HideBlizzardPlayerCoords()
 
-    -- Zone name
-    zoneText:SetText(GetZoneName())
+    -- Zone name (Forever: a soft fade in when it changes)
+    local zone = GetZoneName()
+    zoneText:SetText(zone)
+    if zone ~= lastZone then
+        if lastZone and Forever() then TomoMod_ForeverChrome.Flash(zoneText) end
+        lastZone = zone
+    end
 
     -- Subzone with PvP color
     local r, g, b = GetZonePvPColor()
@@ -406,6 +493,8 @@ function IP.UpdateAppearance()
     local bR, bG, bB = 0, 0, 0
     if useClass then bR, bG, bB = classR, classG, classB end
 
+    IP.ApplyStyle()
+    if Forever() then return end
     zoneBar:SetBackdropBorderColor(bR, bG, bB, 1)
     clockBar:SetBackdropBorderColor(bR, bG, bB, 1)
 end

@@ -57,7 +57,14 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         ns.db.bgAlpha    = ns.db.bgAlpha    or ns.BG[4]
         ns.db.oocAlpha   = ns.db.oocAlpha   or 1
         ns.db.accentColor = ns.db.accentColor or { ns.ACCENT[1], ns.ACCENT[2], ns.ACCENT[3] }
-        if ns.db.skin == nil then ns.db.skin = "DARK" end
+        -- [1.3.9] Forever is the new default; a meter still on the old
+        -- default (DARK) moves to it once, with its bar settings.
+        local seedForever = false
+        if ns.db.skin == nil then ns.db.skin = "FOREVER"; seedForever = true end
+        if not ns.db._foreverSkin then
+            if ns.db.skin == "DARK" then ns.db.skin = "FOREVER"; seedForever = true end
+            ns.db._foreverSkin = true
+        end
         ns.db.barTexture = ns.db.barTexture or (ns.TEX_FLAT or "Tomo Flat")
         ns.db.reportChannel = ns.db.reportChannel or "AUTO"
         -- One-time migration off SAY. It was the factory default rather than
@@ -88,7 +95,7 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
 
         -- Apply the saved skin's structural look before any window is built
         -- (honours saved per-setting tweaks; see Modules/Skins.lua).
-        if ns.ApplySkin then ns.ApplySkin(ns.db.skin, false) end
+        if ns.ApplySkin then ns.ApplySkin(ns.db.skin, seedForever) end
 
         -- Column config
         if not ns.db.columns then

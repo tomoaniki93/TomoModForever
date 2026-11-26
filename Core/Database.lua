@@ -21,7 +21,8 @@ TomoMod_Defaults = {
     minimap = {
         enabled = true,
         scale = 1.0,
-        borderColor = "class",
+        borderColor = "forever",   -- "forever" | "class" | "black" (1.3.9)
+        frameAlpha = 1.0,          -- [1.3.9] opacity of the border / Forever moulding
         size = 200,
         showTracking = true,
         trackingStyle = "tomomod",    -- "tomomod" | "blizzard"
@@ -330,6 +331,7 @@ TomoMod_Defaults = {
             tabHeight = 25,
             inputHeight = 30,
             borderAlpha = 0.22,
+            frameAlpha = 1.0,     -- [1.3.9] Forever moulding, corners and divider
             maxLines = 512,
         },
         messages = {

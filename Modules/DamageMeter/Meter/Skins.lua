@@ -26,11 +26,14 @@ local TEX_PATH = "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Meter\\"
 ns.TEX_FLAT   = "Tomo Flat"
 ns.TEX_SMOOTH = "Tomo Smooth"
 ns.TEX_GLOSSY = "Tomo Glossy"
+ns.TEX_FOREVER = "Tomo Forever"
 
 if LSM then
     LSM:Register("statusbar", ns.TEX_FLAT,   ns.FLAT)
     LSM:Register("statusbar", ns.TEX_SMOOTH, TEX_PATH .. "statusbar-smooth")
     LSM:Register("statusbar", ns.TEX_GLOSSY, TEX_PATH .. "statusbar-glossy")
+    -- [1.3.9] Bevelled bar of the Forever skin (greyscale, tinted by class).
+    LSM:Register("statusbar", ns.TEX_FOREVER, "Interface\\AddOns\\TomoModForever\\Assets\\Textures\\Forever\\bar")
 end
 
 ----------------------------------------------------------------------
@@ -75,6 +78,26 @@ end
 -- texture) so the user can still fine-tune on top of any preset.
 
 ns.SKINS = {
+    {
+        -- [1.3.9] WoW: Forever. Leather, bronze moulding with filigree
+        -- corners and a crest (DamageMeter.lua, `forever`), golden titles,
+        -- off-white text, bevelled bars. The default from 1.3.9.
+        key = "FOREVER", name = "SKIN_FOREVER", forever = true,
+        bg          = { 0.072, 0.056, 0.040 }, bgAlpha = 0.90,
+        headerBg    = { 0.110, 0.085, 0.055, 0.85 },
+        headerHover = { 1.00, 0.82, 0.00, 0.10 },
+        border      = { 0.620, 0.420, 0.210, 0.90 },
+        scrollThumb = { 0.62, 0.42, 0.21 },
+        accent      = { 1.00, 0.82, 0.00 },
+        textPrimary = { 0.949, 0.922, 0.859 },
+        textSecondary = { 0.76, 0.70, 0.60 },
+        textMuted   = { 0.52, 0.47, 0.40 },
+        textLabel   = { 0.85, 0.80, 0.70 },
+        barTexture  = "Tomo Forever",
+        barAlpha    = 0.85,
+        barSpacing  = 1,
+        barHeight   = 20,
+    },
     {
         key = "DARK", name = "SKIN_DARK",
         bg          = { 0.00, 0.00, 0.00 }, bgAlpha = 0.80,
@@ -318,6 +341,7 @@ function ns.ApplySkin(key, seedDefaults)
     if skin.textMuted then copy3(ns.TEXT_MUTED, skin.textMuted) end
     if skin.textLabel then copy3(ns.TEXT_LABEL, skin.textLabel) end
     ns.CLASS_LUM = skin.classLum
+    ns.FOREVER_SKIN = skin.forever and true or false
     ns.BAR_ALPHA   = skin.barAlpha
     ns.BAR_SPACING = skin.barSpacing
 

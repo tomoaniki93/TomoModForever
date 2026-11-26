@@ -33,10 +33,20 @@
 - **New** - CVars while on: `SoftTargetInteract` 3, range, all-around arc, `SoftTargetInteractOnlyInRange` 0, `SoftTargetIconGameObject` 1, `nameplateGameObjectMaxDistance` at least 40. `SoftTargetNameplateInteract` is opened only for an object that should glow. The player's values are captured once (`resourceGlow.saved`), given back at logout (applied again at login) and when the option is turned off; nothing is written in combat.
 - **New** - Stands down when the Lueur addon is loaded. Idea from Lueur (no licence, all rights reserved): nothing of its code or art is used, TMF textures only.
 
+#### WoW: Forever look (new)
+
+- **New** - `Core/ForeverChrome.lua` (`TomoMod_ForeverChrome`): the Forever look shared by the chat, the minimap, its info panel and the damage meter. Tiled dark leather, bronze moulding with filigree corners and a gold gem, a crest, 3-slice golden title plates, bronze button settings with a coloured glow for states, a glint that runs along the top moulding now and then, gem dividers, breathing unread gems. Follows the global animation level (glint with full animations only); `RefreshAnimations` is called when the level changes.
+- **New** - `Assets/Textures/Forever/`: fill, vignette, edges, corner, crest, plate (left, middle, right), socket and its glow, gem, glint, tab glow, divider, meter bar. Drawn for TMF.
+- **Changed** - Chat: leather on every surface, moulding and corners around the whole chat (level 99, between the surfaces and the buttons), gem divider under the tabs, tabs in leather with a bronze line, golden title and warm glow on the open tab, gold gem for unread tabs, sidebar buttons set in bronze (active, warning and danger as glows, pressed icon nudge). Every bluish fill and grey text of the chat moved to the warm palette.
+- **Changed** - Minimap: new border choice "Forever (bronze and gold)", the default (a minimap on the old default "class" moves to it once; "class" and "black" stay). Moulding and corners around the map, tracking and addon collector buttons set in bronze, tracking panel and collector box in leather.
+- **Changed** - Info panel (Forever border): zone name on a gold plate on the top moulding (golden title, soft fade in on zone change), clock on a plate on the bottom moulding; subzone, coordinates and durability moved clear of the plates. Plates follow the minimap size.
+- **New** - Damage meter skin "Forever", the default (a meter on the old default "Tomo Dark" moves to it once, with its bar settings): leather window, moulding, corners and a crest above the window, gem divider under the header, golden accent, warm text colours, bevelled bar texture "Tomo Forever" (registered in LibSharedMedia). The combat timer moves clear of the corners. Every other skin is unchanged.
+- **New** - Frame opacity, to draw less attention to the chat or the minimap: Skins > Chat > Frame opacity (`chatV4.appearance.frameAlpha`: moulding, corners, glint and gem divider; surfaces and text unchanged) and General > Minimap > Border opacity (`minimap.frameAlpha`: Forever moulding or the plain class / black border; the map unchanged). 0 to 100 %, 100 % by default.
+
 #### Changed
 
 - **Changed** - Settings migration `dialogueShiftOff`: the dialogue camera side offset is reset to 0 once.
-- **Changed** - What's New and the six locales (`Locales/Locale_139.lua`) cover the quest dialogue, the scene, rewards, books, the Overlord tab, the resource glow and the fixes below.
+- **Changed** - What's New and the six locales (`Locales/Locale_139.lua`) cover the quest dialogue, the scene, rewards, books, the Overlord tab, the resource glow, the Forever look and the fixes below.
 
 #### Fixed
 

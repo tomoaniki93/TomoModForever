@@ -82,12 +82,88 @@ function TomoMod_Minimap.MakeSquare()
     Minimap:SetClampedToScreen(true)
 end
 
+-- [1.3.9] WoW: Forever look (border "forever", the default): bronze
+-- moulding with filigree corners, buttons set in bronze, leather panels.
+local minimapChrome
+local function IsForever()
+    return TomoMod_ForeverChrome ~= nil and TomoModForeverDB.minimap.borderColor == "forever"
+end
+TomoMod_Minimap.IsForever = IsForever
+
+-- Bronze setting on a small minimap button (tracking, addon collector).
+local function ForeverButton(btn, on)
+    local FC = TomoMod_ForeverChrome
+    if on and FC then
+        FC.Socket(btn, 3)
+        btn.fcSocket:Show()
+        if btn.bg then btn.bg:SetColorTexture(0, 0, 0, 0) end
+        if not btn.fcHooked then
+            btn.fcHooked = true
+            btn:HookScript("OnEnter", function(self)
+                if IsForever() then
+                    if self.bg then self.bg:SetColorTexture(0, 0, 0, 0) end
+                    FC.SocketState(self, "hover")
+                end
+            end)
+            btn:HookScript("OnLeave", function(self)
+                if IsForever() then
+                    if self.bg then self.bg:SetColorTexture(0, 0, 0, 0) end
+                    FC.SocketState(self, nil)
+                end
+            end)
+        end
+    elseif btn.fcSocket then
+        btn.fcSocket:Hide()
+        if FC then FC.SocketState(btn, nil) end
+    end
+end
+
+-- Leather panel with a bronze line (tracking panel, addon collector box).
+local function ForeverPanel(frame)
+    local FC = TomoMod_ForeverChrome
+    FC.Backdrop(frame, 0.97, true)
+end
+
+-- [1.3.9] Opacity of the border (Forever moulding or the plain border), to
+-- draw less attention to the minimap; the map itself is unchanged.
+local function FrameAlpha()
+    local v = tonumber(TomoModForeverDB.minimap.frameAlpha) or 1
+    return math.max(0, math.min(1, v))
+end
+
+function TomoMod_Minimap.ApplyFrameAlpha()
+    local fa = FrameAlpha()
+    if minimapChrome then minimapChrome:SetAlpha(fa) end
+    if minimapBorder then minimapBorder:SetAlpha(fa) end
+end
+
 -- Créer la bordure personnalisée
 function TomoMod_Minimap.CreateBorder()
     if not minimapBorder then
         minimapBorder = CreateFrame("Frame", "TomoModMinimapBorder", Minimap, "BackdropTemplate")
         minimapBorder:SetAllPoints(Minimap)
         minimapBorder:SetFrameLevel(Minimap:GetFrameLevel() + 1)
+    end
+
+    if IsForever() then
+        minimapBorder:SetBackdrop(nil)
+        if not minimapChrome then
+            minimapChrome = TomoMod_ForeverChrome.Frame(Minimap, {
+                outset = 6, edge = 8, corner = 30, vignette = false,
+                level = Minimap:GetFrameLevel() + 2, glintDelay = 10,
+            })
+        end
+        minimapChrome:Toggle(true)
+        TomoMod_Minimap.ApplyFrameAlpha()
+        if TomoMod_InfoPanel and TomoMod_InfoPanel.UpdateAppearance then
+            TomoMod_InfoPanel.UpdateAppearance()
+        end
+        if trackingButton and TomoMod_Minimap.CreateTrackingButton then
+            TomoMod_Minimap.CreateTrackingButton()
+        end
+        return
+    elseif minimapChrome then
+        minimapChrome:Toggle(false)
     end
 
     local r, g, b, a = 0, 0, 0, 1
@@ -100,6 +176,7 @@ function TomoMod_Minimap.CreateBorder()
         edgeSize = 2,
     })
     minimapBorder:SetBackdropBorderColor(r, g, b, a)
+    TomoMod_Minimap.ApplyFrameAlpha()
 
     -- Sync InfoPanel bars border color
     if TomoMod_InfoPanel and TomoMod_InfoPanel.UpdateAppearance then
@@ -265,13 +342,17 @@ local function OpenTrackingPanel()
     -- Style (couleur de bordure peut avoir changé)
     local r, g, b = 0.380, 0.290, 0.170
     if TomoModForeverDB.minimap.borderColor == "class" then r, g, b = TomoMod_Utils.GetClassColor() end
-    trackingPanel:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    trackingPanel:SetBackdropColor(0.025, 0.025, 0.035, 0.98)
-    trackingPanel:SetBackdropBorderColor(r, g, b, 1)
+    if IsForever() then
+        ForeverPanel(trackingPanel)
+    else
+        trackingPanel:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        })
+        trackingPanel:SetBackdropColor(0.025, 0.025, 0.035, 0.98)
+        trackingPanel:SetBackdropBorderColor(r, g, b, 1)
+    end
     trackingPanel:SetSize(PW, panelH)
     trackingPanel._sc:SetSize(PW - PAD * 2, contH)
     trackingPanel._sf:SetVerticalScroll(0)
@@ -462,6 +543,13 @@ function TomoMod_Minimap.CreateTrackingButton()
     end
     trackingButton.border:SetBackdropBorderColor(0, 0, 0, 0)
     trackingButton.ico:SetVertexColor(r, g, b, 1)
+    ForeverButton(trackingButton, IsForever())
+    if IsForever() then
+        local c = TomoMod_ForeverChrome.C.antique
+        trackingButton.ico:SetVertexColor(c[1], c[2], c[3], 1)
+    else
+        trackingButton.bg:SetColorTexture(0, 0, 0, 0.45)
+    end
 
     _tmTrackingWantShown = true
     trackingButton:SetAlpha(1)
@@ -1299,6 +1387,7 @@ function TomoMod_Minimap.CreateButtonBag()
         local aR, aG, aB = 0.380, 0.290, 0.170
         if TomoModForeverDB.minimap.borderColor == "class" then aR, aG, aB = TomoMod_Utils.GetClassColor() end
         bagFrame:SetBackdropBorderColor(aR, aG, aB, 1)
+        if IsForever() then ForeverPanel(bagFrame) end
 
         -- Titre (teal, Poppins SemiBold)
         local FONT_BOLD = "Interface\\AddOns\\TomoModForever\\Assets\\Fonts\\Poppins-SemiBold.ttf"
@@ -1343,6 +1432,7 @@ function TomoMod_Minimap.CreateButtonBag()
     if TomoModForeverDB.minimap.borderColor == "class" then r, g, b = TomoMod_Utils.GetClassColor() end
     bagToggle.border:SetBackdropBorderColor(0, 0, 0, 0)
     bagToggle.ico:SetVertexColor(1, 1, 1, 1)
+    ForeverButton(bagToggle, IsForever())
 
     bagToggle:Show()
     if TomoMod_Minimap.HideNativeClutter then TomoMod_Minimap.HideNativeClutter() end
@@ -1574,6 +1664,13 @@ end)
 
 -- Initialisation du module
 function TomoMod_Minimap.Initialize()
+    -- [1.3.9] The Forever border becomes the default once; "class" and
+    -- "black" stay in the options.
+    local mdb = TomoModForeverDB and TomoModForeverDB.minimap
+    if mdb and not mdb._foreverStyle then
+        if mdb.borderColor == "class" or mdb.borderColor == nil then mdb.borderColor = "forever" end
+        mdb._foreverStyle = true
+    end
     -- (1) Pré-masquage immédiat des boutons d'addon natifs AVANT que bagFrame
     --     existe : on parcourt les parents de la minimap et on cache tout ce
     --     qui serait collecté, pour éviter le flash de 0.5 s.

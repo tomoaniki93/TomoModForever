@@ -196,13 +196,15 @@ function ns.CreateMeterWindow(cfg)
 
     local function ApplyTimerPosition()
         local pos = (ns.db and ns.db.combatTimerPos) or "RIGHT"
+        -- Forever: clear of the filigree corners.
+        local pad = ns.TEXT_PAD + (ns.FOREVER_SKIN and 12 or 0)
         timerFS:ClearAllPoints()
         if pos == "LEFT" then
             timerFS:SetJustifyH("LEFT")
-            timerFS:SetPoint("LEFT", subHeader, "LEFT", ns.TEXT_PAD, ns.GetFontNudge())
+            timerFS:SetPoint("LEFT", subHeader, "LEFT", pad, ns.GetFontNudge())
         else
             timerFS:SetJustifyH("RIGHT")
-            timerFS:SetPoint("RIGHT", subHeader, "RIGHT", -ns.TEXT_PAD, ns.GetFontNudge())
+            timerFS:SetPoint("RIGHT", subHeader, "RIGHT", -pad, ns.GetFontNudge())
         end
     end
     ApplyTimerPosition()
@@ -265,6 +267,43 @@ function ns.CreateMeterWindow(cfg)
     headerSep2:SetHeight(0.8)
     headerSep2:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 1, 0)
     headerSep2:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", -1, 0)
+
+    ----------------------------------------------------------------------
+    -- [1.3.9] Forever skin chrome: bronze moulding, filigree corners, a
+    -- crest above the window and a gem divider under the header. Shown
+    -- only with the FOREVER skin (ApplyForever, called by RefreshSkin).
+    ----------------------------------------------------------------------
+    local FC = _G.TomoMod_ForeverChrome
+    local chrome, fcDivider
+    if FC then
+        chrome = FC.Frame(window, {
+            outset = 5, edge = 7, corner = 22, crest = true, crestWidth = 88, crestY = 9,
+            vignette = true, level = window:GetFrameLevel() + 6, glintDelay = 14,
+        })
+        fcDivider = window:CreateTexture(nil, "OVERLAY", nil, 2)
+        fcDivider:SetTexture(FC.TEX .. "divider")
+        fcDivider:SetHeight(8)
+        fcDivider:SetPoint("LEFT", headerSep2, "LEFT", 4, 0)
+        fcDivider:SetPoint("RIGHT", headerSep2, "RIGHT", -4, 0)
+    end
+    local plainBorders = { topBorder, bottomBorder, leftBorder, rightBorder }
+    local function ApplyForever()
+        local on = chrome ~= nil and ns.FOREVER_SKIN == true
+        if chrome then chrome:Toggle(on) end
+        if fcDivider then fcDivider:SetShown(on) end
+        for _, t in ipairs(plainBorders) do t:SetShown(not on) end
+        headerSep:SetShown(not on)
+        headerSep2:SetAlpha(on and 0 or 1)
+        local alpha = ns.db and ns.db.bgAlpha or ns.BG[4]
+        if on then
+            FC.Fill(windowBG, alpha)
+        else
+            windowBG:SetTexture(ns.FLAT)
+            if windowBG.SetHorizTile then windowBG:SetHorizTile(false); windowBG:SetVertTile(false) end
+            windowBG:SetVertexColor(ns.BG[1], ns.BG[2], ns.BG[3], alpha)
+        end
+    end
+    ApplyForever()
 
     -- Category button
     local catBtn = CreateFrame("Button", nil, header)
@@ -1322,7 +1361,11 @@ function ns.CreateMeterWindow(cfg)
             cfg.sessionType = state.sessionType
         end,
         SetBGAlpha = function(alpha)
-            windowBG:SetVertexColor(ns.BG[1], ns.BG[2], ns.BG[3], alpha)
+            if ns.FOREVER_SKIN and chrome then
+                windowBG:SetVertexColor(1, 1, 1, alpha)
+            else
+                windowBG:SetVertexColor(ns.BG[1], ns.BG[2], ns.BG[3], alpha)
+            end
         end,
         RefreshAccentColor = function()
             local a1, a2, a3 = ns.ACCENT[1], ns.ACCENT[2], ns.ACCENT[3]
@@ -1345,6 +1388,8 @@ function ns.CreateMeterWindow(cfg)
             headerBG:SetVertexColor(unpack(ns.HEADER_BG))
             subHeaderHL:SetVertexColor(unpack(ns.HEADER_HOVER_BG))
             catHL:SetVertexColor(unpack(ns.HEADER_HOVER_BG))
+            ApplyForever()
+            ApplyTimerPosition()
             -- Re-apply the active bar texture to every live row and the self bar
             local tex = ns.GetBarTexture()
             for _, button in scrollBox:EnumerateFrames() do
