@@ -568,6 +568,10 @@ function K.SetExpert(v)
     if TomoMod_Config and TomoMod_Config.InvalidatePanels then TomoMod_Config.InvalidatePanels() end
     -- [1.4.0] Some pages are expert-only: the sidebar lists them or not.
     if TomoMod_Config and TomoMod_Config.RelayoutNav then TomoMod_Config.RelayoutNav() end
+    -- [1.4.1] TMF action bars are expert-only: taken over or given back
+    -- (after a /reload) when the mode changes.
+    local AB = TomoMod_ActionBars
+    if AB and AB.ApplySettings then AB.ApplySettings() end
 end
 
 -- ---------------------------------------------------------------------

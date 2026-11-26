@@ -66,6 +66,7 @@ CHANGELOG = {
         version = "1.4.1",
         highlights = {
             L["wn_141_bars"],
+            L["wn_141_sets"],
             L["wn_141_ornate"],
             L["wn_141_kb"],
         },

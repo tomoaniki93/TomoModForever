@@ -20,6 +20,19 @@
 --
 -- Turning the bars off gives the buttons back on the next /reload only:
 -- a button cannot be handed back to a Blizzard bar mid-session safely.
+--
+-- Expert mode only: in simple mode the bars stay Blizzard's and only
+-- keep the skin (ActionBarSkin).
+--
+-- Sets of bars (groups) and attached bars:
+--   * a group shares size, button count, buttons per row, spacing, empty
+--     slots and row order between its bars (barSkin.layout.groups[id]);
+--     each bar keeps its own place and its on / off switch;
+--   * a bar can be attached to another one (bars[key].attach = { to,
+--     side, gap, off }): it is anchored to it, so it follows its moves and
+--     its size changes. Dropping a bar against another one in Layout mode
+--     attaches it (and it joins that bar's group if it has none). The
+--     first turn-on attaches the bars Blizzard had stacked.
 -- =====================================================================
 
 TomoMod_ActionBars = TomoMod_ActionBars or {}
@@ -95,16 +108,48 @@ local function BarDB(key)
 end
 AB.BarDB = BarDB
 
+-- Settings a group shares; everything else (enabled, x, y, attach,
+-- group) stays the bar's own.
+local SHARED = { size = true, count = true, perRow = true, spacing = true, showEmpty = true, growUp = true }
+AB.SHARED = SHARED
+
+local function GroupOf(key)
+    local l = LDB()
+    local id = l and l.bars[key] and l.bars[key].group
+    local g = id and type(l.groups) == "table" and l.groups[id]
+    if type(g) == "table" then
+        if type(g.settings) ~= "table" then g.settings = {} end
+        return g, id
+    end
+end
+AB.GroupOf = GroupOf
+
 local function BV(key, prop)
-    local v = BarDB(key)[prop]
+    local v
+    local g = SHARED[prop] and GroupOf(key)
+    if g then v = g.settings[prop] else v = BarDB(key)[prop] end
     if v == nil then v = FALLBACK[prop] end
     return v
 end
 AB.BV = BV
 
+--- Dotted DB path a GUI control should write for this bar's setting:
+--- the group's when the bar is in one and the setting is shared.
+function AB.SettingPath(key, prop)
+    local _, id = GroupOf(key)
+    if SHARED[prop] and id then return "barSkin.layout.groups." .. id .. ".settings." .. prop end
+    return "barSkin.layout.bars." .. key .. "." .. prop
+end
+
+function AB.Expert()
+    local g = TomoModForeverDB and TomoModForeverDB.configGUI
+    return type(g) == "table" and g.expert == true
+end
+
+--- Turned on in the settings AND the window in expert mode.
 function AB.IsEnabled()
     local l = LDB()
-    return l and l.enabled == true or false
+    return (l and l.enabled == true and AB.Expert()) and true or false
 end
 function AB.IsAdopted() return adopted end
 function AB.GetFrame(key) return adopted and frames[key] or nil end
@@ -308,11 +353,102 @@ end
 -- ---------------------------------------------------------------------
 -- Layout
 -- ---------------------------------------------------------------------
+-- Attachment sides: f's point, target's point, gap direction (x, y),
+-- offset axis.
+local SIDES = {
+    TOP    = { "BOTTOM", "TOP",    0,  1, "x" },   -- above the target
+    BOTTOM = { "TOP",    "BOTTOM", 0, -1, "x" },   -- below
+    LEFT   = { "RIGHT",  "LEFT",  -1,  0, "y" },   -- left of it
+    RIGHT  = { "LEFT",   "RIGHT",  1,  0, "y" },   -- right of it
+}
+AB.SIDES = SIDES
+
+local function Attach(key)
+    local a = BarDB(key).attach
+    if type(a) == "table" and a.to and a.to ~= key and SIDES[a.side] and frames[a.to] then return a end
+end
+
 local function Anchor(f, key, scale)
     scale = scale or 1
     f:ClearAllPoints()
+    local a = Attach(key)
+    if a then
+        local sd = SIDES[a.side]
+        local gap, off = (tonumber(a.gap) or 0) / scale, (tonumber(a.off) or 0) / scale
+        local x = sd[3] * gap + (sd[5] == "x" and off or 0)
+        local y = sd[4] * gap + (sd[5] == "y" and off or 0)
+        f:SetPoint(sd[1], frames[a.to], sd[2], x, y)
+        return
+    end
     f:SetPoint("CENTER", UIParent, "CENTER", (BV(key, "x") or 0) / scale, (BV(key, "y") or 0) / scale)
 end
+
+-- Would attaching key to target loop back (target already hangs on key)?
+function AB.CanAttach(key, target)
+    if not target or target == key then return false end
+    local seen, cur = {}, target
+    while cur and not seen[cur] do
+        if cur == key then return false end
+        seen[cur] = true
+        local a = BarDB(cur).attach
+        cur = type(a) == "table" and a.to or nil
+    end
+    return true
+end
+
+--- Attach key to target on a side (nil target: detach, keeping the spot).
+function AB.SetAttach(key, target, side, gap, off)
+    local bc = BarDB(key)
+    local f = frames[key]
+    if target and AB.CanAttach(key, target) then
+        bc.attach = { to = target, side = SIDES[side] and side or "TOP", gap = gap or 2, off = off or 0 }
+    else
+        if f and type(bc.attach) == "table" then
+            local cx, cy = f:GetCenter()
+            local ux, uy = UIParent:GetCenter()
+            local sc = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
+            if cx and ux then bc.x, bc.y = Round(cx * sc - ux), Round(cy * sc - uy) end
+        end
+        bc.attach = nil
+    end
+    if AB.QueueLayout then AB.QueueLayout() end
+end
+
+-- Edges of a bar in UIParent units (l, r, b, t).
+local function Rect(f)
+    local cx, cy = f:GetCenter()
+    if not cx then return nil end
+    local sc = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    local w, h = f:GetWidth() * sc, f:GetHeight() * sc
+    cx, cy = cx * sc, cy * sc
+    return cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
+end
+
+-- Closest side of another rect within `reach` px, with gap and offset.
+local function FindSnap(r, others, reach)
+    local l, rr, b, t = r[1], r[2], r[3], r[4]
+    local best
+    for key, o in pairs(others) do
+        local ol, orr, ob, ot = o[1], o[2], o[3], o[4]
+        local hov = math.min(rr, orr) - math.max(l, ol) > 0
+        local vov = math.min(t, ot) - math.max(b, ob) > 0
+        local cands = {
+            { "TOP",    b - ot,  hov, ((l + rr) - (ol + orr)) / 2 },
+            { "BOTTOM", ob - t,  hov, ((l + rr) - (ol + orr)) / 2 },
+            { "LEFT",   ol - rr, vov, ((b + t) - (ob + ot)) / 2 },
+            { "RIGHT",  l - orr, vov, ((b + t) - (ob + ot)) / 2 },
+        }
+        for _, c in ipairs(cands) do
+            local d = c[2]
+            if c[3] and d > -reach and d < reach and (not best or math.abs(d) < math.abs(best.d)) then
+                best = { to = key, side = c[1], d = d, gap = math.max(0, Round(d)), off = Round(c[4]) }
+            end
+        end
+    end
+    if best and math.abs(best.off) <= 10 then best.off = 0 end   -- centred when close
+    return best
+end
+AB.FindSnap = FindSnap
 
 local function LayoutTotem(f, light)
     if not TOTEM then return end
@@ -449,9 +585,30 @@ local function SetupMover(f)
         local ux, uy = UIParent:GetCenter()
         if not (cx and ux) then return end
         local s = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
-        local bc = BarDB(f.key)
+        local key = f.key
+        local bc = BarDB(key)
         bc.x, bc.y = Round(cx * s - ux), Round(cy * s - uy)
-        Anchor(f, f.key, f:GetScale())
+        bc.attach = nil
+        -- Dropped against another bar: attached to it (magnet).
+        local r = { Rect(f) }
+        if r[1] then
+            local others = {}
+            for k, o in pairs(frames) do
+                if k ~= key and o:IsShown() and BV(k, "enabled") ~= false and AB.CanAttach(key, k) then
+                    local orr = { Rect(o) }
+                    if orr[1] then others[k] = orr end
+                end
+            end
+            local snap = FindSnap(r, others, 16)
+            if snap then
+                bc.attach = { to = snap.to, side = snap.side, gap = snap.gap, off = snap.off }
+                if not bc.group and BarDB(snap.to).group and not DEF_BY[key].kind and not DEF_BY[snap.to].kind then
+                    AB.JoinGroup(key, BarDB(snap.to).group)
+                end
+            end
+        end
+        Anchor(f, key, f:GetScale())
+        if bc.attach then QueueLayout() end
     end, AB.Label(f.key))
 end
 
@@ -542,6 +699,31 @@ local function Capture(defs)
     end
 end
 
+-- Bars Blizzard had stacked (edges within 8 px, overlapping) are
+-- attached, from the bottom up, so they move and resize together.
+local function AttachCaptured(defs)
+    local rects, order = {}, {}
+    for _, d in ipairs(defs) do
+        local bc = BarDB(d.key)
+        if d.kind ~= "totem" and bc.enabled ~= false and bc.x and bc.y then
+            local W, H = AB.Grid(d.key, AB.Count(d.key))
+            rects[d.key] = { bc.x - W / 2, bc.x + W / 2, bc.y - H / 2, bc.y + H / 2 }
+            order[#order + 1] = d.key
+        end
+    end
+    table.sort(order, function(a, b) return rects[a][3] < rects[b][3] end)
+    for i = 2, #order do
+        local key = order[i]
+        local below = {}
+        for j = 1, i - 1 do
+            local k = order[j]
+            if AB.CanAttach(key, k) then below[k] = rects[k] end
+        end
+        local snap = FindSnap(rects[key], below, 8)
+        if snap then BarDB(key).attach = { to = snap.to, side = snap.side, gap = snap.gap, off = snap.off } end
+    end
+end
+
 -- Profile without a capture while the bars are already ours: take the
 -- current layout as the starting point.
 local function CaptureFromOwn(defs)
@@ -581,6 +763,7 @@ function AB.Adopt()
     local l = LDB()
     if not l.captured then
         Capture(defs)
+        AttachCaptured(defs)
         l.captured = true
     end
     HideBlizzard(defs)
@@ -611,6 +794,90 @@ function AB.Adopt()
 end
 
 -- ---------------------------------------------------------------------
+-- Groups (sets of bars sharing their settings)
+-- ---------------------------------------------------------------------
+function AB.Groups()
+    local l = LDB()
+    if not l then return {} end
+    if type(l.groups) ~= "table" then l.groups = {} end
+    return l.groups
+end
+
+function AB.GroupMembers(id)
+    local out = {}
+    for _, d in ipairs(DEFS) do
+        if BarDB(d.key).group == id then out[#out + 1] = d.key end
+    end
+    return out
+end
+
+-- Effective shared settings of a bar (copied into or out of a group).
+local function SharedOf(key)
+    local t = {}
+    for prop in pairs(SHARED) do t[prop] = BV(key, prop) end
+    return t
+end
+
+-- Bars connected to key by attachments, in either direction.
+function AB.Connected(key)
+    local set, list = { [key] = true }, { key }
+    local changed = true
+    while changed do
+        changed = false
+        for _, d in ipairs(DEFS) do
+            local a = BarDB(d.key).attach
+            local to = type(a) == "table" and a.to
+            if to and set[to] ~= set[d.key] then
+                local add = set[to] and d.key or to
+                if not set[add] then set[add] = true; list[#list + 1] = add; changed = true end
+            end
+        end
+    end
+    return list
+end
+
+function AB.JoinGroup(key, id)
+    local g = id and AB.Groups()[id]
+    if not g or DEF_BY[key].kind == "totem" then return end
+    BarDB(key).group = id
+    QueueLayout()
+end
+
+--- Leaves the group, keeping the shared settings as the bar's own.
+--- An emptied group is deleted.
+function AB.LeaveGroup(key)
+    local bc = BarDB(key)
+    local g, id = GroupOf(key)
+    if not g then bc.group = nil; return end
+    for prop, v in pairs(g.settings) do bc[prop] = v end
+    bc.group = nil
+    if #AB.GroupMembers(id) == 0 then AB.Groups()[id] = nil end
+    QueueLayout()
+end
+
+--- New group from key's settings, with every bar attached to it.
+function AB.NewGroup(key)
+    local groups = AB.Groups()
+    local n = 1
+    while groups["g" .. n] do n = n + 1 end
+    local id = "g" .. n
+    groups[id] = { name = T("Ensemble ", "Set ") .. n, settings = SharedOf(key) }
+    for _, k in ipairs(AB.Connected(key)) do
+        if DEF_BY[k] and DEF_BY[k].kind ~= "totem" then
+            if BarDB(k).group and BarDB(k).group ~= id then AB.LeaveGroup(k) end
+            BarDB(k).group = id
+        end
+    end
+    QueueLayout()
+    return id
+end
+
+function AB.GroupName(id)
+    local g = id and AB.Groups()[id]
+    return g and g.name or id
+end
+
+-- ---------------------------------------------------------------------
 -- Move mode (driven by TMF's layout mode, /tmf layout)
 -- ---------------------------------------------------------------------
 function AB.SetUnlocked(on)
@@ -623,6 +890,7 @@ end
 --- Puts one bar back above the bottom of the screen (lost off-screen).
 function AB.ResetPosition(key)
     local bc = BarDB(key)
+    bc.attach = nil
     local idx = 1
     for i, d in ipairs(DEFS) do if d.key == key then idx = i end end
     local _, uiH = UIParent:GetSize()
@@ -652,9 +920,16 @@ function AB.ApplySettings()
             if not InCombatLockdown() then
                 for _, f in pairs(frames) do UnregisterStateDriver(f, "visibility"); f:Hide() end
             end
-            print("|cffffd100TomoModForever|r " .. T(
-                "Barres d'action TMF désactivées : les barres de Blizzard reviennent après un /reload.",
-                "TMF action bars turned off: Blizzard's bars come back after a /reload."))
+            local l = LDB()
+            if l and l.enabled and not AB.Expert() then
+                print("|cffffd100TomoModForever|r " .. T(
+                    "Mode simple : les barres d'action TMF sont réservées au mode expert. Les barres de Blizzard (avec le skin) reviennent après un /reload.",
+                    "Simple mode: TMF action bars are an expert-mode feature. Blizzard's bars (skinned) come back after a /reload."))
+            else
+                print("|cffffd100TomoModForever|r " .. T(
+                    "Barres d'action TMF désactivées : les barres de Blizzard reviennent après un /reload.",
+                    "TMF action bars turned off: Blizzard's bars come back after a /reload."))
+            end
             if StaticPopupDialogs and StaticPopupDialogs["TOMOMOD_MODULE_RELOAD"] then
                 StaticPopup_Show("TOMOMOD_MODULE_RELOAD")
             end

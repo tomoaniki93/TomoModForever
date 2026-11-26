@@ -570,8 +570,12 @@ TomoMod_Defaults = {
         -- bars, placed where Blizzard's were (captured = that first read).
         -- x / y are filled by the capture or by dragging (centre offsets).
         layout = {
-            enabled  = false,
+            enabled  = false,          -- also needs the window in expert mode
             captured = false,
+            -- Sets of bars sharing size / count / rows / spacing:
+            -- groups[id] = { name, settings = { ... } }, bars[key].group = id.
+            -- Attached bars: bars[key].attach = { to, side, gap, off }.
+            groups = {},
             bars = {
                 bar1   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },
                 bar2   = { enabled = true, size = 36, count = 12, perRow = 12, spacing = 2, showEmpty = false, growUp = false },

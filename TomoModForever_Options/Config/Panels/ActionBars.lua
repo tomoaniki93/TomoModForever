@@ -107,11 +107,14 @@ end
 local function LayoutCards(page)
     local A = ABL()
     if not A then return end
+    -- [1.4.1] Expert mode only: in simple mode these cards are not built
+    -- (the page shows the "advanced settings hidden" notice) and the bars
+    -- stay Blizzard's, skinned.
     local on = A.IsEnabled and A.IsEnabled()
 
-    local c = page:Card(T("Barres TMF", "TMF bars"))
-    c:Info(T("TMF place les boutons du jeu dans ses propres barres : tu choisis leur taille, leur nombre de boutons, leurs lignes et tu les déplaces avec le mode Disposition. Tes sorts, macros et raccourcis restent les mêmes.",
-             "TMF puts the game's buttons into its own bars: you choose their size, button count and rows, and move them with Layout mode. Your spells, macros and keybinds stay the same."))
+    local c = page:Card(T("Barres TMF", "TMF bars"), { adv = true })
+    c:Info(T("TMF place les boutons du jeu dans ses propres barres : tu choisis leur taille, leur nombre de boutons, leurs lignes et tu les déplaces avec le mode Disposition. Tes sorts, macros et raccourcis restent les mêmes. Réservé au mode expert : en mode simple, les barres du jeu gardent seulement l'habillage.",
+             "TMF puts the game's buttons into its own bars: you choose their size, button count and rows, and move them with Layout mode. Your spells, macros and keybinds stay the same. Expert mode only: in simple mode the game's bars only keep the skin."))
     c:Toggle(T("Utiliser les barres d'action TMF", "Use TMF action bars"), {
         get = function() return K.Get("barSkin.layout.enabled") == true end,
         set = function(v)
@@ -131,7 +134,8 @@ local function LayoutCards(page)
     c:Pair(function(l) l:Button(T("Déplacer les barres", "Move the bars"), function()
                 local M = TomoMod_Movers
                 if M and M.Toggle then M.Toggle() end
-            end, 170, T("Ouvre le mode Disposition : glisse les barres où tu veux, puis verrouille.", "Opens Layout mode: drag the bars where you want, then lock."))
+            end, 170, T("Ouvre le mode Disposition : glisse les barres où tu veux, puis verrouille. Lâchée contre une autre barre, une barre s'y colle.",
+                        "Opens Layout mode: drag the bars where you want, then lock. Dropped against another bar, a bar sticks to it."))
            end,
            function(r) r:Button(T("Raccourcis clavier", "Keybinds"), function()
                 if not (A.OpenQuickKeybind and A.OpenQuickKeybind()) and SlashCmdList and SlashCmdList.TOMOMOD_KB then
@@ -147,37 +151,99 @@ local function LayoutCards(page)
     for _, d in ipairs(defs) do if d.key == key then def = d end end
     local opts = {}
     for _, d in ipairs(defs) do opts[#opts + 1] = { text = A.Label(d.key), value = d.key } end
+    local isTotem = def and def.kind == "totem"
+    local P = function(prop) return A.SettingPath(key, prop) end
+    local g, gid = A.GroupOf(key)
 
-    c = page:Card(T("Disposition", "Layout"))
+    c = page:Card(T("Disposition", "Layout"), { adv = true })
     c:Seg(T("Barre à régler", "Bar to set up"), {
         get = function() return key end,
         set = function(v) K.GuiDB().abBar = v; K.RefreshPage() end,
     }, opts, nil, 4)
-    local base = "barSkin.layout.bars." .. key .. "."
-    c:Toggle(T("Afficher cette barre", "Show this bar"), base .. "enabled", "abl")
-    if def and def.kind == "totem" then
-        c:Slider(T("Taille", "Size"), base .. "size", 20, 64, 1, "abl")
+    c:Toggle(T("Afficher cette barre", "Show this bar"), "barSkin.layout.bars." .. key .. ".enabled", "abl")
+    if gid then
+        local names = {}
+        for _, k in ipairs(A.GroupMembers(gid)) do if k ~= key then names[#names + 1] = A.Label(k) end end
+        c:Info(string.format(T("%s : ces réglages sont partagés avec %s.", "%s: these settings are shared with %s."),
+            A.GroupName(gid), #names > 0 and table.concat(names, ", ") or T("aucune autre barre", "no other bar")))
+    end
+    if isTotem then
+        c:Slider(T("Taille", "Size"), "barSkin.layout.bars.totem.size", 20, 64, 1, "abl")
         c:Info(T("Les totems gardent la disposition du jeu ; seules leur taille et leur place changent.",
                  "Totems keep the game's arrangement; only their size and place change."))
     else
         local max = (def and def.count) or 12
-        c:Pair(function(l) l:Slider(T("Nombre de boutons", "Buttons"), base .. "count", 1, max, 1, "abl") end,
-               function(r) r:Slider(T("Boutons par ligne", "Buttons per row"), base .. "perRow", 1, max, 1, "abl") end)
-        c:Pair(function(l) l:Slider(T("Taille des boutons", "Button size"), base .. "size", 20, 64, 1, "abl") end,
-               function(r) r:Slider(T("Espacement", "Spacing"), base .. "spacing", 0, 12, 1, "abl") end)
+        c:Pair(function(l) l:Slider(T("Nombre de boutons", "Buttons"), P("count"), 1, max, 1, "abl") end,
+               function(r) r:Slider(T("Boutons par ligne", "Buttons per row"), P("perRow"), 1, max, 1, "abl") end)
+        c:Pair(function(l) l:Slider(T("Taille des boutons", "Button size"), P("size"), 20, 64, 1, "abl") end,
+               function(r) r:Slider(T("Espacement", "Spacing"), P("spacing"), 0, 12, 1, "abl") end)
+        c:Pair(function(l) l:Toggle(T("Afficher les cases vides", "Show empty slots"), P("showEmpty"), "abl",
+                    T("Les cases vides apparaissent toujours quand tu glisses un sort ou en mode Disposition.",
+                      "Empty slots always show while dragging a spell or in Layout mode.")) end,
+               function(r) r:Toggle(T("Première ligne en bas", "First row at the bottom"), P("growUp"), "abl") end)
     end
     c:Done()
 
-    c = page:Card(T("Disposition avancée", "Advanced layout"), { adv = true })
-    if not (def and def.kind == "totem") then
-        c:Toggle(T("Afficher les cases vides", "Show empty slots"), base .. "showEmpty", "abl",
-            T("Les cases vides apparaissent toujours quand tu glisses un sort ou en mode Disposition.",
-              "Empty slots always show while dragging a spell or in Layout mode."))
-        c:Toggle(T("Première ligne en bas", "First row at the bottom"), base .. "growUp", "abl")
+    -- Sets of bars and attached bars
+    c = page:Card(T("Ensembles et barres collées", "Sets and attached bars"), { adv = true })
+    c:Info(T("Une barre collée suit la barre à laquelle elle est attachée : déplacements et changements de taille. Un ensemble partage la taille, le nombre de boutons, les lignes et l'espacement : tout réglage sur une barre s'applique aux autres.",
+             "An attached bar follows the bar it hangs on: moves and size changes. A set shares size, button count, rows and spacing: any change on one bar applies to the others."))
+
+    local bc = A.BarDB(key)
+    local att = type(bc.attach) == "table" and bc.attach or nil
+    local attOpts = { { text = T("Aucune (libre)", "None (free)"), value = "none" } }
+    for _, d in ipairs(defs) do
+        if d.key ~= key and A.CanAttach(key, d.key) then attOpts[#attOpts + 1] = { text = A.Label(d.key), value = d.key } end
+    end
+    c:Select(T("Collée à", "Attached to"), {
+        get = function() return att and att.to or "none" end,
+        set = function(v)
+            if v == "none" then A.SetAttach(key, nil)
+            else A.SetAttach(key, v, att and att.side or "TOP", att and att.gap or 2, 0) end
+            K.RefreshPage()
+        end,
+    }, attOpts, "abl")
+    if att then
+        c:Seg(T("Côté", "Side"), {
+            get = function() return att.side end,
+            set = function(v) att.side = v; att.off = 0 end,
+        }, {
+            { text = T("Au-dessus", "Above"), value = "TOP" },
+            { text = T("En dessous", "Below"), value = "BOTTOM" },
+            { text = T("À gauche", "Left"), value = "LEFT" },
+            { text = T("À droite", "Right"), value = "RIGHT" },
+        }, "abl", 4)
+        c:Pair(function(l) l:Slider(T("Écart", "Gap"), "barSkin.layout.bars." .. key .. ".attach.gap", 0, 30, 1, "abl") end,
+               function(r) r:Slider(T("Décalage", "Offset"), "barSkin.layout.bars." .. key .. ".attach.off", -300, 300, 1, "abl") end)
+    end
+
+    if not isTotem then
+        local gOpts = { { text = T("Aucun", "None"), value = "none" } }
+        for id in pairs(A.Groups()) do gOpts[#gOpts + 1] = { text = A.GroupName(id), value = id } end
+        table.sort(gOpts, function(a, b) if a.value == "none" then return true elseif b.value == "none" then return false end return a.text < b.text end)
+        c:Select(T("Ensemble", "Set"), {
+            get = function() return gid or "none" end,
+            set = function(v)
+                if v == "none" then A.LeaveGroup(key)
+                else
+                    if gid then A.LeaveGroup(key) end
+                    A.JoinGroup(key, v)
+                end
+                K.RefreshPage()
+            end,
+        }, gOpts, "abl", T("En rejoignant un ensemble, la barre prend ses réglages. En le quittant, elle les garde.",
+                           "Joining a set, the bar takes its settings. Leaving it, the bar keeps them."))
+        c:Button(T("Nouvel ensemble avec les barres collées", "New set with the attached bars"), function()
+            A.NewGroup(key)
+            K.Apply("abl")
+            K.RefreshPage()
+        end, 320, T("Crée un ensemble à partir des réglages de cette barre, avec toutes les barres qui lui sont collées.",
+                    "Creates a set from this bar's settings, with every bar attached to it."))
     end
     c:Button(T("Remettre la barre en bas de l'écran", "Bring the bar back to the bottom"), function()
         if A.ResetPosition then A.ResetPosition(key) end
-    end, 280, T("Pour une barre perdue hors de l'écran.", "For a bar lost off-screen."))
+        K.RefreshPage()
+    end, 280, T("Pour une barre perdue hors de l'écran (elle est aussi décollée).", "For a bar lost off-screen (it is also detached)."))
     c:Done()
 end
 
@@ -255,11 +321,18 @@ K.RegisterPage({
         wipe(samples)
         return K.Page(parent, function(page)
             local ownBars = TomoMod_ActionBars and TomoMod_ActionBars.IsEnabled and TomoMod_ActionBars.IsEnabled()
-            page:Hero(T("Barres d'action", "Action bars"),
-                ownBars and T("Les barres d'action TMF : disposition, apparence et visibilité. Déplace-les avec le mode Disposition (/tmf layout).",
-                              "TMF action bars: layout, look and visibility. Move them with Layout mode (/tmf layout).")
-                    or T("Change l'apparence des barres d'action. Active les barres TMF pour régler aussi leur taille et leur position ici ; sinon elles se règlent dans le Mode Édition du jeu.",
-                         "Changes the look of the action bars. Turn on TMF bars to also set their size and position here; otherwise they are set in the game's Edit Mode."),
+            local heroText
+            if ownBars then
+                heroText = T("Les barres d'action TMF : disposition, ensembles, apparence et visibilité. Déplace-les avec le mode Disposition (/tmf layout).",
+                             "TMF action bars: layout, sets, look and visibility. Move them with Layout mode (/tmf layout).")
+            elseif K.Expert() then
+                heroText = T("Change l'apparence des barres d'action. Active les barres TMF pour régler aussi leur taille, leur position et des ensembles de barres ; sinon elles se règlent dans le Mode Édition du jeu.",
+                             "Changes the look of the action bars. Turn on TMF bars to also set their size, position and sets of bars; otherwise they are set in the game's Edit Mode.")
+            else
+                heroText = T("Change l'apparence des barres d'action du jeu. Leur position et leur taille se règlent dans le Mode Édition du jeu (les barres TMF sont disponibles en mode expert).",
+                             "Changes the look of the game's action bars. Their position and size are set in the game's Edit Mode (TMF bars are available in expert mode).")
+            end
+            page:Hero(T("Barres d'action", "Action bars"), heroText,
                 function() return _G.ActionButton1 end, T("Barre 1", "Bar 1"))
 
             LayoutCards(page)
