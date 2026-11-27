@@ -68,6 +68,7 @@ CHANGELOG = {
             L["wn_141_bars"],
             L["wn_141_sets"],
             L["wn_141_ornate"],
+            L["wn_141_dialogue"],
             L["wn_141_kb"],
         },
     },

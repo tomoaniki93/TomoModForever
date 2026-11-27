@@ -22,6 +22,10 @@
 - **New** - Ready shine (`barSkin.readyShine`, on): a golden band sweeps across the icon when a cooldown longer than the GCD ends (cooldown `SetCooldown` / `OnCooldownDone` hooks, our textures only). Halo and shine follow General > Animations (none: off, reduced: shine only).
 - **Changed** - The cooldown swipe is anchored to the icon (inside the border); the original anchors come back when the skin is turned off.
 
+#### Quest dialogue
+
+- **Fixed** - Reward tooltips opened above the hovered card, over the quest text and the other reward (`ANCHOR_RIGHT` on a half-window-wide card). They now open beside the dialogue window, level with the card: on the right when the screen has room, on the left otherwise (`DialogueRewards.lua`, `PlaceTooltip`).
+
 #### Keybinds
 
 - **Changed** - `/kb` opens Blizzard's quick keybind mode (falls back to the keybinding settings); Keybinds button in Action bars.

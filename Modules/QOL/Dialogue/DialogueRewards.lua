@@ -113,8 +113,32 @@ local function GetHead(parent, i)
     return h
 end
 
+-- [1.4.1] The tooltip goes beside the dialogue window, level with the
+-- hovered card. Anchored to the card itself (ANCHOR_RIGHT), it opened
+-- above the card, over the quest text and the other reward. Right of the
+-- window when the screen has room, left otherwise.
+local TIP_ROOM = 320
+
+local function PlaceTooltip(self)
+    local win = _G.TomoMod_DialogueFrame
+    if not (win and win:IsShown() and win:GetRight() and self:GetTop() and win:GetTop()) then
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        return
+    end
+    GameTooltip:SetOwner(self, "ANCHOR_NONE")
+    GameTooltip:ClearAllPoints()
+    local k = self:GetEffectiveScale() / win:GetEffectiveScale()
+    local dy = self:GetTop() * k - win:GetTop()
+    local screenR = UIParent:GetRight() * UIParent:GetEffectiveScale() / win:GetEffectiveScale()
+    if win:GetRight() + TIP_ROOM <= screenR then
+        GameTooltip:SetPoint("TOPLEFT", win, "TOPRIGHT", 8, dy)
+    else
+        GameTooltip:SetPoint("TOPRIGHT", win, "TOPLEFT", -8, dy)
+    end
+end
+
 local function CardTooltip(self)
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    PlaceTooltip(self)
     if self.itemType and self.index then
         GameTooltip:SetQuestItem(self.itemType, self.index)
         if IsModifiedClick and IsModifiedClick("COMPAREITEMS") and GameTooltip_ShowCompareItem then
