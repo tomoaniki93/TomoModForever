@@ -17,6 +17,8 @@
 --   /codex set <key>      the entrance of <key> is where I stand
 --   /codex reset <key>    forget that override
 --   /codex missing        dungeons without a position
+--   /codex compare        [1.4.1] gap between each position and the
+--                         game's own entrance (D.game), in yards
 -- Overrides live in the profile (dungeonCodex.overrides) and win over
 -- the data file; `set` also prints the line to paste into it.
 --
@@ -150,13 +152,65 @@ local function ResolveZone(zoneKey)
     return id
 end
 
--- Entrance of a dungeon: mapID, x, y, source ("override" | "guide" | "approx").
--- mapID alone (no x/y) when only the zone is known.
+-- [1.4.1] The game's own entrance (DungeonCodexData D.game) on the zone
+-- map `zoneMap` when it falls on it, else on its own map: map, x, y (0-100).
+local function Vec(x, y)
+    if not CreateVector2D then return nil end
+    local ok, v = pcall(CreateVector2D, x, y)
+    return ok and v or nil
+end
+
+local function OnMap(cont, world, map)
+    if not (map and world and C_Map and C_Map.GetMapPosFromWorldPos) then return nil end
+    local ok, _, pos = pcall(C_Map.GetMapPosFromWorldPos, cont, world, map)
+    if not (ok and pos) then return nil end
+    local x, y = pos.x, pos.y
+    if pos.GetXY then x, y = pos:GetXY() end
+    if type(x) ~= "number" or x < 0 or x > 1 or y < 0 or y > 1 then return nil end
+    return x * 100, y * 100
+end
+
+local gameCache = {}   -- [key] = { map, x, y } or false (positions do not move)
+
+local function GamePos(d, zoneMap)
+    local hit = gameCache[d.key]
+    if hit ~= nil then
+        if hit then return hit[1], hit[2], hit[3] end
+        return nil
+    end
+    local g = Data().game and Data().game[d.key]
+    local map, x, y
+    if g and g.map then
+        if g.map == zoneMap or not zoneMap then
+            map, x, y = g.map, g[1], g[2]
+        elseif C_Map and C_Map.GetWorldPosFromMapPos then
+            local ok, cont, world = pcall(C_Map.GetWorldPosFromMapPos, g.map, Vec(g[1] / 100, g[2] / 100))
+            if ok and cont then x, y = OnMap(cont, world, zoneMap) end
+            if x then map = zoneMap
+            elseif C_Map.GetMapInfo and C_Map.GetMapInfo(g.map) then map, x, y = g.map, g[1], g[2] end
+        end
+    elseif g then
+        x, y = OnMap(g[1], Vec(g[2], g[3]), zoneMap)
+        if x then map = zoneMap end
+    end
+    -- Only a client answer is kept: before the map API is up, try again later.
+    if map then gameCache[d.key] = { map, x, y } elseif not g then gameCache[d.key] = false end
+    return map, x, y
+end
+DC.GamePos = GamePos
+
+-- Entrance of a dungeon: mapID, x, y, source ("override" | "guide" |
+-- "game" | "approx"). mapID alone (no x/y) when only the zone is known.
+-- Order: your /codex set, a guide position (or a deliberate way-in point,
+-- usePos), the game's own entrance, then the approximate one.
 local function Entrance(d)
     local db = DB()
     local o = db and db.overrides and db.overrides[d.key]
     if o and o.map and o.x and o.y then return o.map, o.x, o.y, "override" end
     local map = ResolveZone(d.zone)
+    if d.pos and (d.src == "guide" or d.usePos) then return map, d.pos[1], d.pos[2], d.src or "approx" end
+    local gm, gx, gy = GamePos(d, map)
+    if gm and gx then return gm, gx, gy, "game" end
     if d.pos then return map, d.pos[1], d.pos[2], d.src or "approx" end
     return map, nil, nil, nil
 end
@@ -1765,6 +1819,7 @@ end
 local SRC_TEXT = {
     override = { fr = "Position : enregistrée par toi", en = "Position: recorded by you" },
     guide    = { fr = "Position : relevée par les guides Forever", en = "Position: from Forever guides" },
+    game     = { fr = "Position : entrée tirée des tables du jeu", en = "Position: entrance from the game's own tables" },
     approx   = { fr = "Position : approximative (entrée Classic). Corrigeable avec /codex set", en = "Position: approximate (Classic entrance). Fix it with /codex set" },
 }
 
@@ -1838,6 +1893,7 @@ ShowDetail = function(d)
         d.min, d.max, c[1] * 255, c[2] * 255, c[3] * 255, hint, ZoneName(d)))
 
     local tags = {}
+    if d.raid then tags[#tags + 1] = string.format(T("Raid (%d joueurs)", "Raid (%d players)"), d.size or 40) end
     if d.new then tags[#tags + 1] = T("Nouveau dans Forever", "New in Forever") end
     if d.side and d.side ~= fac then
         tags[#tags + 1] = "|cffff7359" .. (d.side == "H" and T("Territoire horde", "Horde territory") or T("Territoire alliance", "Alliance territory")) .. "|r"
@@ -1949,6 +2005,48 @@ local function Here()
     return map, x * 100, y * 100
 end
 
+-- [1.4.1] /codex compare: for each dungeon, the data file's position and
+-- the game's own entrance, the gap in yards and which one the codex uses.
+-- Green under 25 yd, yellow under 80, orange beyond.
+local function WorldOf(map, x, y)
+    if not (map and x and C_Map and C_Map.GetWorldPosFromMapPos) then return nil end
+    local ok, cont, world = pcall(C_Map.GetWorldPosFromMapPos, map, Vec(x / 100, y / 100))
+    if not (ok and world) then return nil end
+    local wx, wy = world.x, world.y
+    if world.GetXY then wx, wy = world:GetXY() end
+    return cont, wx, wy
+end
+
+function DC.Compare()
+    print(PREFIX .. T("Positions du codex comparées aux entrées du jeu :", "Codex positions against the game's entrances:"))
+    local far = 0
+    for _, d in ipairs(Data().dungeons) do
+        local zone = ResolveZone(d.zone)
+        local gm, gx, gy = GamePos(d, zone)
+        local _, _, _, used = Entrance(d)
+        local tag = used and ("  [" .. used .. "]") or ""
+        if not (Data().game and Data().game[d.key]) then
+            print(string.format("  |cff888888%s|r  %s : %s%s", d.key, DungeonName(d), T("pas d'entrée dans le jeu", "no game entrance"), tag))
+        elseif not gm then
+            print(string.format("  |cffff8855%s|r  %s : %s%s", d.key, DungeonName(d), T("entrée du jeu hors de la carte de la zone", "game entrance off the zone map"), tag))
+        elseif not d.pos then
+            print(string.format("  |cffffd100%s|r  %s : %s %.1f, %.1f (map %d)%s", d.key, DungeonName(d), T("jeu seulement", "game only"), gx, gy, gm, tag))
+        else
+            local c1, x1, y1 = WorldOf(zone, d.pos[1], d.pos[2])
+            local c2, x2, y2 = WorldOf(gm, gx, gy)
+            local gap = (c1 and c2 and c1 == c2) and math.sqrt((x1 - x2) ^ 2 + (y1 - y2) ^ 2) or nil
+            local col = not gap and "|cff888888" or gap < 25 and "|cff55dd55" or gap < 80 and "|cffffd100" or "|cffff8855"
+            if gap and gap >= 80 then far = far + 1 end
+            print(string.format("  %s%s|r  %s : %s %.1f, %.1f (%s)  /  %s %.1f, %.1f%s  =  %s%s",
+                col, d.key, DungeonName(d), T("fichier", "file"), d.pos[1], d.pos[2], d.src or "approx",
+                T("jeu", "game"), gx, gy, gm ~= zone and (" (map " .. gm .. ")") or "",
+                gap and string.format(T("%d m", "%d yd"), math.floor(gap + 0.5)) or "?", tag))
+        end
+    end
+    print(PREFIX .. string.format(T("%d écart(s) de plus de 80 m. Sur place, /codex set <clé> fixe la bonne position.",
+        "%d gap(s) over 80 yd. On the spot, /codex set <key> records the right one."), far))
+end
+
 local function Slash(msg)
     msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
     local cmd, arg = msg:match("^(%S*)%s*(.-)$")
@@ -1982,6 +2080,8 @@ local function Slash(msg)
     elseif cmd == "carte" or cmd == "map" then
         local M = TomoMod_DungeonMap
         if M then M.Open(arg ~= "" and arg or nil) end
+    elseif cmd == "compare" then
+        DC.Compare()
     elseif cmd == "missing" or cmd == "keys" then
         for _, d in ipairs(Data().dungeons) do
             local map, x = Entrance(d)
@@ -1991,7 +2091,7 @@ local function Slash(msg)
             end
         end
     else
-        print(PREFIX .. "/codex  |  /codex carte  |  /codex here  |  /codex set <key>  |  /codex reset <key>  |  /codex missing  |  /codex keys")
+        print(PREFIX .. "/codex  |  /codex carte  |  /codex here  |  /codex set <key>  |  /codex reset <key>  |  /codex missing  |  /codex keys  |  /codex compare")
     end
 end
 

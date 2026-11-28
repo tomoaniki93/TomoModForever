@@ -6,7 +6,8 @@
 --     positions, your faction and neutral ones)
 --   * dungeon entrances (the codex's positions, your /codex set
 --     corrections included), on the zone and on the continent
---   * boats and zeppelins (Classic positions, below)
+--   * boats, zeppelins and airships: every transport path of the game
+--     (1.4.1, below), placed and named by the client
 -- Hovering a marker names it; a left click sets a waypoint there (TMF's
 -- arrow when it is on).
 --
@@ -32,6 +33,7 @@ local ATLAS = {
     flight   = "flightmaster",
     boat     = "flightmasterferry",
     zeppelin = "vehicle-air-horde",
+    airship  = "vehicle-air-horde",
     dungeon  = "Dungeon",
     raid     = "Raid",
 }
@@ -39,23 +41,103 @@ local FALLBACK = {
     flight   = "Interface\\Minimap\\Tracking\\FlightMaster",
     boat     = "Interface\\Minimap\\Tracking\\FlightMaster",
     zeppelin = "Interface\\Minimap\\Tracking\\FlightMaster",
+    airship  = "Interface\\Minimap\\Tracking\\FlightMaster",
     dungeon  = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
     raid     = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
 }
-local SIZE = { flight = 18, boat = 20, zeppelin = 20, dungeon = 22, raid = 24 }
+local SIZE = { flight = 18, boat = 20, zeppelin = 20, airship = 20, dungeon = 22, raid = 24 }
 
--- Boats and zeppelins: Classic uiMapID, x, y (0-100), kind, where to.
-local TRANSPORTS = {
-    { 1411, 50.9, 13.3, "zeppelin", T("Fossoyeuse, Grom'gol", "Undercity, Grom'gol") },
-    { 1420, 61.0, 58.9, "zeppelin", T("Orgrimmar, Grom'gol", "Orgrimmar, Grom'gol") },
-    { 1434, 31.5, 29.5, "zeppelin", T("Orgrimmar, Fossoyeuse", "Orgrimmar, Undercity") },
-    { 1437,  4.6, 57.1, "boat",     T("Auberdine", "Auberdine") },
-    { 1437,  5.1, 63.4, "boat",     T("Theramore", "Theramore") },
-    { 1439, 32.4, 43.7, "boat",     T("Port de Menethil", "Menethil Harbor") },
-    { 1445, 71.6, 56.5, "boat",     T("Port de Menethil", "Menethil Harbor") },
-    { 1413, 63.7, 38.6, "boat",     T("Baie-du-Butin", "Booty Bay") },
-    { 1434, 25.9, 73.1, "boat",     T("Cabestan", "Ratchet") },
+-- [1.4.1] Boats, zeppelins and airships of WoW: Forever: every transport
+-- path of the game's TaxiPathNode table (build 1.60.1.71139), each stop
+-- where the transport waits, in world yards { continent, x, y }
+-- (continent 0 Eastern Kingdoms, 1 Kalimdor, 2991 Zephras Isle). Facts
+-- read from the game's own tables; the list was cross-checked with
+-- KW Boats And Zeppelins (Krool) and OpenMap, thanks to them.
+-- The client places each dock on the map being looked at and names the
+-- zones it leads to, so names come out in the player's language. Nothing
+-- says which faction may ride a path: all are shown.
+local ROUTES = {
+    { "boat",     { 1, -1005.6, -3841.6 }, { 0, -14277.7, 582.9 } },                    -- Ratchet, Booty Bay
+    { "zeppelin", { 0, -12464.0, 231.6 },  { 1, 1360.9, -4631.3 } },                    -- Grom'gol, Orgrimmar
+    { "boat",     { 0, -3905.2, -585.8 },  { 1, -4016.4, -4740.6 } },                   -- Menethil, Theramore
+    { "boat",     { 1, 8532.0, 1023.7 },   { 1, 6594.4, 759.8 } },                      -- Rut'theran, Auberdine
+    { "zeppelin", { 0, -12406.9, 211.8 },  { 0, 2062.6, 235.3 } },                      -- Grom'gol, Undercity
+    { "zeppelin", { 1, 1318.1, -4658.0 },  { 0, 2062.4, 293.0 } },                      -- Orgrimmar, Undercity
+    { "boat",     { 1, -4197.3, 3286.6 },  { 1, -4347.8, 2444.4 } },                    -- Feathermoon, Feralas coast
+    { "boat",     { 0, -3709.5, -575.1 },  { 0, -1102.6, -554.7 }, { 1, 6406.2, 823.1 } }, -- Menethil, Southshore, Auberdine
+    { "boat",     { 1, -6932.6, -4950.8 }, { 0, -8232.3, -5800.8 } },                   -- Steamwheedle Port, Powderfuse Port
+    { "airship",  { 0, 544.8, 424.2 },     { 2991, 1848.3, 569.1 } },                   -- Alterac Mountains, Zephras Isle
+    { "airship",  { 1, -802.0, 366.5 },    { 2991, 1952.1, 1017.1 } },                  -- Mulgore, Zephras Isle
+    { "boat",     { 1, 6548.3, 942.2 },    { 0, -8654.5, 1344.4 } },                    -- Darkshore, Stormwind
 }
+MM.ROUTES = ROUTES
+local DOCK = 100   -- yards: stops this close on one continent are one dock
+
+-- Docks: stops merged, each with the stops it leads to.
+local docks
+local function Docks()
+    if docks then return docks end
+    docks = {}
+    local function DockOf(kind, st)
+        for _, d in ipairs(docks) do
+            if d.c == st[1] and math.abs(d.x - st[2]) <= DOCK and math.abs(d.y - st[3]) <= DOCK then
+                if kind ~= "boat" then d.kind = kind end   -- a tower is a tower
+                return d
+            end
+        end
+        local d = { kind = kind, c = st[1], x = st[2], y = st[3], to = {} }
+        docks[#docks + 1] = d
+        return d
+    end
+    for _, r in ipairs(ROUTES) do
+        for i = 2, #r do
+            local d = DockOf(r[1], r[i])
+            for j = 2, #r do
+                if j ~= i then d.to[#d.to + 1] = r[j] end
+            end
+        end
+    end
+    return docks
+end
+MM.Docks = Docks
+
+local function Vec(x, y)
+    if not CreateVector2D then return nil end
+    local ok, v = pcall(CreateVector2D, x, y)
+    return ok and v or nil
+end
+
+-- A world position on map `uiMapID` (0-1), or nil when off it.
+local function OnMap(c, x, y, uiMapID)
+    local vec = Vec(x, y)
+    if not (vec and C_Map and C_Map.GetMapPosFromWorldPos) then return nil end
+    local ok, id, pos = pcall(C_Map.GetMapPosFromWorldPos, c, vec, uiMapID)
+    if not (ok and pos) then return nil end
+    local px, py = pos.x, pos.y
+    if pos.GetXY then px, py = pos:GetXY() end
+    if type(px) ~= "number" or px < 0 or px > 1 or py < 0 or py > 1 then return nil end
+    return px, py, id
+end
+
+-- The zone a stop lies in, by the client (localized), cached once known.
+local zoneNames = {}
+local function ZoneName(st)
+    local key = st[1] .. ":" .. st[2] .. ":" .. st[3]
+    if zoneNames[key] then return zoneNames[key] end
+    local px, py, top = OnMap(st[1], st[2], st[3], nil)
+    if not top then return nil end
+    local name
+    if C_Map.GetMapInfoAtPosition then
+        local ok, info = pcall(C_Map.GetMapInfoAtPosition, top, px, py)
+        if ok and info and info.name and info.mapID ~= top then name = info.name end
+    end
+    if not name and C_Map.GetMapInfo then
+        local info = C_Map.GetMapInfo(top)
+        name = info and info.name
+    end
+    zoneNames[key] = name
+    return name
+end
 
 local function DB() return TomoModForeverDB and TomoModForeverDB.mapMarkers end
 
@@ -214,12 +296,23 @@ local function DrawDungeons(canvas, mapID)
     end
 end
 
+local TITLES = {
+    boat     = T("Bateau", "Boat"),
+    zeppelin = T("Zeppelin", "Zeppelin"),
+    airship  = T("Dirigeable", "Airship"),
+}
+
 local function DrawTransports(canvas, mapID)
-    for _, t in ipairs(TRANSPORTS) do
-        local px, py = Translate(t[1], t[2] / 100, t[3] / 100, mapID)
+    for _, d in ipairs(Docks()) do
+        local px, py = OnMap(d.c, d.x, d.y, mapID)
         if px then
-            local title = t[4] == "zeppelin" and T("Zeppelin", "Zeppelin") or T("Bateau", "Boat")
-            Place(canvas, t[4], px, py, title, T("Vers : ", "To: ") .. t[5], t[1], t[2], t[3])
+            local names, seen = {}, {}
+            for _, st in ipairs(d.to) do
+                local n = ZoneName(st) or "?"
+                if not seen[n] then seen[n] = true; names[#names + 1] = n end
+            end
+            Place(canvas, d.kind, px, py, TITLES[d.kind] or TITLES.boat,
+                T("Vers : ", "To: ") .. table.concat(names, ", "), mapID, px * 100, py * 100)
         end
     end
 end

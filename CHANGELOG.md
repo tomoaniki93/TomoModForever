@@ -1,6 +1,6 @@
 ## ####################################
 
-## CHANGELOG 1.4.1
+## CHANGELOG 1.4.1 - Release
 
 #### TMF action bars
 
@@ -21,6 +21,21 @@
 - **New** - Skin "Forever ornate" (first tile): bronze and gold frame with corner studs, soft golden halo fading in under the mouse. Textures `Assets/Textures/ActionBars/ornate_frame.tga`, `ornate_glow.tga`, `shine.tga`, made by `Tools/gen_bar_textures.py`.
 - **New** - Ready shine (`barSkin.readyShine`, on): a golden band sweeps across the icon when a cooldown longer than the GCD ends (cooldown `SetCooldown` / `OnCooldownDone` hooks, our textures only). Halo and shine follow General > Animations (none: off, reduced: shine only).
 - **Changed** - The cooldown swipe is anchored to the icon (inside the border); the original anchors come back when the skin is turned off.
+
+#### Map: transports and zone levels
+
+- **New** - Boats, zeppelins and airships: the hand-entered table of 9 Classic docks (`MapMarkers.lua`, `TRANSPORTS`) is replaced by every transport path of Forever's TaxiPathNode table (build 1.60.1.71139), stops in world yards (`MM.ROUTES`). New for Forever: Stormwind - Darkshore, Steamwheedle Port - Powderfuse Port (Riverglades), Menethil - Southshore - Auberdine (new Southshore dock), the airships Alterac Mountains - Zephras Isle and Mulgore - Zephras Isle; also the Classic Feathermoon ferry and Rut'theran - Auberdine boat, missing before. List cross-checked with KW Boats And Zeppelins (Krool) and OpenMap (credited in the code).
+- **New** - Stops within 100 yards are one dock (`MM.Docks`): the Grom'gol, Orgrimmar and Undercity towers each show one pin with both destinations. The client places each dock on the shown map (`C_Map.GetMapPosFromWorldPos`) and names the destination zones (`C_Map.GetMapInfoAtPosition`), so the tooltip is in the player's language. Airship pin kind added.
+- **New** - Zone levels on the world map: Zephras Isle 1-12, Riverglades 35-45, Mount Hyjal 60 (`MapReveal.lua`), used when the game gives no range. Shen'dralas has no settled range yet: only the game's own.
+- **Checked** - Flight points: TMF's flight data (build 1.60.1.70862) already has every node and path of Forever, newer than OpenMap's (70245); nothing to add.
+
+#### Dungeon codex: game entrances and raids
+
+- **New** - `D.game` (`DungeonCodexData.lua`): the entrance of 41 of the 43 codex entries from the game's own tables (instance entrances and Group Finder data, builds 1.60.1.70245 / 70888), as a world position `{ continent, x, y }` or a spot on a map `{ map = uiMapID, x, y }`, cross-checked with OpenMap (credited in the file). `DC.GamePos` puts it on the codex zone map through the client (`C_Map.GetMapPosFromWorldPos` / `GetWorldPosFromMapPos`), or on its own map when it falls off the zone (Ruins of Lordaeron on the Undercity map); answers are cached.
+- **Changed** - `DC.Entrance` order: your `/codex set` override, a `guide` position or a deliberate way-in point (`usePos`: Blackrock Mountain wings and raids, Stratholme's two gates), the game's entrance (new source `game`, labelled in the detail panel), then the approximate one. Most "approx" dungeons now point at the real entrance; Krol'dok Stronghold, Blackmaw Hold and Shaper's Terrace get one (their "not placed yet" notes go). Riverglades gets its uiMapID (2548).
+- **New** - 8 raids (`raid = true`, `size`): Molten Core, Blackwing Lair, Onyxia's Lair, Zul'Gurub, Ruins of Ahn'Qiraj, Ahn'Qiraj Temple, and Forever's Hyjal Summit (20) and Barrow Deeps (10), level 60, with routes for each faction; the two Forever raids open on 9 December and have no entrance yet (`/codex set hyjal`, `/codex set barrow`). Zones Silithus and Mount Hyjal (2482) added. Detail panel tag "Raid (N players)"; the map markers already draw raids with the raid icon.
+- **New** - `/codex compare`: for each entry, the data file's position and the game's entrance, the gap in yards (green under 25, yellow under 80, orange beyond) and which one the codex uses; to settle the Hall of Thanes (16 % apart), Excavation Site (9 %) and Ruins of Lordaeron in game.
+- **Fixed** - The Stockade: levels 24-32 (the game's group finder), was 25-29.
 
 #### Quest dialogue
 

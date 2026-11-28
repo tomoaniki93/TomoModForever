@@ -171,7 +171,7 @@ end
 -- ---------------------------------------------------------------------
 -- Zone levels on the hover label
 -- ---------------------------------------------------------------------
--- Classic ranges by uiMapID, used only when the game gives no range.
+-- Ranges by uiMapID, used only when the game gives no range.
 local CLASSIC_LEVELS = {
     [1429] = { 1, 10 },  [1426] = { 1, 10 },  [1420] = { 1, 10 },  [1411] = { 1, 10 },
     [1412] = { 1, 10 },  [1438] = { 1, 10 },  [1436] = { 10, 20 }, [1432] = { 10, 20 },
@@ -183,6 +183,10 @@ local CLASSIC_LEVELS = {
     [1427] = { 43, 50 }, [1419] = { 45, 55 }, [1447] = { 45, 55 }, [1448] = { 48, 55 },
     [1449] = { 48, 55 }, [1428] = { 50, 58 }, [1422] = { 51, 58 }, [1423] = { 53, 60 },
     [1430] = { 55, 60 }, [1451] = { 55, 60 }, [1452] = { 55, 60 },
+    -- [1.4.1] WoW: Forever's own zones: Zephras Isle and the Riverglades
+    -- as Blizzard gave them, Mount Hyjal the level 60 zone. Shen'dralas
+    -- (2652) has no settled range yet: only the game's own, if it gives one.
+    [2521] = { 1, 12 },  [2548] = { 35, 45 }, [2482] = { 60, 60 },
 }
 
 local function Readable(v) return type(v) == "number" and not (issecretvalue and issecretvalue(v)) end

@@ -695,8 +695,8 @@ K.RegisterPage({
     build = function(parent)
         return K.Page(parent, function(page)
             page:Hero(T("Codex des donjons", "Dungeon codex"),
-                T("Les 35 donjons de WoW Forever, du niveau 13 au 60 : ceux de ton niveau, l'itinéraire pour ta faction étape par étape, et un waypoint sur l'entrée.",
-                  "The 35 dungeons of WoW Forever, levels 13 to 60: the ones for your level, the route for your faction step by step, and a waypoint on the entrance."))
+                T("Les 35 donjons et 8 raids de WoW Forever, du niveau 13 au 60 : ceux de ton niveau, l'itinéraire pour ta faction étape par étape, et un waypoint sur l'entrée.",
+                  "The 35 dungeons and 8 raids of WoW Forever, levels 13 to 60: the ones for your level, the route for your faction step by step, and a waypoint on the entrance."))
 
             local c = page:Card(T("Activation", "On / off"))
             ModuleToggle(c, "dungeonCodex", T("Activer le codex des donjons", "Enable the dungeon codex"))

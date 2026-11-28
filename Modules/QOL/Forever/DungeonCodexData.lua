@@ -2,15 +2,22 @@
 -- Modules/QOL/Forever/DungeonCodexData.lua -- the dungeons of WoW: Forever
 --
 -- 35 dungeons over 28 instances, levels 13 to 60: the 20 original
--- instances (with their wings) and the 9 new Forever ones. Level ranges
--- are the live Forever ranges (Warcraft Tavern / Icy Veins, Nov 2026),
--- not the old Classic ones.
+-- instances (with their wings) and the 9 new Forever ones, and (1.4.1)
+-- 8 raids: the 6 Classic ones and Forever's Hyjal Summit and Barrow Deeps.
+-- Level ranges are the live Forever ranges (Warcraft Tavern / Icy Veins,
+-- Nov 2026; the Stockade from the game's group finder), not the old
+-- Classic ones.
 --
 -- Entrance positions. `pos` is { x, y } in 0-100 map coordinates on the
 -- zone `zone`. `src` says how much to trust it:
 --   "guide"  -- coordinates published by Forever guides
 --   "approx" -- the Classic position of the entrance, or a close guess
 --   nil pos  -- unknown yet: the codex offers the zone map but no point
+-- [1.4.1] D.game (end of file): the entrances from the game's own tables.
+-- The codex prefers them to "approx" positions and to unknown ones; a
+-- "guide" position, or `usePos = true` (the point is the way in, not the
+-- portal: Blackrock Mountain, Stratholme's two gates), keeps its `pos`.
+-- /codex compare prints, in game, the gap between `pos` and the game.
 -- Any position can be replaced in game: stand on the entrance and type
 -- `/codex set <key>`. The override wins and is printed as a ready-to-
 -- paste line for this file.
@@ -39,7 +46,7 @@ D.zones = {
     dunmorogh      = { id = 1426, en = "Dun Morogh",           fr = "Dun Morogh" },
     tirisfal       = { id = 1420, en = "Tirisfal Glades",      fr = "Clairières de Tirisfal" },
     stranglethorn  = { id = 1434, en = "Stranglethorn Vale",   fr = "Vallée de Strangleronce" },
-    riverglades    = { id = nil,  en = "Riverglades",          fr = "Riverglades" },
+    riverglades    = { id = 2548, en = "Riverglades",          fr = "Riverglades" },
     badlands       = { id = 1418, en = "Badlands",             fr = "Terres ingrates" },
     tanaris        = { id = 1446, en = "Tanaris",              fr = "Tanaris" },
     desolace       = { id = 1443, en = "Desolace",             fr = "Désolace" },
@@ -51,6 +58,8 @@ D.zones = {
     ungoro         = { id = 1449, en = "Un'Goro Crater",       fr = "Cratère d'Un'Goro" },
     epl            = { id = 1423, en = "Eastern Plaguelands",  fr = "Maleterres de l'Est" },
     wpl            = { id = 1422, en = "Western Plaguelands",  fr = "Maleterres de l'Ouest" },
+    silithus       = { id = 1451, en = "Silithus",             fr = "Silithus" },
+    hyjal          = { id = 2482, en = "Mount Hyjal",          fr = "Mont Hyjal" },
 }
 
 -- ---------------------------------------------------------------------
@@ -216,7 +225,7 @@ D.dungeons = {
     },
     {
         key = "stocks", en = "The Stockade", fr = "La Prison",
-        min = 25, max = 29, zone = "stormwind", pos = { 50.8, 66.9 }, src = "guide", side = "A",   -- [1.4.0] entrance checked in game
+        min = 24, max = 32, zone = "stormwind", pos = { 50.8, 66.9 }, src = "guide", side = "A",   -- [1.4.0] entrance checked in game; [1.4.1] levels from the game's group finder
         routes = {
             A = { fr = { "Dans Hurlevent : la prison est au bord d'un canal, côté quartier des Mages.",
                          "Suis le waypoint : la porte est gardée, au pied d'un pont." },
@@ -320,8 +329,8 @@ D.dungeons = {
     {
         key = "kroldok", en = "Krol'dok Stronghold", fr = "Bastion de Krol'dok",
         min = 40, max = 47, zone = "riverglades", pos = nil, new = true,
-        note = { fr = "Nouvelle zone : position de l'entrée pas encore connue. Sur place, tape /codex set kroldok.",
-                 en = "New zone: entrance position not known yet. On the spot, type /codex set kroldok." },
+        note = { fr = "La forteresse ogre domine le centre-ouest des Riverglades.",
+                 en = "The ogre fortress overlooks the west-centre of the Riverglades." },
         routes = {
             H = { fr = { "Riverglades : nouvelle zone à l'est des Terres ingrates et des Steppes ardentes.",
                          "Maîtres de vol : Rog'mar ou Flame Crest. La forteresse ogre domine la zone." },
@@ -402,18 +411,18 @@ D.dungeons = {
         },
     },
     { key = "brd",  en = "Blackrock Depths", fr = "Profondeurs de Rochenoire",
-      min = 52, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", routes = R_BRM,
+      min = 52, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", usePos = true, routes = R_BRM,
       note = { fr = "Le point marque l'entrée du mont Rochenoire depuis les Steppes ardentes.",
                en = "The point marks the way into Blackrock Mountain from the Burning Steppes." } },
     { key = "dme",  en = "Dire Maul: East", fr = "Hache-Tripes : Est",
       min = 54, max = 60, zone = "feralas", pos = { 59.2, 44.8 }, src = "approx", routes = R_DM },
     { key = "lbrs", en = "Lower Blackrock Spire", fr = "Pic Rochenoire inférieur",
-      min = 55, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", routes = R_BRM },
+      min = 55, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", usePos = true, routes = R_BRM },
     {
         key = "blackmaw", en = "Blackmaw Hold", fr = "Repaire des Noiregueules",
         min = 55, max = 60, zone = "azshara", pos = nil, new = true,
-        note = { fr = "Derrière la grande porte de pierre du nord de l'Azshara. Sur place, tape /codex set blackmaw.",
-                 en = "Behind the great stone gate of northern Azshara. On the spot, type /codex set blackmaw." },
+        note = { fr = "Derrière la grande porte de pierre du nord de l'Azshara.",
+                 en = "Behind the great stone gate of northern Azshara." },
         routes = {
             H = { fr = { "Valormok (Azshara) : maître de vol horde.",
                          "Au nord de la zone, la grande porte de pierre restée fermée en Vanilla (« Timbermaw Hold »)." },
@@ -432,8 +441,8 @@ D.dungeons = {
     {
         key = "shaper", en = "Shaper's Terrace", fr = "Terrasse du Façonneur",
         min = 58, max = 60, zone = "ungoro", pos = nil, new = true,
-        note = { fr = "Collines nord du cratère : entrée pas encore placée. Sur place, tape /codex set shaper.",
-                 en = "Northern hills of the crater: entrance not placed yet. On the spot, type /codex set shaper." },
+        note = { fr = "Dans les collines au nord du cratère.",
+                 en = "In the northern hills of the crater." },
         routes = {
             both = { fr = { "Refuge des Marshal (Un'Goro) : maître de vol des deux factions.",
                             "Le site titan est dans les collines nord du cratère." },
@@ -442,10 +451,10 @@ D.dungeons = {
         },
     },
     { key = "stratlive", en = "Stratholme: Main Gate", fr = "Stratholme : Porte principale",
-      min = 58, max = 60, zone = "epl", pos = { 30.8, 14.8 }, src = "approx", routes = R_STRAT,
+      min = 58, max = 60, zone = "epl", pos = { 30.8, 14.8 }, src = "approx", usePos = true, routes = R_STRAT,
       note = { fr = "Porte principale, au bout du pont (côté écarlate).", en = "Main gate, at the end of the bridge (Scarlet side)." } },
     { key = "stratud", en = "Stratholme: Service Gate", fr = "Stratholme : Porte de service",
-      min = 58, max = 60, zone = "epl", pos = { 47.9, 23.9 }, src = "approx", routes = R_STRAT,
+      min = 58, max = 60, zone = "epl", pos = { 47.9, 23.9 }, src = "approx", usePos = true, routes = R_STRAT,
       note = { fr = "Porte de service sur le flanc est des remparts (côté mort-vivant).", en = "Service gate on the east side of the walls (undead side)." } },
     {
         key = "scholo", en = "Scholomance", fr = "Scholomance",
@@ -462,8 +471,121 @@ D.dungeons = {
         },
     },
     { key = "ubrs", en = "Upper Blackrock Spire", fr = "Pic Rochenoire supérieur",
-      min = 59, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", routes = R_BRM },
+      min = 59, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", usePos = true, routes = R_BRM },
+
+    -- -----------------------------------------------------------------
+    -- [1.4.1] Raids (raid = true, size = players)
+    -- -----------------------------------------------------------------
+    { key = "mc", en = "Molten Core", fr = "Cœur du Magma", raid = true, size = 40,
+      min = 60, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", usePos = true, routes = R_BRM,
+      note = { fr = "Dans le mont Rochenoire : le portail est au fond, près de l'entrée des Profondeurs de Rochenoire.",
+               en = "Inside Blackrock Mountain: the portal is at the bottom, near the Blackrock Depths entrance." } },
+    { key = "bwl", en = "Blackwing Lair", fr = "Repaire de l'Aile noire", raid = true, size = 40,
+      min = 60, max = 60, zone = "burningsteppes", pos = { 29.4, 38.0 }, src = "approx", usePos = true, routes = R_BRM,
+      note = { fr = "Par le Pic Rochenoire supérieur : l'accès est au bout du pic.",
+               en = "Through Upper Blackrock Spire: the way in is at the top of the spire." } },
+    {
+        key = "ony", en = "Onyxia's Lair", fr = "Repaire d'Onyxia", raid = true, size = 40,
+        min = 60, max = 60, zone = "dustwallow", pos = { 52.6, 76.8 }, src = "approx",
+        routes = {
+            A = { fr = { "Theramore (Marécage d'Âprefange) : maître de vol alliance.",
+                         "Au sud du marais, la grotte d'Onyxia dans les collines de Wyrmbog." },
+                  en = { "Theramore (Dustwallow Marsh): Alliance flight master.",
+                         "South of the marsh, Onyxia's cave in the hills of the Wyrmbog." } },
+            H = { fr = { "Brackenwall Village (Marécage d'Âprefange) : maître de vol horde.",
+                         "Au sud du marais, la grotte d'Onyxia dans les collines de Wyrmbog." },
+                  en = { "Brackenwall Village (Dustwallow Marsh): Horde flight master.",
+                         "South of the marsh, Onyxia's cave in the hills of the Wyrmbog." } },
+        },
+    },
+    {
+        key = "zg", en = "Zul'Gurub", fr = "Zul'Gurub", raid = true, size = 20,
+        min = 60, max = 60, zone = "stranglethorn", pos = { 53.9, 17.6 }, src = "approx",
+        routes = {
+            H = { fr = { "Grom'gol (Strangleronce) : maître de vol horde.",
+                         "Au nord-est de la vallée, la cité troll : entrée par le grand pont." },
+                  en = { "Grom'gol (Stranglethorn): Horde flight master.",
+                         "In the north-east of the vale, the troll city: enter by the great bridge." } },
+            A = { fr = { "Maître de vol du camp Rebelle (nord de Strangleronce).",
+                         "À l'est, la cité troll : entrée par le grand pont." },
+                  en = { "Rebel Camp flight master (northern Stranglethorn).",
+                         "To the east, the troll city: enter by the great bridge." } },
+        },
+    },
+    {
+        key = "aq20", en = "Ruins of Ahn'Qiraj", fr = "Ruines d'Ahn'Qiraj", raid = true, size = 20,
+        min = 60, max = 60, zone = "silithus", pos = { 28.6, 92.4 }, src = "approx",
+        routes = {
+            both = { fr = { "Fort Cénarien (Silithus) : maître de vol des deux factions.",
+                            "Tout au sud, derrière le Mur du Scarabée : les Ruines sont à gauche des portes." },
+                     en = { "Cenarion Hold (Silithus): flight master for both factions.",
+                            "At the far south, past the Scarab Wall: the Ruins are left of the gates." } },
+        },
+    },
+    {
+        key = "aq40", en = "Ahn'Qiraj Temple", fr = "Temple d'Ahn'Qiraj", raid = true, size = 40,
+        min = 60, max = 60, zone = "silithus", pos = { 28.6, 92.4 }, src = "approx",
+        routes = {
+            both = { fr = { "Fort Cénarien (Silithus) : maître de vol des deux factions.",
+                            "Tout au sud, derrière le Mur du Scarabée : le Temple est au fond, passé les portes." },
+                     en = { "Cenarion Hold (Silithus): flight master for both factions.",
+                            "At the far south, past the Scarab Wall: the Temple lies beyond the gates." } },
+        },
+    },
+    {
+        key = "hyjal", en = "Hyjal Summit", fr = "Sommet d'Hyjal", raid = true, size = 20, new = true,
+        min = 60, max = 60, zone = "hyjal", pos = nil,
+        note = { fr = "Ouvre le 9 décembre. Au sommet du mont Hyjal, près de l'Arbre-Monde Nordrassil. Sur place, tape /codex set hyjal.",
+                 en = "Opens on 9 December. At the summit of Mount Hyjal, near the World Tree Nordrassil. On the spot, type /codex set hyjal." },
+        routes = {
+            both = { fr = { "Long-guet (Berceau-de-l'Hiver), puis au sud par les gorges de Darkwhisper vers le mont Hyjal.",
+                            "Maîtres de vol : Summit of Eternity ou Tainted Foothills. Le raid est au sommet, près de Nordrassil." },
+                     en = { "Everlook (Winterspring), then south through Darkwhisper Gorge into Mount Hyjal.",
+                            "Flight masters: Summit of Eternity or Tainted Foothills. The raid is at the summit, near Nordrassil." } },
+        },
+    },
+    {
+        key = "barrow", en = "Barrow Deeps", fr = "Barrow Deeps", raid = true, size = 10, new = true,
+        min = 60, max = 60, zone = "hyjal", pos = nil,
+        note = { fr = "Ouvre le 9 décembre. Entrées par le mont Hyjal, le Berceau-de-l'Hiver et le Repaire des Noiregueules. Sur place, tape /codex set barrow.",
+                 en = "Opens on 9 December. Entrances through Mount Hyjal, Winterspring and Blackmaw Hold. On the spot, type /codex set barrow." },
+        routes = {
+            both = { fr = { "Long-guet (Berceau-de-l'Hiver), puis au sud par les gorges de Darkwhisper vers le mont Hyjal.",
+                            "Le raid est sous la montagne : plusieurs entrées, dont une depuis le Repaire des Noiregueules." },
+                     en = { "Everlook (Winterspring), then south through Darkwhisper Gorge into Mount Hyjal.",
+                            "The raid lies under the mountain: several entrances, one of them from Blackmaw Hold." } },
+        },
+    },
 }
 
 D.byKey = {}
 for _, d in ipairs(D.dungeons) do D.byKey[d.key] = d end
+
+-- ---------------------------------------------------------------------
+-- [1.4.1] Entrances from the game's own tables (instance entrances and
+-- Group Finder data, builds 1.60.1.70245 / 70888), cross-checked with
+-- OpenMap, thanks to its contributors.
+--   { continent, worldX, worldY }        a world position (yards): the
+--                                         client puts it on the zone map
+--   { map = uiMapID, x, y }              a spot on that map (0-100)
+-- ---------------------------------------------------------------------
+local SM, DM, BRM, STRAT, AQ = { 0, 2892.2, -811.3 }, { 1, -3908.0, 1130.0 }, { 0, -7522.5, -1233.0 }, { 0, 3392.3, -3378.5 }, { 1, -8114.5, 1526.4 }
+D.game = {
+    rfc = { 1, 1816.8, -4423.4 },          hot = { map = 1455, 27.7, 47.9 },
+    rol = { map = 1458, 72.5, 11.4 },      wc = { 1, -751.1, -2209.2 },
+    vc = { 0, -11207.8, 1681.2 },          sfk = { 0, -231.0, 1571.6 },
+    bfd = { 1, 4249.1, 748.4 },            stocks = { 0, -8762.4, 848.0 },
+    exc = { map = 1437, 47.8, 56.2 },      dal = { map = 1416, 8.5, 59.3 },
+    rfk = { 1, -4459.4, -1660.2 },         gnomer = { 0, -5162.7, 931.6 },
+    smgy = SM, smlib = SM, smarm = SM, smcath = SM,
+    drowned = { map = 1434, 21.3, 27.8 },  rfd = { 1, -4662.9, -2535.9 },
+    kroldok = { map = 2548, 37.5, 37.3 },  ulda = { 0, -6060.2, -2955.0 },
+    zf = { 1, -6790.6, -2891.3 },          mara = { 1, -1432.7, 2925.0 },
+    alcaz = { map = 1445, 75.3, 14.1 },    st = { 0, -10170.1, -3996.0 },
+    brd = { 0, -7178.1, -928.6 },          dme = DM, dmw = DM, dmn = DM,
+    lbrs = BRM, ubrs = BRM, mc = BRM, bwl = BRM,
+    blackmaw = { map = 1447, 38.6, 33.2 }, shaper = { map = 1449, 48.1, 6.1 },
+    stratlive = STRAT, stratud = STRAT,    scholo = { 0, 1274.8, -2552.6 },
+    ony = { 1, -4753.3, -3752.4 },         zg = { 0, -11916.1, -1224.6 },
+    aq20 = AQ, aq40 = AQ,
+}
